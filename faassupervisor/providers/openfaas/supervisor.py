@@ -12,29 +12,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import subprocess
 import faassupervisor.utils as utils
-from faassupervisor.supervisortemplate import SupervisorTemplate
+from faassupervisor.interfaces.supervisor import SupervisorInterface
+from faassupervisor.providers.openfaas.minio import Minio
 
 logger = utils.get_logger()
 logger.info('SUPERVISOR: Initializing Openfaas supervisor')
 
-class OpenfaasSupervisor(SupervisorTemplate):
+class OpenfaasSupervisor(SupervisorInterface):
     
+    def __init__(self, f_input):
+        self.f_input = f_input
+        utils.create_folder(self.output_folder)
+        utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder)
+
+    @utils.lazy_property
+    def minio(self):
+        minio = Minio(self.output_folder)
+        return minio
+
+    @utils.lazy_property
+    def storage_client(self):
+        if Minio.is_minio_event(self.f_input):
+            storage_client = Minio(self.output_folder)
+        return storage_client
+       
     ##################################################################
     ## The methods below must be defined for the supervisor to work ##
     ##################################################################
     
     def parse_input(self):
-        pass
+        utils.set_environment_variable('SCAR_INPUT_FILE', self.storage_client.download_input())
+        print('SCAR_INPUT_FILE: {0}'.format(utils.get_environment_variable('SCAR_INPUT_FILE')))
     
     def parse_output(self):
-        pass
+        self.storage_client.upload_output()
     
     def execute_function(self):
-        pass
+        if utils.is_variable_in_environment('sprocess'):
+            print("Executing user_script.sh")
+            print(subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT))
     
     def create_response(self):
         pass
     
     def create_error_response(self, message, status_code):
         pass
+

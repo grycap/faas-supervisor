@@ -15,11 +15,12 @@
 from setuptools import setup
 
 setup(name='faas-supervisor',
-      version='0.5.0',
+      version='0.6.0',
       description='Input/Output data manager for FaaS',
       url='https://github.com/grycap/faas-supervisor',
       author='GRyCAP - Universitat Politecnica de Valencia',
       author_email='alpegon3@upv.es',
       license='Apache 2.0',
-      packages=['faassupervisor','faassupervisor.providers.aws','faassupervisor.providers.openfaas'],
+      packages=['faassupervisor','faassupervisor.interfaces',
+                'faassupervisor.providers.aws','faassupervisor.providers.openfaas'],
       zip_safe=False)

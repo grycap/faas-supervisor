@@ -61,6 +61,9 @@ def join_paths(*paths):
 def get_temp_dir():
     return tempfile.gettempdir()
 
+def get_random_tmp_folder():
+    return join_paths(tempfile.gettempdir(), str(uuid.uuid4().hex))    
+
 def lazy_property(func):
     ''' A decorator that makes a property lazy-evaluated.'''
     attr_name = '_lazy_' + func.__name__
@@ -180,6 +183,9 @@ def execute_command_and_return_output(command):
 def is_variable_in_environment(variable):
     return is_value_in_dict(os.environ, variable)
 
+def is_key_and_value_in_dictionary(key, dictionary):
+    return (key in dictionary) and dictionary[key] and dictionary[key] != ""
+
 def set_environment_variable(key, variable):
     if key and variable:
         os.environ[key] = variable
@@ -206,3 +212,10 @@ def get_user_defined_variables():
         if re.match("CONT_VAR_.*", key):
             user_vars[key.replace("CONT_VAR_", "")] = get_environment_variable(key)
     return user_vars
+
+def get_stdin():
+    buf = ""
+    for line in sys.stdin:
+        buf = buf + line
+    return buf
+

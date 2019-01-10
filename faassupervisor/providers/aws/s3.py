@@ -16,9 +16,11 @@ import boto3
 import os
 from urllib.parse import unquote_plus
 import faassupervisor.utils as utils
+from faassupervisor.interfaces.dataprovider import DataProviderInterface
+
 logger = utils.get_logger()
 
-class S3():
+class S3(DataProviderInterface):
     
     @utils.lazy_property
     def client(self):

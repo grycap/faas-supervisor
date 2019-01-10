@@ -14,7 +14,7 @@
 
 import abc
 
-class SupervisorTemplate(metaclass=abc.ABCMeta):
+class SupervisorInterface(metaclass=abc.ABCMeta):
     ''' All the different supervisors must inherit from this class
     to ensure that the commands are defined consistently'''
 
@@ -36,4 +36,5 @@ class SupervisorTemplate(metaclass=abc.ABCMeta):
     
     @abc.abstractmethod    
     def create_error_response(self, message, status_code):
-        pass       
+        pass
+     

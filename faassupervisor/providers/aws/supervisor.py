@@ -15,7 +15,7 @@
 import json
 import subprocess
 import faassupervisor.utils as utils
-from faassupervisor.supervisortemplate import SupervisorTemplate
+from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.lambdafunction import Lambda
 from faassupervisor.providers.aws.batch import Batch
 from faassupervisor.providers.aws.apigateway import ApiGateway
@@ -25,7 +25,7 @@ from faassupervisor.providers.aws.udocker import Udocker
 logger = utils.get_logger()
 logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')
 
-class LambdaSupervisor(SupervisorTemplate):
+class LambdaSupervisor(SupervisorInterface):
     
     @utils.lazy_property
     def s3(self):
@@ -98,26 +98,6 @@ class LambdaSupervisor(SupervisorTemplate):
         if bucket_name:
             self.s3.upload_output(bucket_name, bucket_folder)
 
-    def create_error_response(self, message, status_code):
-        return {"statusCode" : status_code, 
-                "headers" : { 
-                    "amz-lambda-request-id": self.lambda_instance.request_id, 
-                    "amz-log-group-name": self.lambda_instance.log_group_name, 
-                    "amz-log-stream-name": self.lambda_instance.log_stream_name },
-                "body" : json.dumps({"exception" : message}),
-                "isBase64Encoded" : False                
-                }    
-
-    def create_response(self):
-        return {"statusCode" : self.status_code, 
-                "headers" : { 
-                    "amz-lambda-request-id": self.lambda_instance.request_id, 
-                    "amz-log-group-name": self.lambda_instance.log_group_name, 
-                    "amz-log-stream-name": self.lambda_instance.log_stream_name },
-                "body" : json.dumps(self.body),
-                "isBase64Encoded" : False                
-                }
-        
     def clean_instance_files(self):
         utils.delete_folder(self.lambda_instance.temporal_folder)
         
@@ -166,3 +146,23 @@ class LambdaSupervisor(SupervisorTemplate):
         else:
             self.prepare_udocker()
             self.execute_udocker()
+            
+    def create_error_response(self, message, status_code):
+        return {"statusCode" : status_code, 
+                "headers" : { 
+                    "amz-lambda-request-id": self.lambda_instance.request_id, 
+                    "amz-log-group-name": self.lambda_instance.log_group_name, 
+                    "amz-log-stream-name": self.lambda_instance.log_stream_name },
+                "body" : json.dumps({"exception" : message}),
+                "isBase64Encoded" : False                
+                }    
+
+    def create_response(self):
+        return {"statusCode" : self.status_code, 
+                "headers" : { 
+                    "amz-lambda-request-id": self.lambda_instance.request_id, 
+                    "amz-log-group-name": self.lambda_instance.log_group_name, 
+                    "amz-log-stream-name": self.lambda_instance.log_stream_name },
+                "body" : json.dumps(self.body),
+                "isBase64Encoded" : False                
+                }            
