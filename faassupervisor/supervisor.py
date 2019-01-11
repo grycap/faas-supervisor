@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from faassupervisor.supervisortemplate import SupervisorTemplate
-from faassupervisor.providers.aws.supervisor import LambdaSupervisor
-from faassupervisor.providers.openfaas.supervisor import OpenfaasSupervisor
+from faassupervisor.interfaces.supervisor import SupervisorInterface
+from faassupervisor.providers.aws.lambda_.supervisor import LambdaSupervisor
+from faassupervisor.providers.onpremises.openfaas.supervisor import OpenfaasSupervisor
 
-class Supervisor(SupervisorTemplate):
+class Supervisor(SupervisorInterface):
 
     allowed_types = ['lambda', 'openfaas']
 

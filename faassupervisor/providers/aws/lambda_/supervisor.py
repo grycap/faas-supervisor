@@ -16,11 +16,11 @@ import json
 import subprocess
 import faassupervisor.utils as utils
 from faassupervisor.interfaces.supervisor import SupervisorInterface
-from faassupervisor.providers.aws.lambdafunction import Lambda
-from faassupervisor.providers.aws.batch import Batch
-from faassupervisor.providers.aws.apigateway import ApiGateway
-from faassupervisor.providers.aws.s3 import S3
-from faassupervisor.providers.aws.udocker import Udocker
+from faassupervisor.providers.aws.lambda_.function import Lambda
+from faassupervisor.providers.aws.lambda_.udocker import Udocker
+from faassupervisor.providers.aws.batch.batch import Batch
+from faassupervisor.providers.aws.apigateway.apigateway import ApiGateway
+from faassupervisor.providers.aws.storage.s3 import S3
 
 logger = utils.get_logger()
 logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')

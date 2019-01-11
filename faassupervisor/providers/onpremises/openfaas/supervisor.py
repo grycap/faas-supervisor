@@ -15,15 +15,15 @@
 import subprocess
 import faassupervisor.utils as utils
 from faassupervisor.interfaces.supervisor import SupervisorInterface
-from faassupervisor.providers.openfaas.minio import Minio
+from faassupervisor.providers.onpremises.storage.minio import Minio
 
 logger = utils.get_logger()
 logger.info('SUPERVISOR: Initializing Openfaas supervisor')
 
 class OpenfaasSupervisor(SupervisorInterface):
     
-    def __init__(self, f_input):
-        self.f_input = f_input
+    def __init__(self, **kwargs):
+        self.event = kwargs['event']
         utils.create_folder(self.output_folder)
         utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder)
 
@@ -34,7 +34,7 @@ class OpenfaasSupervisor(SupervisorInterface):
 
     @utils.lazy_property
     def storage_client(self):
-        if Minio.is_minio_event(self.f_input):
+        if Minio.is_minio_event(self.event):
             storage_client = Minio(self.output_folder)
         return storage_client
        

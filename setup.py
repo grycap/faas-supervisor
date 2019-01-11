@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
 setup(name='faas-supervisor',
-      version='0.6.0',
+      version='0.7.1',
       description='Input/Output data manager for FaaS',
       url='https://github.com/grycap/faas-supervisor',
       author='GRyCAP - Universitat Politecnica de Valencia',
       author_email='alpegon3@upv.es',
       license='Apache 2.0',
-      packages=['faassupervisor','faassupervisor.interfaces',
-                'faassupervisor.providers.aws','faassupervisor.providers.openfaas'],
+      packages=find_namespace_packages(),
       zip_safe=False)
