@@ -22,6 +22,8 @@ logger.info('SUPERVISOR: Initializing Openfaas supervisor')
 
 class OpenfaasSupervisor(SupervisorInterface):
     
+    output_folder = utils.join_paths(utils.get_random_tmp_folder(), "output")
+    
     def __init__(self, **kwargs):
         self.event = kwargs['event']
         utils.create_folder(self.output_folder)

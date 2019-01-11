@@ -39,10 +39,11 @@ class Minio(DataProviderInterface):
         and utils.is_key_and_value_in_dictionary('body', event['data']) \
         and utils.is_key_and_value_in_dictionary('Records', event['data']['body']):
             record = event['data']['body']['Records'][0]
-            if utils.is_key_and_value_in_dictionary('s3', record):
+            if record['eventSource'] == 'minio:s3':
                 print("Is a Minio event")
                 return True
-        print("Not a Minio event") 
+        print("Not a Minio event")
+        return False
     
     def get_record(self, event):
         return event['data']['body']['Records'][0]['s3']    
