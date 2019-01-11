@@ -29,7 +29,8 @@ class Minio(DataProviderInterface):
                               aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
         return client
 
-    def __init__(self, output_folder):
+    def __init__(self, event, output_folder):
+        self.event = event
         self.os_tmp_folder = os.path.dirname(output_folder)
         self.output_folder = output_folder
     
@@ -45,12 +46,12 @@ class Minio(DataProviderInterface):
         print("Not a Minio event")
         return False
     
-    def get_record(self, event):
-        return event['data']['body']['Records'][0]['s3']    
+    def get_record(self):
+        return self.event['data']['body']['Records'][0]['s3']    
     
-    def download_input(self, event):
+    def download_input(self):
         '''Downloads the file from the minio bucket and returns the path were the download is placed'''
-        record_info = self.get_record(event)
+        record_info = self.get_record()
         bucket = record_info['bucket']['name']
         key = unquote_plus(record_info['object']['key'])
         file_name = os.path.splitext(key)[0]

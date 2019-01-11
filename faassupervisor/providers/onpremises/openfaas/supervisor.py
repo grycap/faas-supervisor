@@ -31,7 +31,7 @@ class OpenfaasSupervisor(SupervisorInterface):
 
     @utils.lazy_property
     def minio(self):
-        minio = Minio(self.output_folder)
+        minio = Minio(self.output_folder, self.event)
         return minio
 
     @utils.lazy_property
