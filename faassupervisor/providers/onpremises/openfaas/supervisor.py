@@ -30,14 +30,9 @@ class OpenfaasSupervisor(SupervisorInterface):
         utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder)
 
     @utils.lazy_property
-    def minio(self):
-        minio = Minio(self.output_folder, self.event)
-        return minio
-
-    @utils.lazy_property
     def storage_client(self):
         if Minio.is_minio_event(self.event):
-            storage_client = Minio(self.output_folder)
+            storage_client = Minio(self.output_folder, self.event)
         return storage_client
        
     ##################################################################
