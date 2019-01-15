@@ -32,7 +32,7 @@ class OpenfaasSupervisor(SupervisorInterface):
     @utils.lazy_property
     def storage_client(self):
         if Minio.is_minio_event(self.event):
-            storage_client = Minio(self.output_folder, self.event)
+            storage_client = Minio(self.event, self.output_folder)
         return storage_client
        
     ##################################################################
