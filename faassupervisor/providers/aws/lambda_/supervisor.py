@@ -14,6 +14,7 @@
 
 import json
 import subprocess
+import traceback
 import faassupervisor.utils as utils
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.lambda_.function import Lambda
@@ -27,11 +28,6 @@ logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')
 
 class LambdaSupervisor(SupervisorInterface):
     
-    @utils.lazy_property
-    def s3(self):
-        s3 = S3(self.lambda_instance)
-        return s3
-
     @utils.lazy_property
     def batch(self):
         batch = Batch(self.lambda_instance, self.scar_input_file)
@@ -47,6 +43,12 @@ class LambdaSupervisor(SupervisorInterface):
         udocker = Udocker(self.lambda_instance, self.scar_input_file)
         return udocker
     
+    @utils.lazy_property
+    def storage_client(self):
+        if S3.is_s3_event(self.lambda_instance.event):
+            storage_client = S3(self.lambda_instance)
+        return storage_client    
+    
     def __init__(self, **kwargs):
         self.lambda_instance = Lambda(kwargs['event'], kwargs['context'])
         self.create_temporal_folders()
@@ -54,11 +56,6 @@ class LambdaSupervisor(SupervisorInterface):
         self.status_code = 200
         self.body = {}
 
-    def is_s3_event(self):
-        if utils.is_value_in_dict(self.lambda_instance.event, 'Records'):
-            return self.lambda_instance.event['Records'][0]['eventSource'] == "aws:s3"
-        return False
-           
     def is_apigateway_event(self):
         return 'httpMethod' in self.lambda_instance.event           
            
@@ -96,7 +93,7 @@ class LambdaSupervisor(SupervisorInterface):
             logger.debug("OUTPUT BUCKET SET TO {0}".format(bucket_name))
             
         if bucket_name:
-            self.s3.upload_output(bucket_name, bucket_folder)
+            self.storage_client.upload_output(bucket_name, bucket_folder)
 
     def clean_instance_files(self):
         utils.delete_folder(self.lambda_instance.temporal_folder)
@@ -123,13 +120,13 @@ class LambdaSupervisor(SupervisorInterface):
     
     def parse_input(self):
         self.scar_input_file = None
-        if self.is_s3_event():
-            self.input_bucket = self.s3.input_bucket
+        if  S3.is_s3_event(self.lambda_instance.event):
+            self.input_bucket = self.storage_client.input_bucket
             logger.debug("INPUT BUCKET SET TO {0}".format(self.input_bucket))
             if self.is_batch_execution():
-                self.scar_input_file = self.s3.file_download_path
+                self.scar_input_file = self.storage_client.file_download_path
             else:
-                self.scar_input_file = self.s3.download_input()
+                self.scar_input_file = self.storage_client.download_input()
             logger.debug("INPUT FILE SET TO {0}".format(self.scar_input_file))
         elif self.is_apigateway_event():
             self.apigateway.save_request_parameters()
@@ -147,15 +144,17 @@ class LambdaSupervisor(SupervisorInterface):
             self.prepare_udocker()
             self.execute_udocker()
             
-    def create_error_response(self, message, status_code):
-        return {"statusCode" : status_code, 
+    def create_error_response(self):
+        exception_msg = traceback.format_exc()
+        logger.error("Exception launched:\n {0}".format(exception_msg))
+        return {"statusCode" : 500, 
                 "headers" : { 
                     "amz-lambda-request-id": self.lambda_instance.request_id, 
                     "amz-log-group-name": self.lambda_instance.log_group_name, 
                     "amz-log-stream-name": self.lambda_instance.log_stream_name },
-                "body" : json.dumps({"exception" : message}),
+                "body" : json.dumps({"exception" : exception_msg}),
                 "isBase64Encoded" : False                
-                }    
+                }
 
     def create_response(self):
         return {"statusCode" : self.status_code, 
@@ -165,4 +164,4 @@ class LambdaSupervisor(SupervisorInterface):
                     "amz-log-stream-name": self.lambda_instance.log_stream_name },
                 "body" : json.dumps(self.body),
                 "isBase64Encoded" : False                
-                }            
+                }             

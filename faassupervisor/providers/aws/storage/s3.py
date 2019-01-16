@@ -36,6 +36,12 @@ class S3(DataProviderInterface):
             self.file_name = os.path.basename(self.file_key).replace(' ', '')
             self.file_download_path = '{0}/{1}'.format(self.lambda_instance.input_folder, self.file_name)
 
+    @classmethod
+    def is_s3_event(cls, event):
+        if utils.is_value_in_dict(event, 'Records'):
+            return event['Records'][0]['eventSource'] == "aws:s3"
+        return False
+
     def get_s3_record(self):
         if len(self.lambda_instance.event['Records']) > 1:
             logger.warning("Multiple records detected. Only processing the first one.")

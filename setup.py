@@ -15,7 +15,7 @@
 from setuptools import setup, find_namespace_packages
 
 setup(name='faas-supervisor',
-      version='0.7.13',
+      version='0.8.0',
       description='Input/Output data manager for FaaS',
       url='https://github.com/grycap/faas-supervisor',
       author='GRyCAP - Universitat Politecnica de Valencia',

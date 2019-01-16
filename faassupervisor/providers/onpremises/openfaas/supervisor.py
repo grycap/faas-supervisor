@@ -39,21 +39,19 @@ class OpenfaasSupervisor(SupervisorInterface):
     ## The methods below must be defined for the supervisor to work ##
     ##################################################################
     
-    def parse_input(self):
-        utils.set_environment_variable('SCAR_INPUT_FILE', self.storage_client.download_input())
-        print('SCAR_INPUT_FILE: {0}'.format(utils.get_environment_variable('SCAR_INPUT_FILE')))
-    
-    def parse_output(self):
-        self.storage_client.upload_output()
-    
     def execute_function(self):
         if utils.is_variable_in_environment('sprocess'):
             print("Executing user_script.sh")
-            print(subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT))
+            print(subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT))    
+    
+    def parse_input(self):
+        pass
+    
+    def parse_output(self):
+        pass
     
     def create_response(self):
         pass
     
     def create_error_response(self, message, status_code):
         pass
-
