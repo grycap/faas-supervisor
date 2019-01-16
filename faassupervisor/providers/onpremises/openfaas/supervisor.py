@@ -14,6 +14,7 @@
 
 import subprocess
 import faassupervisor.utils as utils
+from faassupervisor.exceptions import NoStorageProviderDefinedError
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.onpremises.storage.minio import Minio
 
@@ -33,6 +34,8 @@ class OpenfaasSupervisor(SupervisorInterface):
     def storage_client(self):
         if Minio.is_minio_event(self.event):
             storage_client = Minio(self.event, self.output_folder)
+        else:
+            raise NoStorageProviderDefinedError()
         return storage_client
        
     ##################################################################
@@ -53,5 +56,5 @@ class OpenfaasSupervisor(SupervisorInterface):
     def create_response(self):
         pass
     
-    def create_error_response(self, message, status_code):
+    def create_error_response(self):
         pass

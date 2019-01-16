@@ -14,6 +14,7 @@
 
 import sys
 import faassupervisor.utils as utils
+import faassupervisor.exceptions as excp
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.lambda_.supervisor import LambdaSupervisor
 from faassupervisor.providers.onpremises.openfaas.supervisor import OpenfaasSupervisor
@@ -25,31 +26,30 @@ allowed_types = ['LAMBDA', 'OPENFAAS']
 
 class Supervisor(SupervisorInterface):
 
-    def __init__(self, **kwargs):
+    def __init__(self, typ, **kwargs):
         ''' The class names initialized must follow the naming pattern 'type.capitalize() + Supervisor'.
         For example the class 'LambdaSupervisor' is: 'lambda'.capitalize() + 'Supervisor'.
         '''
-        typ = utils.get_environment_variable("SUPERVISOR_TYPE")
-        if typ not in self.allowed_types:
-            raise
         targetclass = "{0}{1}".format(typ.lower().capitalize(), 'Supervisor')
         self.supervisor =  globals()[targetclass](**kwargs)
 
     def execute_function(self):
         self.supervisor.execute_function()
     
+    @excp.exception(logger)    
     def parse_input(self):
-        utils.set_environment_variable('SCAR_INPUT_FILE', self.storage_client.download_input())
+        utils.set_environment_variable('SCAR_INPUT_FILE', self.supervisor.storage_client.download_input())
         print('SCAR_INPUT_FILE: {0}'.format(utils.get_environment_variable('SCAR_INPUT_FILE')))
-    
+
+    @excp.exception(logger)
     def parse_output(self):
-        self.storage_client.upload_output()
-        
+        self.supervisor.storage_client.upload_output()
+
     def create_response(self):
         return self.supervisor.create_response()
     
-    def create_error_response(self, message, status_code):
-        return self.supervisor.create_error_response(message, status_code)
+    def create_error_response(self):
+        return self.supervisor.create_error_response()
     
     def run(self):
         try:
@@ -85,14 +85,10 @@ def parse_input_args():
         kwargs['context'] = sys.argv[2]
     return kwargs
 
-def create_supervisor(typ, kwargs):
-    targetclass = "{0}{1}".format(typ.lower().capitalize(), 'Supervisor')
-    return globals()[targetclass](**kwargs)     
-
 def main():
     typ = get_supervisor_type()
     kwargs = parse_input_args()        
-    supervisor = create_supervisor(typ, kwargs)
+    supervisor = Supervisor(typ, **kwargs)
     supervisor.run()
     
 if __name__ == "__main__":

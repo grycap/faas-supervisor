@@ -31,11 +31,11 @@ def exception(logger):
                 print(ce.response['Error']['Message'])
                 logger.exception(ce)
                 sys.exit(1)
-            except BaseError as se:
-                print(se.args[0])
-                logger.exception(se)
+            except FaasSupervisorError as fse:
+                print(fse.args[0])
+                logger.exception(fse)
                 # Finish the execution if it's an error
-                if 'Error' in se.__class__.__name__:
+                if 'Error' in fse.__class__.__name__:
                     sys.exit(1)
             except Exception as ex:
                 print("There was an unmanaged exception in {0}".format(func.__name__))
@@ -44,7 +44,7 @@ def exception(logger):
         return wrapper
     return decorator
 
-class BaseError(Exception):
+class FaasSupervisorError(Exception):
     """
     The base exception class for exceptions.
 
@@ -60,10 +60,21 @@ class BaseError(Exception):
 ################################################
 ##             GENERAL EXCEPTIONS             ##
 ################################################
-class InvalidPlatformError(BaseError):
+class InvalidPlatformError(FaasSupervisorError):
     """
     The binary is not launched on a Linux platform
 
     """
     fmt = "This binary only works on a Linux Platform.\nTry executing the Python version."
+    
+################################################
+##        STORAGE PROVIDER EXCEPTIONS         ##
+################################################
+class NoStorageProviderDefinedError(FaasSupervisorError):
+    """
+    There is no storage provider defined.
+
+    """
+    fmt = "There is no storage provider defined for this function execution."
+ 
     
