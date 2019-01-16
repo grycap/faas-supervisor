@@ -78,11 +78,11 @@ def parse_input_args():
         logger.info('SUPERVISOR: No input data')
     elif len(sys.argv) == 2:
         logger.info('SUPERVISOR: Event data found')
-        kwargs['event', sys.argv[1]]
+        kwargs['event'] = sys.argv[1]
     elif len(sys.argv) == 3:
         logger.info('SUPERVISOR: Event and Context data found')
-        kwargs['event', sys.argv[1]]
-        kwargs['context', sys.argv[2]]
+        kwargs['event'] = sys.argv[1]
+        kwargs['context'] = sys.argv[2]
     return kwargs
 
 def create_supervisor(typ, kwargs):
