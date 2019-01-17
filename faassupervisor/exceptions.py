@@ -70,7 +70,7 @@ class InvalidPlatformError(FaasSupervisorError):
 ################################################
 ##        STORAGE PROVIDER EXCEPTIONS         ##
 ################################################
-class NoStorageProviderDefinedError(FaasSupervisorError):
+class NoStorageProviderDefinedWarning(FaasSupervisorError):
     """
     There is no storage provider defined.
 

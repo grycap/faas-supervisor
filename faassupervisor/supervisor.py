@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+import json
 import faassupervisor.utils as utils
 import faassupervisor.exceptions as excp
 from faassupervisor.interfaces.supervisor import SupervisorInterface
@@ -76,13 +77,12 @@ def parse_input_args():
     kwargs = {}
     if len(sys.argv) == 1:
         logger.info('SUPERVISOR: No input data')
-    elif len(sys.argv) == 2:
+    if len(sys.argv) >= 2:
         logger.info('SUPERVISOR: Event data found')
-        kwargs['event'] = sys.argv[1]
-    elif len(sys.argv) == 3:
-        logger.info('SUPERVISOR: Event and Context data found')
-        kwargs['event'] = sys.argv[1]
-        kwargs['context'] = sys.argv[2]
+        kwargs['event'] = json.loads(sys.argv[1])
+    if len(sys.argv) >= 3:
+        logger.info('SUPERVISOR: Context data found')
+        kwargs['context'] = json.loads(sys.argv[2])
     return kwargs
 
 def main():
