@@ -18,6 +18,7 @@ import traceback
 import faassupervisor.utils as utils
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.lambda_.function import Lambda
+from faassupervisor.providers.aws.lambda_.context import LambdaContext
 from faassupervisor.providers.aws.lambda_.udocker import Udocker
 from faassupervisor.providers.aws.batch.batch import Batch
 from faassupervisor.providers.aws.apigateway.apigateway import ApiGateway
@@ -50,7 +51,11 @@ class LambdaSupervisor(SupervisorInterface):
         return storage_client    
     
     def __init__(self, **kwargs):
-        self.lambda_instance = Lambda(kwargs['event'], kwargs['context'])
+        logger.debug("EVENT: {}".format(kwargs['event']))
+        logger.debug("CONTEXT: {}".format(kwargs['context']))
+        context = LambdaContext()
+        context.update(kwargs['context'])        
+        self.lambda_instance = Lambda(kwargs['event'], context)
         self.create_temporal_folders()
         self.create_event_file()
         self.status_code = 200

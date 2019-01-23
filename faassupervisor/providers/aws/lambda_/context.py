@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from setuptools import setup, find_namespace_packages
+import time
 
-setup(name='faas-supervisor',
-      version='0.8.7',
-      description='Input/Output data manager for FaaS',
-      url='https://github.com/grycap/faas-supervisor',
-      author='GRyCAP - Universitat Politecnica de Valencia',
-      author_email='alpegon3@upv.es',
-      license='Apache 2.0',
-      packages=find_namespace_packages(),
-      zip_safe=False)
+class LambdaContext(object):
+
+    def __init__(self, *args, **kwargs):
+        super(LambdaContext, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+        
+    def get_remaining_time_in_millis(self):
+        return self.timeout - int(time.time()*1000)

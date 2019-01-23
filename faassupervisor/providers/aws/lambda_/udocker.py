@@ -48,16 +48,16 @@ class Udocker():
         
     def is_container_image_downloaded(self):
         cmd_out = utils.execute_command_and_return_output(self.cmd_get_images)
-        return self.container_image_id in cmd_out              
+        return self.container_image_id in cmd_out
 
     def create_image(self):
         if self.is_container_image_downloaded():
             logger.info("Container image '{0}' already available".format(self.container_image_id))
-        else:                     
+        else:
             if utils.is_variable_in_environment("IMAGE_FILE"):
                 self.load_local_container_image()
             else:
-                self.download_container_image()        
+                self.download_container_image()
 
     def load_local_container_image(self):
         logger.info("Loading container image '{0}'".format(self.container_image_id))
@@ -69,7 +69,7 @@ class Udocker():
 
     def is_container_available(self):
         cmd_out = utils.execute_command_and_return_output(self.cmd_list_containers)
-        return self.container_name in cmd_out      
+        return self.container_name in cmd_out
 
     def create_container(self):
         if self.is_container_available():
