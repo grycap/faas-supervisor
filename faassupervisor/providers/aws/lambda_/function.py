@@ -24,9 +24,10 @@ class Lambda():
         self.memory = int(context.memory_limit_in_mb)
         self.arn = context.invoked_function_arn
         self.function_name = context.function_name
-        self.temporal_folder = "/tmp/{0}".format(self.request_id)
-        self.input_folder = "{0}/input".format(self.temporal_folder)
-        self.output_folder = "{0}/output".format(self.temporal_folder)
+        self.temporal_folder = utils.create_tmp_dir()
+        self.temporal_folder_path = self.temporal_folder.name
+        self.input_folder = "{}/input".format(self.temporal_folder_path)
+        self.output_folder = "{}/output".format(self.temporal_folder_path)
         self.permanent_folder = "/var/task"         
         self.log_group_name = self.context.log_group_name
         self.log_stream_name = self.context.log_stream_name            

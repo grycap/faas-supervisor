@@ -124,7 +124,7 @@ class Batch():
     def get_user_script(self):
         script = ""
         if utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
-            file_content = utils.read_file(utils.get_environment_variable('INIT_SCRIPT_PATH'), 'rb')
+            file_content = utils.read_file(utils.get_environment_variable('INIT_SCRIPT_PATH'), mode='rb')
             script = utils.utf8_to_base64_string(file_content)        
         if utils.is_value_in_dict(self.lambda_instance.event, 'script'):
             script = self.lambda_instance.event['script']

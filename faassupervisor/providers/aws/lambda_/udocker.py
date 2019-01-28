@@ -22,14 +22,15 @@ logger = utils.get_logger()
 
 class Udocker():
 
-    udocker_exec = ["python3", "/opt/udocker/udocker.py"]
     container_name = "udocker_container"
     script_exec = "/bin/sh"
 
     def __init__(self, lambda_instance, scar_input_file):
         self.lambda_instance = lambda_instance
-        self.container_output_file = "{0}/container-stdout.txt".format(self.lambda_instance.temporal_folder)
-        self.scar_input_file = scar_input_file
+        self.scar_input_file = scar_input_file        
+        
+        self.udocker_exec = [utils.get_environment_variable("UDOCKER_EXEC")]
+        self.container_output_file = "{}/container-stdout.txt".format(self.lambda_instance.temporal_folder_path)
         
         if utils.is_variable_in_environment("IMAGE_ID"):
             self.container_image_id = utils.get_environment_variable("IMAGE_ID")
@@ -85,7 +86,7 @@ class Udocker():
         # Container running script
         if utils.is_value_in_dict(self.lambda_instance.event, 'script'): 
             # Add script in memory as entrypoint
-            script_path = "{0}/script.sh".format(self.lambda_instance.temporal_folder)
+            script_path = "{0}/script.sh".format(self.lambda_instance.temporal_folder_path)
             script_content = utils.base64_to_utf8_string(self.lambda_instance.event['script'])
             utils.create_file_with_content(script_path, script_content)
             self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, script_path), self.container_name]
@@ -97,7 +98,7 @@ class Udocker():
         # Script to be executed every time (if defined)
         elif utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
             # Add init script
-            init_script_path = "{0}/init_script.sh".format(self.lambda_instance.temporal_folder)
+            init_script_path = "{0}/init_script.sh".format(self.lambda_instance.temporal_folder_path)
             shutil.copyfile(utils.get_environment_variable("INIT_SCRIPT_PATH"), init_script_path)    
             self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, init_script_path), self.container_name]
         # Only container
@@ -105,7 +106,7 @@ class Udocker():
             self.cmd_container_execution += [self.container_name]
     
     def add_container_volumes(self):
-        self.cmd_container_execution += ["-v", self.lambda_instance.temporal_folder]
+        self.cmd_container_execution += ["-v", self.lambda_instance.temporal_folder_path]
         self.cmd_container_execution += ["-v", "/dev", "-v", "/proc", "-v", "/etc/hosts", "--nosysdirs"]
         if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
             self.cmd_container_execution += ["-v", self.lambda_instance.permanent_folder]
@@ -179,17 +180,18 @@ class Udocker():
         remaining_seconds = self.lambda_instance.get_invocation_remaining_seconds()
         logger.info("Executing udocker container. Timeout set to {0} seconds".format(remaining_seconds))
         logger.debug("Udocker command: {0}".format(self.cmd_container_execution))
-        with subprocess.Popen(self.cmd_container_execution, 
-                              stderr=subprocess.STDOUT, 
-                              stdout=open(self.container_output_file, "w"), 
-                              preexec_fn=os.setsid) as process:
-            try:
-                process.wait(timeout=remaining_seconds)
-            except subprocess.TimeoutExpired:
-                logger.info("Stopping process '{0}'".format(process))
-                process.kill()
-                logger.warning("Container timeout")
-                raise
+        with open(self.container_output_file, "w", encoding="latin-1") as out:
+            with subprocess.Popen(self.cmd_container_execution, 
+                                  stderr=subprocess.STDOUT, 
+                                  stdout=out, 
+                                  preexec_fn=os.setsid) as process:
+                try:
+                    process.wait(timeout=remaining_seconds)
+                except subprocess.TimeoutExpired:
+                    logger.info("Stopping process '{0}'".format(process))
+                    process.kill()
+                    logger.warning("Container timeout")
+                    raise
         
         if os.path.isfile(self.container_output_file):
-            return utils.read_file(self.container_output_file)
+            return utils.read_file(self.container_output_file, file_encoding="latin-1")

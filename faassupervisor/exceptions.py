@@ -66,6 +66,13 @@ class InvalidPlatformError(FaasSupervisorError):
 
     """
     fmt = "This binary only works on a Linux Platform.\nTry executing the Python version."
+
+class InvalidSupervisorTypeError(FaasSupervisorError):
+    """
+    The supervisor type is not in the allowed list
+
+    """
+    fmt = "The supervisor type selected is not in the allowed list."    
     
 ################################################
 ##        STORAGE PROVIDER EXCEPTIONS         ##
@@ -76,5 +83,19 @@ class NoStorageProviderDefinedWarning(FaasSupervisorError):
 
     """
     fmt = "There is no storage provider defined for this function execution."
+    
+class NoInputStorageProviderDefinedWarning(NoStorageProviderDefinedWarning):
+    """
+    There is no input storage provider defined.
+
+    """
+    fmt = "There is no input storage provider defined for this function execution."
+    
+class NoOutputStorageProviderDefinedWarning(NoStorageProviderDefinedWarning):
+    """
+    There is no output storage provider defined.
+
+    """
+    fmt = "There is no output storage provider defined for this function execution."    
  
     

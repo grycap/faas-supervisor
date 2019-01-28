@@ -58,8 +58,11 @@ def get_logger():
 def join_paths(*paths):
     return os.path.join(*paths)
 
-def get_temp_dir():
+def get_tmp_dir():
     return tempfile.gettempdir()
+
+def create_tmp_dir():
+    return tempfile.TemporaryDirectory()
 
 def get_random_tmp_folder():
     return join_paths(tempfile.gettempdir(), str(uuid.uuid4().hex))    
@@ -149,8 +152,8 @@ def create_file_with_content(path, content):
     with open(path, "w") as f:
         f.write(content)
 
-def read_file(file_path, mode="r"):
-    with open(file_path, mode) as content_file:
+def read_file(file_path, file_mode="r", file_encoding="utf-8"):
+    with open(file_path, mode=file_mode, encoding=file_encoding) as content_file:
         return content_file.read()
     
 def delete_file(path):

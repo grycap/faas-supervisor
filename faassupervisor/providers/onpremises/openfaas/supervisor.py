@@ -19,21 +19,21 @@ from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.onpremises.storage.minio import Minio
 
 logger = utils.get_logger()
-logger.info('SUPERVISOR: Initializing Openfaas supervisor')
 
 class OpenfaasSupervisor(SupervisorInterface):
     
-    output_folder = utils.join_paths(utils.get_random_tmp_folder(), "output")
-    
     def __init__(self, **kwargs):
+        logger.info('SUPERVISOR: Initializing Openfaas supervisor')
         self.event = kwargs['event']
-        utils.create_folder(self.output_folder)
-        utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder)
+        self.output_folder = utils.create_tmp_dir()
+        self.output_folder_path = utils.join_paths(self.output_folder.name, "output")
+        utils.create_folder(self.output_folder_path)
+        utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder_path)
 
     @utils.lazy_property
     def storage_client(self):
         if Minio.is_minio_event(self.event):
-            storage_client = Minio(self.event, self.output_folder)
+            storage_client = Minio(self.event, self.output_folder_path)
         else:
             raise NoStorageProviderDefinedWarning()
         return storage_client
