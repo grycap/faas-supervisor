@@ -28,9 +28,11 @@ class Onedata(DataProviderInterface):
         # Onedata settings
         self.onedata_access_token = os.environ.get('ONEDATA_ACCESS_TOKEN')
         self.oneprovider_host = os.environ.get('ONEPROVIDER_HOST')
+        self.oneprovider_space = os.environ.get('ONEDATA_SPACE')
         self.headers = {
             'X-CDMI-Specification-Version': '1.1.1',
-            'X-Auth-Token': self.onedata_access_token
+            'X-Auth-Token': self.onedata_access_token,
+            'Content-Type': 'application/cdmi-object'
         }
 
     @classmethod    
@@ -64,7 +66,22 @@ class Onedata(DataProviderInterface):
             return None
 
     def upload_output(self):
-        pass
+        output_files_path = utils.get_all_files_in_directory(self.output_folder)
+        print("UPLOADING FILES {0}".format(output_files_path))
+        for file_path in output_files_path:
+            file_name = os.path.basename(file_path)
+            output_file_name = "{0}-out{1}".format(os.path.splitext(file_name)[0],''.join(os.path.splitext(file_name)[1:]))
+            self.upload_file(file_path, output_file_name)
 
-    def upload_file(self, file_name):
-        pass
+    def upload_file(self, file_path, file_name):
+        url = 'https://{0}{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, self.output_folder, file_name)
+        with open(file_path, 'rb') as f:
+            encoded_value = base64.b64encode(f.read())
+        data = {
+            'value': encoded_value,
+            'valuetransferencoding': 'base64'
+        }
+        print("Uploading file  '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, self.output_folder))
+        req = requests.put(url, json=data, headers=self.headers)
+        if req.status_code not in [201, 202, 204]:
+            print("Upload failed")
