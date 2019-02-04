@@ -74,14 +74,20 @@ class Onedata(DataProviderInterface):
             self.upload_file(file_path, output_file_name)
 
     def upload_file(self, file_path, file_name):
-        url = 'https://{0}{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, self.output_folder, file_name)
+        # Get OUTPUT_BUCKET environment variable to use as output folder in Onedata Space
+        # If not set upload files to space root
+        output_bucket = os.environ.get('OUTPUT_BUCKET')
+        if output_bucket == None:
+            url = 'https://{0}{1}/{2}/{3}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, file_name)
+        else:
+            url = 'https://{0}{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, output_bucket, file_name)
         with open(file_path, 'rb') as f:
             encoded_value = base64.b64encode(f.read())
         data = {
-            'value': encoded_value,
+            'value': encoded_value.decode(),
             'valuetransferencoding': 'base64'
         }
-        print("Uploading file  '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, self.output_folder))
+        print("Uploading file  '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, output_bucket))
         req = requests.put(url, json=data, headers=self.headers)
         if req.status_code not in [201, 202, 204]:
             print("Upload failed")
