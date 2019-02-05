@@ -85,20 +85,20 @@ def parse_input_args():
 def start_supervisor(**kwargs):
     typ = get_supervisor_type()
     supervisor = Supervisor(typ, **kwargs)
-    supervisor.run()    
+    return supervisor.run()    
 
 def python_main(**kwargs):
     ''' Called when running from a Python environment.
     Receives the input from the method arguments.
     '''
-    start_supervisor(**kwargs);
+    return start_supervisor(**kwargs);
 
 def main():
     ''' Called when running as binary.
     Receives the input from stdin.
     '''
     kwargs = parse_input_args()        
-    start_supervisor(**kwargs);
+    return start_supervisor(**kwargs);
     
 if __name__ == "__main__":
     main()
