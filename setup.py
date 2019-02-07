@@ -22,4 +22,8 @@ setup(name='faas-supervisor',
       author_email='alpegon3@upv.es',
       license='Apache 2.0',
       packages=find_namespace_packages(),
+      install_requires=[
+          'boto3',
+          'botocore',
+      ],      
       zip_safe=False)
