@@ -222,3 +222,5 @@ def get_stdin():
         buf = buf + line
     return buf
 
+def set_file_execution_rights(file_path):
+    execute_command(["chmod", "+x", file_path])

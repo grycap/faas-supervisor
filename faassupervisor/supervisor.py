@@ -17,13 +17,14 @@ import json
 import faassupervisor.utils as utils
 import faassupervisor.exceptions as excp
 from faassupervisor.providers.aws.lambda_.supervisor import LambdaSupervisor
+from faassupervisor.providers.aws.batch.supervisor import BatchSupervisor
 from faassupervisor.providers.onpremises.openfaas.supervisor import OpenfaasSupervisor
 
 logger = utils.get_logger()
 
 class Supervisor():
     
-    allowed_supervisor_types = ['LAMBDA', 'OPENFAAS']
+    allowed_supervisor_types = ['LAMBDA', 'BATCH', 'OPENFAAS']
 
     def __init__(self, typ, **kwargs):
         ''' The class names initialized must follow the naming pattern 'type.lower().capitalize() + Supervisor'.
@@ -32,42 +33,27 @@ class Supervisor():
         targetclass = "{0}{1}".format(typ.lower().capitalize(), 'Supervisor')
         self.supervisor =  globals()[targetclass](**kwargs)
 
-    @excp.exception(logger)
-    def parse_input(self):
-        try:
-            utils.set_environment_variable('SCAR_INPUT_FILE', self.supervisor.storage_client.download_input())
-            logger.info('SCAR_INPUT_FILE: {0}'.format(utils.get_environment_variable('SCAR_INPUT_FILE')))
-        except excp.NoStorageProviderDefinedWarning:
-            pass
-
-    @excp.exception(logger)
-    def parse_output(self):
-        try:        
-            self.supervisor.storage_client.upload_output()
-        except excp.NoStorageProviderDefinedWarning:
-            pass
-
     def run(self):
         try:
-            self.parse_input()
+            self.supervisor.parse_input()
             self.supervisor.execute_function()
-            self.parse_output()
+            self.supervisor.parse_output()
         except Exception:
             return self.supervisor.create_error_response()
         logger.info('Creating response')
         return self.supervisor.create_response()
     
-def get_supervisor_type():
+def _get_supervisor_type():
     typ = utils.get_environment_variable("SUPERVISOR_TYPE")
-    is_allowed_environment(typ)
+    _is_allowed_environment(typ)
     return typ
 
 @excp.exception(logger)
-def is_allowed_environment(typ):
+def _is_allowed_environment(typ):
     if typ not in Supervisor.allowed_supervisor_types:
         raise excp.InvalidSupervisorTypeError()
 
-def parse_input_args():
+def _parse_input_args():
     ''' Only accepts 2 arguments in the following order: event, context.
     More arguments will be ignored.
     '''
@@ -82,23 +68,23 @@ def parse_input_args():
         kwargs['context'] = json.loads(sys.argv[2])
     return kwargs
 
-def start_supervisor(**kwargs):
-    typ = get_supervisor_type()
+def _start_supervisor(**kwargs):
+    typ = _get_supervisor_type()
     supervisor = Supervisor(typ, **kwargs)
-    return supervisor.run()    
+    return supervisor.run()
 
 def python_main(**kwargs):
     ''' Called when running from a Python environment.
     Receives the input from the method arguments.
     '''
-    return start_supervisor(**kwargs);
+    return _start_supervisor(**kwargs);
 
 def main():
     ''' Called when running as binary.
     Receives the input from stdin.
     '''
-    kwargs = parse_input_args()        
-    return start_supervisor(**kwargs);
+    kwargs = _parse_input_args()        
+    return _start_supervisor(**kwargs);
     
 if __name__ == "__main__":
     main()

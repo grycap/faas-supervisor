@@ -14,7 +14,7 @@
 
 import subprocess
 import faassupervisor.utils as utils
-from faassupervisor.exceptions import NoStorageProviderDefinedWarning
+from faassupervisor.exceptions import NoStorageProviderDefinedWarning, exception
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.onpremises.storage.minio import Minio
 
@@ -47,11 +47,20 @@ class OpenfaasSupervisor(SupervisorInterface):
             print("Executing user_script.sh")
             print(subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT))    
     
+    @exception(logger)    
     def parse_input(self):
-        pass
+        try:
+            utils.set_environment_variable('SCAR_INPUT_FILE', self.storage_client.download_input())
+            logger.info('SCAR_INPUT_FILE: {0}'.format(utils.get_environment_variable('SCAR_INPUT_FILE')))
+        except NoStorageProviderDefinedWarning:
+            pass
     
+    @exception(logger)
     def parse_output(self):
-        pass
+        try:        
+            self.supervisor.storage_client.upload_output()
+        except NoStorageProviderDefinedWarning:
+            pass
     
     def create_response(self):
         pass

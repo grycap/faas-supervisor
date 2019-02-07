@@ -15,29 +15,24 @@
 import faassupervisor.utils as utils
 logger = utils.get_logger()
 
-class Lambda():
-
+# Executed inside the containers launched in each batch job
+class BatchJob():
+    
     def __init__(self, event, context):
         self.event = event
-        self.context = context
-        self.request_id = context.aws_request_id
-        self.memory = int(context.memory_limit_in_mb)
-        self.arn = context.invoked_function_arn
-        self.function_name = context.function_name
-        self.log_group_name = self.context.log_group_name
-        self.log_stream_name = self.context.log_stream_name  
-        self.permanent_folder = "/var/task"
+        self._set_context_info(context)
         self._set_tmp_folders()         
+        
+    def _set_context_info(self, context):
+        self.request_id = context['aws_request_id']
+        self.memory = int(context['memory_limit_in_mb'])
+        self.function_name = context['function_name']
+        self.log_group_name = context['log_group_name']
+        self.log_stream_name = context['log_stream_name']        
 
     def _set_tmp_folders(self):
-        if utils.get_environment_variable("SUPERVISOR_TYPE") == 'BATCH':
-            self.temporal_folder = "/tmp/{0}".format(self.request_id)
-            self.temporal_folder_path = self.temporal_folder
-        else:
-            self.temporal_folder = utils.create_tmp_dir()
-            self.temporal_folder_path = self.temporal_folder.name
-        self.input_folder = "{}/input".format(self.temporal_folder_path)
-        self.output_folder = "{}/output".format(self.temporal_folder_path)            
+        self.input_folder = utils.get_environment_variable('SCAR_INPUT_DIR')
+        self.output_folder = utils.get_environment_variable('SCAR_OUTPUT_DIR')        
 
     @utils.lazy_property
     def output_bucket(self):
@@ -62,7 +57,4 @@ class Lambda():
     
     def has_input_bucket(self):
         return utils.is_variable_in_environment('INPUT_BUCKET')
-
-    def get_invocation_remaining_seconds(self):
-        return int(self.context.get_remaining_time_in_millis() / 1000) - int(utils.get_environment_variable('TIMEOUT_THRESHOLD'))
     

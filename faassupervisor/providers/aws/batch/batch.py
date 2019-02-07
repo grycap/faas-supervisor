@@ -17,6 +17,7 @@ import json
 import faassupervisor.utils as utils
 logger = utils.get_logger()
 
+# Used for defining Batch jobs in the Batch environment
 class Batch():
     
     @utils.lazy_property
@@ -26,11 +27,11 @@ class Batch():
     
     def __init__(self, lambda_instance, scar_input_file):
         self.lambda_instance = lambda_instance
-        self.scar_batch_io_image_id="grycap/scarbatchio"
+        self.scar_batch_io_image_id = "grycap/scarbatchio"
         self.script = self.get_user_script()
         self.scar_input_file = scar_input_file
         self.io_job_name = "{0}-io".format(lambda_instance.function_name)
-        self.scar_batch_io_bin = "scar-batch-io"
+        self.scar_batch_io_bin = "supervisor"
         self.container_environment_variables = []
         self.create_context()
     
