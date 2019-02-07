@@ -90,4 +90,4 @@ class Onedata(DataProviderInterface):
         print("Uploading file  '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, output_bucket))
         req = requests.put(url, json=data, headers=self.headers)
         if req.status_code not in [201, 202, 204]:
-            print("Upload failed")
+            print("Upload failed. Status code: {0}".format(req.status_code))
