@@ -30,9 +30,7 @@ class Onedata(DataProviderInterface):
         self.oneprovider_host = os.environ.get('ONEPROVIDER_HOST')
         self.oneprovider_space = os.environ.get('ONEDATA_SPACE')
         self.headers = {
-            'X-CDMI-Specification-Version': '1.1.1',
-            'X-Auth-Token': self.onedata_access_token,
-            'Content-Type': 'application/cdmi-object'
+            'X-Auth-Token': self.onedata_access_token
         }
 
     @classmethod    
@@ -52,13 +50,11 @@ class Onedata(DataProviderInterface):
         print("Downloading item from '{0}' with key '{1}'".format(file_path, file_name))
         req = requests.get(url, headers=self.headers)
         if req.status_code == 200:
-            response = req.json()
             file_download_path = "{0}/{1}".format(self.os_tmp_folder, file_name) 
             utils.create_folder(self.os_tmp_folder)
-            encoded_content = response['value']
             print(file_name)
             with open(file_download_path, 'wb') as f:
-                f.write(base64.b64decode(encoded_content))
+                f.write(req.content)
             print("Successful download of file '{0}' from Oneprovider '{1}' in path '{2}'".format(file_name, file_path, file_download_path))
             return file_download_path
         else:
@@ -81,13 +77,8 @@ class Onedata(DataProviderInterface):
             url = 'https://{0}{1}/{2}/{3}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, file_name)
         else:
             url = 'https://{0}{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, output_bucket, file_name)
-        with open(file_path, 'rb') as f:
-            encoded_value = base64.b64encode(f.read())
-        data = {
-            'value': encoded_value.decode(),
-            'valuetransferencoding': 'base64'
-        }
         print("Uploading file  '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, output_bucket))
-        req = requests.put(url, json=data, headers=self.headers)
+        with open(file_path, 'rb') as f:
+            req = requests.put(url, data=f, headers=self.headers)
         if req.status_code not in [201, 202, 204]:
             print("Upload failed. Status code: {0}".format(req.status_code))
