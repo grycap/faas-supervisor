@@ -72,7 +72,7 @@ class InvalidSupervisorTypeError(FaasSupervisorError):
     The supervisor type is not in the allowed list
 
     """
-    fmt = "The supervisor type selected is not in the allowed list."    
+    fmt = "The supervisor type '{sup_typ}' is not allowed."    
     
 ################################################
 ##        STORAGE PROVIDER EXCEPTIONS         ##

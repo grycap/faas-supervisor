@@ -51,7 +51,7 @@ def _get_supervisor_type():
 @excp.exception(logger)
 def _is_allowed_environment(typ):
     if typ not in Supervisor.allowed_supervisor_types:
-        raise excp.InvalidSupervisorTypeError()
+        raise excp.InvalidSupervisorTypeError(sup_typ=typ)
 
 def _parse_input_args():
     ''' Only accepts 2 arguments in the following order: event, context.

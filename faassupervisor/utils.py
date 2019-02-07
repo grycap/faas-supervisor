@@ -153,6 +153,8 @@ def create_file_with_content(path, content):
         f.write(content)
 
 def read_file(file_path, file_mode="r", file_encoding="utf-8"):
+    if file_mode == 'rb':
+        file_encoding = None
     with open(file_path, mode=file_mode, encoding=file_encoding) as content_file:
         return content_file.read()
     

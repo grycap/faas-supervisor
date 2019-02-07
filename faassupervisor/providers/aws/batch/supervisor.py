@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import faassupervisor.utils as utils
-from faassupervisor.exceptions import NoStorageProviderDefinedWarning
+import faassupervisor.exceptions as excp
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.batch.job import BatchJob
 from faassupervisor.providers.aws.storage.s3 import S3
@@ -27,7 +27,7 @@ class BatchSupervisor(SupervisorInterface):
         if S3.is_s3_event(self.batch_job.event):
             storage_client = S3(self.batch_job)
         else:
-            raise NoStorageProviderDefinedWarning()
+            raise excp.NoStorageProviderDefinedWarning()
         return storage_client     
     
     def __init__(self, **kwargs):
@@ -71,7 +71,7 @@ class BatchSupervisor(SupervisorInterface):
     def execute_function(self):
         pass    
     
-    @utils.exception(logger)    
+    @excp.exception(logger)    
     def parse_input(self):
         step = utils.get_environment_variable("STEP")
         if step == "INIT":
@@ -80,7 +80,7 @@ class BatchSupervisor(SupervisorInterface):
             if utils.is_variable_in_environment('INPUT_BUCKET'):
                 self.storage_client.download_input()  
     
-    @utils.exception(logger)
+    @excp.exception(logger)
     def parse_output(self):
         step = utils.get_environment_variable("STEP")
         if step == "END":
