@@ -64,10 +64,10 @@ class OpenfaasSupervisor(SupervisorInterface):
     @excp.exception(logger)
     def parse_output(self):
         try:        
-            self.supervisor.storage_client.upload_output()
+            self.storage_client.upload_output()
         except excp.NoStorageProviderDefinedWarning:
             pass
-    
+
     def create_response(self):
         pass
     
