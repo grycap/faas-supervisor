@@ -14,7 +14,7 @@
 
 import subprocess
 import faassupervisor.utils as utils
-from faassupervisor.exceptions import NoStorageProviderDefinedWarning
+import faassupervisor.exceptions as excp
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.onpremises.storage.minio import Minio
 from faassupervisor.providers.onpremises.storage.onedata import Onedata
@@ -24,21 +24,24 @@ logger.info('SUPERVISOR: Initializing Openfaas supervisor')
 
 class OpenfaasSupervisor(SupervisorInterface):
     
-    output_folder = utils.join_paths(utils.get_random_tmp_folder(), "output")
+    # output_folder = utils.join_paths(utils.get_random_tmp_folder(), "output")
     
     def __init__(self, **kwargs):
+        logger.info('SUPERVISOR: Initializing Openfaas supervisor')
         self.event = kwargs['event']
-        utils.create_folder(self.output_folder)
-        utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder)
+        self.output_folder = utils.create_tmp_dir()
+        self.output_folder_path = utils.join_paths(self.output_folder.name, "output")
+        utils.create_folder(self.output_folder_path)
+        utils.set_environment_variable('SCAR_OUTPUT_FOLDER', self.output_folder_path)
 
     @utils.lazy_property
     def storage_client(self):
         if Minio.is_minio_event(self.event):
-            storage_client = Minio(self.event, self.output_folder)
+            storage_client = Minio(self.event, self.output_folder_path)
         elif Onedata.is_onedata_event(self.event):
             storage_client = Onedata(self.event, self.output_folder)
         else:
-            raise NoStorageProviderDefinedWarning()
+            raise excp.NoStorageProviderDefinedWarning()
         return storage_client
        
     ##################################################################
@@ -50,11 +53,20 @@ class OpenfaasSupervisor(SupervisorInterface):
             print("Executing user_script.sh")
             print(subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT))    
     
+    @excp.exception(logger)    
     def parse_input(self):
-        pass
+        try:
+            utils.set_environment_variable('SCAR_INPUT_FILE', self.storage_client.download_input())
+            logger.info('SCAR_INPUT_FILE: {0}'.format(utils.get_environment_variable('SCAR_INPUT_FILE')))
+        except excp.NoStorageProviderDefinedWarning:
+            pass
     
+    @excp.exception(logger)
     def parse_output(self):
-        pass
+        try:        
+            self.supervisor.storage_client.upload_output()
+        except excp.NoStorageProviderDefinedWarning:
+            pass
     
     def create_response(self):
         pass

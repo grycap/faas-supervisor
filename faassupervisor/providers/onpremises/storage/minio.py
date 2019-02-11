@@ -31,7 +31,7 @@ class Minio(DataProviderInterface):
 
     def __init__(self, event, output_folder):
         self.event = event
-        self.os_tmp_folder = os.path.dirname(output_folder)
+        self.os_tmp_folder = utils.get_tmp_dir()
         self.output_folder = output_folder
     
     @classmethod    

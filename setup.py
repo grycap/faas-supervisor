@@ -19,7 +19,7 @@ with open('README.md', mode='r', encoding='utf-8') as f:
     readme = f.read()
 
 # Load version
-with open('onetrigger/version.py', mode='r', encoding='utf-8')  as f:
+with open('faassupervisor/version.py', mode='r', encoding='utf-8')  as f:
     exec(f.read())
 
 setup(name='faas-supervisor',

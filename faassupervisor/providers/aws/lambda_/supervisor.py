@@ -16,6 +16,7 @@ import json
 import subprocess
 import traceback
 import faassupervisor.utils as utils
+from faassupervisor.exceptions import NoStorageProviderDefinedWarning
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.lambda_.function import Lambda
 from faassupervisor.providers.aws.lambda_.udocker import Udocker
@@ -24,7 +25,6 @@ from faassupervisor.providers.aws.apigateway.apigateway import ApiGateway
 from faassupervisor.providers.aws.storage.s3 import S3
 
 logger = utils.get_logger()
-logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')
 
 class LambdaSupervisor(SupervisorInterface):
     
@@ -47,14 +47,20 @@ class LambdaSupervisor(SupervisorInterface):
     def storage_client(self):
         if S3.is_s3_event(self.lambda_instance.event):
             storage_client = S3(self.lambda_instance)
-        return storage_client    
+        else:
+            raise NoStorageProviderDefinedWarning()
+        return storage_client 
     
     def __init__(self, **kwargs):
+        logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')
+        logger.debug("EVENT: {}".format(kwargs['event']))
+        logger.debug("CONTEXT: {}".format(kwargs['context']))
         self.lambda_instance = Lambda(kwargs['event'], kwargs['context'])
         self.create_temporal_folders()
         self.create_event_file()
         self.status_code = 200
         self.body = {}
+        self.scar_input_file = None
 
     def is_apigateway_event(self):
         return 'httpMethod' in self.lambda_instance.event           
@@ -95,16 +101,13 @@ class LambdaSupervisor(SupervisorInterface):
         if bucket_name:
             self.storage_client.upload_output(bucket_name, bucket_folder)
 
-    def clean_instance_files(self):
-        utils.delete_folder(self.lambda_instance.temporal_folder)
-        
     def create_temporal_folders(self):
-        utils.create_folder(self.lambda_instance.temporal_folder)
         utils.create_folder(self.lambda_instance.input_folder)
         utils.create_folder(self.lambda_instance.output_folder)
+        utils.create_folder(utils.get_environment_variable("UDOCKER_DIR"))
     
     def create_event_file(self):
-        utils.create_file_with_content("{0}/event.json".format(self.lambda_instance.temporal_folder), json.dumps(self.lambda_instance.event))        
+        utils.create_file_with_content("{0}/event.json".format(self.lambda_instance.temporal_folder_path), json.dumps(self.lambda_instance.event))        
 
     def execute_batch(self):
         batch_ri = self.batch.invoke_batch_function()
@@ -119,7 +122,6 @@ class LambdaSupervisor(SupervisorInterface):
     ##################################################################
     
     def parse_input(self):
-        self.scar_input_file = None
         if  S3.is_s3_event(self.lambda_instance.event):
             self.input_bucket = self.storage_client.input_bucket
             logger.debug("INPUT BUCKET SET TO {0}".format(self.input_bucket))
@@ -135,7 +137,6 @@ class LambdaSupervisor(SupervisorInterface):
     
     def parse_output(self):
         self.upload_to_bucket()
-        self.clean_instance_files()    
     
     def execute_function(self):
         if self.is_batch_execution():
@@ -163,5 +164,4 @@ class LambdaSupervisor(SupervisorInterface):
                     "amz-log-group-name": self.lambda_instance.log_group_name, 
                     "amz-log-stream-name": self.lambda_instance.log_stream_name },
                 "body" : json.dumps(self.body),
-                "isBase64Encoded" : False                
-                }             
+                "isBase64Encoded" : False }             
