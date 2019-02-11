@@ -17,10 +17,14 @@ import faassupervisor.utils as utils
 import faassupervisor.exceptions as excp
 from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.onpremises.storage.minio import Minio
+from faassupervisor.providers.onpremises.storage.onedata import Onedata
 
 logger = utils.get_logger()
+logger.info('SUPERVISOR: Initializing Openfaas supervisor')
 
 class OpenfaasSupervisor(SupervisorInterface):
+    
+    # output_folder = utils.join_paths(utils.get_random_tmp_folder(), "output")
     
     def __init__(self, **kwargs):
         logger.info('SUPERVISOR: Initializing Openfaas supervisor')
@@ -34,6 +38,8 @@ class OpenfaasSupervisor(SupervisorInterface):
     def storage_client(self):
         if Minio.is_minio_event(self.event):
             storage_client = Minio(self.event, self.output_folder_path)
+        elif Onedata.is_onedata_event(self.event):
+            storage_client = Onedata(self.event, self.output_folder)
         else:
             raise excp.NoStorageProviderDefinedWarning()
         return storage_client

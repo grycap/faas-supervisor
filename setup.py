@@ -14,16 +14,30 @@
 
 from setuptools import setup, find_namespace_packages
 
+# Load readme
+with open('README.md', mode='r', encoding='utf-8') as f:
+    readme = f.read()
+
+# Load version
+with open('faassupervisor/version.py', mode='r', encoding='utf-8')  as f:
+    exec(f.read())
+
 setup(name='faas-supervisor',
-      version='0.8.32',
+      version=__version__,
       description='Input/Output data manager for FaaS',
+      long_description=readme,
+      long_description_content_type='text/markdown',
       url='https://github.com/grycap/faas-supervisor',
       author='GRyCAP - Universitat Politecnica de Valencia',
       author_email='alpegon3@upv.es',
       license='Apache 2.0',
       packages=find_namespace_packages(),
       install_requires=[
-          'boto3',
-          'botocore',
-      ],      
+          'requests',
+          'boto3'
+      ],
+      classifiers=[
+          'Programming Language :: Python :: 3',
+          'License :: OSI Approved :: Apache Software License'
+      ],
       zip_safe=False)
