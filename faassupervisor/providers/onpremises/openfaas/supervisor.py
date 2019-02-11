@@ -39,7 +39,7 @@ class OpenfaasSupervisor(SupervisorInterface):
         if Minio.is_minio_event(self.event):
             storage_client = Minio(self.event, self.output_folder_path)
         elif Onedata.is_onedata_event(self.event):
-            storage_client = Onedata(self.event, self.output_folder)
+            storage_client = Onedata(self.event, self.output_folder_path)
         else:
             raise excp.NoStorageProviderDefinedWarning()
         return storage_client
