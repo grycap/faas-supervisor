@@ -17,6 +17,7 @@ import json
 import faassupervisor.utils as utils
 logger = utils.get_logger()
 
+# Used for defining Batch jobs in the Batch environment
 class Batch():
     
     @utils.lazy_property
@@ -26,11 +27,10 @@ class Batch():
     
     def __init__(self, lambda_instance, scar_input_file):
         self.lambda_instance = lambda_instance
-        self.scar_batch_io_image_id="grycap/scarbatchio"
+        self.scar_batch_io_image_id = utils.get_environment_variable('BATCH_SUPERVISOR_IMG')
         self.script = self.get_user_script()
         self.scar_input_file = scar_input_file
         self.io_job_name = "{0}-io".format(lambda_instance.function_name)
-        self.scar_batch_io_bin = "scar-batch-io"
         self.container_environment_variables = []
         self.create_context()
     
@@ -95,9 +95,9 @@ class Batch():
         }
         if step == "MED":
             job_def_args["containerProperties"]["command"] = []
+            job_def_args["containerProperties"]["image"] = utils.get_environment_variable("IMAGE_ID")
             if self.script != "":
                 job_def_args["containerProperties"]["command"] = ["{0}/script.sh".format(self.lambda_instance.input_folder)]
-            job_def_args["containerProperties"]["image"] = utils.get_environment_variable("IMAGE_ID")
         
         return job_def_args
     
@@ -124,7 +124,7 @@ class Batch():
     def get_user_script(self):
         script = ""
         if utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
-            file_content = utils.read_file(utils.get_environment_variable('INIT_SCRIPT_PATH'), 'rb')
+            file_content = utils.read_file(utils.get_environment_variable('INIT_SCRIPT_PATH'), file_mode='rb')
             script = utils.utf8_to_base64_string(file_content)        
         if utils.is_value_in_dict(self.lambda_instance.event, 'script'):
             script = self.lambda_instance.event['script']
