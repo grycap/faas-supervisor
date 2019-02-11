@@ -159,7 +159,7 @@ class Udocker():
     
     def get_output_dir(self):
         return self.parse_container_environment_variable("SCAR_OUTPUT_DIR", 
-                                                         "/tmp/{0}/output".format(self.lambda_instance.request_id))
+                                                         "{}".format(self.lambda_instance.output_folder))
             
     def get_extra_payload_path(self):
         ppath = []
@@ -171,7 +171,7 @@ class Udocker():
     def get_lambda_output_variable(self):
         out_lambda = []
         if utils.is_variable_in_environment('OUTPUT_LAMBDA'):
-            utils.set_environment_variable("OUTPUT_LAMBDA_FILE", "/tmp/{0}/lambda_output".format(self.lambda_instance.request_id))
+            utils.set_environment_variable("OUTPUT_LAMBDA_FILE", "{0}/lambda_output".format(self.lambda_instance.temporal_folder_path))
             out_lambda += self.parse_container_environment_variable("OUTPUT_LAMBDA_FILE", 
                                                                     utils.get_environment_variable("EXTRA_PAYLOAD"))
         return out_lambda      
@@ -192,6 +192,5 @@ class Udocker():
                     process.kill()
                     logger.warning("Container timeout")
                     raise
-        
         if os.path.isfile(self.container_output_file):
             return utils.read_file(self.container_output_file, file_encoding="latin-1")
