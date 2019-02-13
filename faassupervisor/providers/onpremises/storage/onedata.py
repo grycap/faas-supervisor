@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, base64
+import os
 import requests
 import faassupervisor.utils as utils
 from faassupervisor.interfaces.dataprovider import DataProviderInterface

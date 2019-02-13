@@ -13,25 +13,27 @@
 # limitations under the License.
 
 import sys
-import json
 import faassupervisor.utils as utils
 import faassupervisor.exceptions as excp
-from faassupervisor.providers.aws.lambda_.supervisor import LambdaSupervisor
-from faassupervisor.providers.aws.batch.supervisor import BatchSupervisor
-from faassupervisor.providers.onpremises.openfaas.supervisor import OpenfaasSupervisor
-
+import importlib
+import json
 logger = utils.get_logger()
 
 class Supervisor():
     
-    allowed_supervisor_types = ['LAMBDA', 'BATCH', 'OPENFAAS']
+    supervisor_type = { 'LAMBDA': {'module' : 'faassupervisor.providers.aws.lambda_.supervisor',
+                                   'class_name' : 'LambdaSupervisor'},
+                        'BATCH': {'module' : 'faassupervisor.providers.aws.batch.supervisor',
+                                  'class_name' : 'BatchSupervisor'},
+                        'OPENFAAS': {'module' : 'faassupervisor.providers.onpremises.openfaas.supervisor',
+                                     'class_name' : 'OpenfaasSupervisor'},
+                        }
 
     def __init__(self, typ, **kwargs):
-        ''' The class names initialized must follow the naming pattern 'type.lower().capitalize() + Supervisor'.
-        For example the class 'LambdaSupervisor' is: 'LAMBDA'.lower().capitalize() + 'Supervisor'.
-        '''
-        targetclass = "{0}{1}".format(typ.lower().capitalize(), 'Supervisor')
-        self.supervisor =  globals()[targetclass](**kwargs)
+        '''Dynamically loads the module and the supervisor class needed'''
+        module = importlib.import_module(self.supervisor_type[typ]['module'])
+        class_ = getattr(module, self.supervisor_type[typ]['class_name'])
+        self.supervisor = class_(**kwargs) 
 
     def run(self):
         try:
@@ -50,7 +52,7 @@ def _get_supervisor_type():
 
 @excp.exception(logger)
 def _is_allowed_environment(typ):
-    if typ not in Supervisor.allowed_supervisor_types:
+    if typ not in Supervisor.supervisor_type:
         raise excp.InvalidSupervisorTypeError(sup_typ=typ)
 
 def _get_stdin():
@@ -74,7 +76,7 @@ def main():
     ''' Called when running as binary.
     Receives the input from stdin.
     '''
-    kwargs = {'event': _get_stdin()}
+    kwargs = {'event': json.loads(_get_stdin())}
     return _start_supervisor(**kwargs)
     
 if __name__ == "__main__":
