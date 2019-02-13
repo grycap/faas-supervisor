@@ -2,6 +2,9 @@ language: python
 python:
   - "3.6"
 
+before_install:
+  - sudo apt-get install -y upx
+
 install:
   - pip install -U pyinstaller
   - pip install -U -r requirements.txt
@@ -9,7 +12,7 @@ install:
 jobs:
   include:
     - stage: Build binary and deploy to github on new releases
-      script: pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
+      script: find faassupervisor/ -name '*.py' -type f | xargs pyinstaller --onefile -n supervisor --hidden-import=boto3
       deploy:
         - provider: releases
           api_key: $GITHUB_OAUTH_TOKEN
