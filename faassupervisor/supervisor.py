@@ -53,20 +53,11 @@ def _is_allowed_environment(typ):
     if typ not in Supervisor.allowed_supervisor_types:
         raise excp.InvalidSupervisorTypeError(sup_typ=typ)
 
-def _parse_input_args():
-    ''' Only accepts 2 arguments in the following order: event, context.
-    More arguments will be ignored.
-    '''
-    kwargs = {}
-    if len(sys.argv) == 1:
-        logger.info('SUPERVISOR: No input data')
-    if len(sys.argv) >= 2:
-        logger.info('SUPERVISOR: Event data found')
-        kwargs['event'] = json.loads(sys.argv[1])
-    if len(sys.argv) >= 3:
-        logger.info('SUPERVISOR: Context data found')
-        kwargs['context'] = json.loads(sys.argv[2])
-    return kwargs
+def _get_stdin():
+    buf = ""
+    for line in sys.stdin:
+        buf = buf + line
+    return buf
 
 def _start_supervisor(**kwargs):
     typ = _get_supervisor_type()
@@ -77,14 +68,14 @@ def python_main(**kwargs):
     ''' Called when running from a Python environment.
     Receives the input from the method arguments.
     '''
-    return _start_supervisor(**kwargs);
+    return _start_supervisor(**kwargs)
 
 def main():
     ''' Called when running as binary.
     Receives the input from stdin.
     '''
-    kwargs = _parse_input_args()        
-    return _start_supervisor(**kwargs);
+    kwargs = {'event': _get_stdin()}
+    return _start_supervisor(**kwargs)
     
 if __name__ == "__main__":
     main()
