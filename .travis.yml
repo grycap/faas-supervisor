@@ -9,7 +9,7 @@ install:
 jobs:
   include:
     - stage: Build binary and deploy to github on new releases
-      script: pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
+      script: pyinstaller --onefile -n supervisor --hidden-import=boto3 --hidden-import=urllib3 faassupervisor/supervisor.py
       deploy:
         - provider: releases
           api_key: $GITHUB_OAUTH_TOKEN

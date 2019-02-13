@@ -35,6 +35,7 @@ setup(name='faas-supervisor',
       install_requires=[
           'requests',
           'boto3'
+          "setuptools >= 40.8.0"
       ],
       classifiers=[
           'Programming Language :: Python :: 3',
