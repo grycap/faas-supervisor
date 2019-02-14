@@ -47,14 +47,6 @@ def is_binary_execution():
     except Exception:
         return False
 
-def get_logger():
-    logger = logging.getLogger()
-    if is_variable_in_environment('LOG_LEVEL'):
-        logger.setLevel(get_environment_variable('LOG_LEVEL'))
-    else:
-        logger.setLevel('INFO')
-    return logger
-
 def join_paths(*paths):
     return os.path.join(*paths)
 
@@ -226,3 +218,12 @@ def get_stdin():
 
 def set_file_execution_rights(file_path):
     execute_command(["chmod", "+x", file_path])
+
+loglevel = logging.INFO
+if is_variable_in_environment('LOG_LEVEL'):
+    loglevel = get_environment_variable('LOG_LEVEL')
+FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(level=loglevel, format=FORMAT)
+
+def get_logger():
+    return logging.getLogger('oscar')    
