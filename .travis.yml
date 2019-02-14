@@ -10,7 +10,11 @@ install:
 jobs:
   include:
     - stage: Build binary and deploy to github on new releases
-      script: find faassupervisor/ -name '*.py' -type f | xargs pyinstaller --onefile -n supervisor --hidden-import=boto3
+      script: >
+        pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
+        --hidden-import faassupervisor.providers.aws.lambda_.supervisor
+        --hidden-import faassupervisor.providers.aws.batch.supervisor
+        --hidden-import faassupervisor.providers.onpremises.openfaas.supervisor
       deploy:
         - provider: releases
           api_key: $GITHUB_OAUTH_TOKEN
