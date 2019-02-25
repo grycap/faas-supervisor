@@ -27,7 +27,8 @@ class ApiGateway():
         return self.lambda_instance.event['httpMethod'] == 'POST'
 
     def is_post_request_with_body_json(self):
-        return self.lambda_instance.event['httpMethod'] == 'POST' and self.lambda_instance.event['headers']['Content-Type'].strip() == 'application/json'
+        return self.lambda_instance.event['httpMethod'] == 'POST' and \
+            self.lambda_instance.event['headers']['Content-Type'].strip() == 'application/json'
 
     def is_request_with_parameters(self):
         return"queryStringParameters" in self.lambda_instance.event and self.lambda_instance.event["queryStringParameters"]

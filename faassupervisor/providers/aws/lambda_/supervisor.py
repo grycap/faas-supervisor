@@ -45,6 +45,9 @@ class LambdaSupervisor(SupervisorInterface):
     
     @utils.lazy_property
     def storage_client(self):
+        
+        SI EL EVENTO ES DE API GaTEWAY NO CREA EL STORAGE CLIENT
+        
         if S3.is_s3_event(self.lambda_instance.event):
             storage_client = S3(self.lambda_instance)
         else:
@@ -86,7 +89,6 @@ class LambdaSupervisor(SupervisorInterface):
     def upload_to_bucket(self):
         bucket_name = None
         bucket_folder = None
-        
         if self.lambda_instance.has_output_bucket():
             bucket_name = self.lambda_instance.output_bucket
             logger.debug("OUTPUT BUCKET SET TO {0}".format(bucket_name))
@@ -107,7 +109,8 @@ class LambdaSupervisor(SupervisorInterface):
         utils.create_folder(utils.get_environment_variable("UDOCKER_DIR"))
     
     def create_event_file(self):
-        utils.create_file_with_content("{0}/event.json".format(self.lambda_instance.temporal_folder_path), json.dumps(self.lambda_instance.event))        
+        utils.create_file_with_content("{0}/event.json".format(self.lambda_instance.temporal_folder_path),
+                                       json.dumps(self.lambda_instance.event))        
 
     def execute_batch(self):
         batch_ri = self.batch.invoke_batch_function()

@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from faassupervisor.version import __version__
+'''
+Different storage types:
+    - Minio
+    - OneData
+    - S3
 
-__all_ = ['exceptions', 'supervisor', 'utils']
+
+'''
