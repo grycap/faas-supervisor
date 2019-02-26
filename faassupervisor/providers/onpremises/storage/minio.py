@@ -36,15 +36,12 @@ class Minio(DataProviderInterface):
     
     @classmethod    
     def is_minio_event(cls, event):
-        if utils.is_key_and_value_in_dictionary('data', event) \
-        and utils.is_key_and_value_in_dictionary('body', event['data']) \
-        and utils.is_key_and_value_in_dictionary('Records', event['data']['body']):
-            record = event['data']['body']['Records'][0]
-            return record['eventSource'] == 'minio:s3'
+        if utils.is_key_and_value_in_dictionary('Records', event):
+            return event['Records'][0]['eventSource'] == 'minio:s3'
         return False
     
     def get_record(self):
-        return self.event['data']['body']['Records'][0]['s3']    
+        return self.event['Records'][0]['s3']    
     
     def download_input(self):
         '''Downloads the file from the minio bucket and returns the path were the download is placed'''
