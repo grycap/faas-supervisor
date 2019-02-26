@@ -226,4 +226,4 @@ FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=loglevel, format=FORMAT)
 
 def get_logger():
-    return logging.getLogger('oscar')    
+    return logging.getLogger('oscar')

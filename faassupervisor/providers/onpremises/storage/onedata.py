@@ -35,17 +35,14 @@ class Onedata(DataProviderInterface):
 
     @classmethod    
     def is_onedata_event(cls, event):
-        if utils.is_key_and_value_in_dictionary('data', event) \
-        and utils.is_key_and_value_in_dictionary('body', event['data']) \
-        and utils.is_key_and_value_in_dictionary('eventSource', event['data']['body']):
-            event_source = event['data']['body']['eventSource']
-            return event_source == 'OneTrigger'
+        if utils.is_key_and_value_in_dictionary('eventSource', event):
+            return event['eventSource'] == 'OneTrigger'
         return False
 
     def download_input(self):
         '''Downloads the file from the Onedata space and returns the path were the download is placed'''
-        file_path = self.event['data']['body']['path']
-        file_name = self.event['data']['body']['file']
+        file_path = self.event['path']
+        file_name = self.event['file']
         url = 'https://{0}{1}{2}'.format(self.oneprovider_host, self.CDMI_PATH, file_path)
         print("Downloading item from '{0}' with key '{1}'".format(file_path, file_name))
         req = requests.get(url, headers=self.headers)
