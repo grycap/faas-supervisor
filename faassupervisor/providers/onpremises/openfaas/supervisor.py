@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import subprocess
+import sys
 import faassupervisor.utils as utils
 import faassupervisor.exceptions as excp
 from faassupervisor.interfaces.supervisor import SupervisorInterface
@@ -51,7 +52,11 @@ class OpenfaasSupervisor(SupervisorInterface):
     def execute_function(self):
         if utils.is_variable_in_environment('sprocess'):
             print("Executing user_script.sh")
-            print(subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT))    
+            return_code = subprocess.call(['/bin/sh', utils.get_environment_variable('sprocess')], stderr=subprocess.STDOUT)
+            print(return_code)
+            # Exit with user script return code if an error occurs (Kubernetes handles the error) 
+            if return_code != 0:
+                sys.exit(return_code)
     
     @excp.exception(logger)    
     def parse_input(self):
