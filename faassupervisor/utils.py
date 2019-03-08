@@ -16,36 +16,38 @@ import base64
 import json
 import os
 import re
+import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import uuid
-import sys
-import platform
-import shutil
-from faassupervisor.exceptions import InvalidPlatformError
-import logging
+# import platform
+# from faassupervisor.exceptions import InvalidPlatformError
+#
+# def resource_path(relative_path, bin_path=None):
+#     """ Get absolute path to resource, works for dev and for PyInstaller """
+#     try:
+#         # PyInstaller creates a temp folder and stores path in _MEIPASS
+#         base_path = sys._MEIPASS
+#     except Exception:
+#         if bin_path:
+#             return bin_path
+#         else:
+#             base_path = os.path.abspath(".")
+#     return os.path.join(base_path, relative_path)
+#
+# def is_binary_execution():
+#     try:
+#         binary_env = sys._MEIPASS
+#         if platform.system().lower() != 'linux':
+#             raise InvalidPlatformError()
+#         return True
+#     except Exception:
+#         return False
 
-def resource_path(relative_path, bin_path=None):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        if bin_path:
-            return bin_path
-        else:
-            base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-def is_binary_execution():
-    try:
-        binary_env = sys._MEIPASS
-        if platform.system().lower() != 'linux':
-            raise InvalidPlatformError()
-        return True
-    except Exception:
-        return False
+def get_stdin():
+    return sys.stdin.read()
 
 def join_paths(*paths):
     return os.path.join(*paths)
@@ -140,9 +142,9 @@ def create_folder(folder_name):
     if not os.path.isdir(folder_name):
         os.makedirs(folder_name, exist_ok=True)
         
-def create_file_with_content(path, content):
-    with open(path, "w") as f:
-        f.write(content)
+def create_file_with_content(path, content, mode='w'):
+    with open(path, mode) as f:
+        f.write(content)        
 
 def read_file(file_path, file_mode="r", file_encoding="utf-8"):
     if file_mode == 'rb':
@@ -167,16 +169,6 @@ def extract_tar_gz(tar_path, destination_path):
     with tarfile.open(tar_path, "r:gz") as tar:
         tar.extractall(path=destination_path)
 
-def kill_process(self, process):
-    # Using SIGKILL instead of SIGTERM to ensure the process finalization 
-    os.killpg(os.getpgid(process.pid), subprocess.signal.SIGKILL)
-
-def execute_command(command):
-    subprocess.call(command)
-    
-def execute_command_and_return_output(command):
-    return subprocess.check_output(command).decode("utf-8")
-
 def is_variable_in_environment(variable):
     return is_value_in_dict(os.environ, variable)
 
@@ -186,6 +178,9 @@ def is_key_and_value_in_dictionary(key, dictionary):
 def set_environment_variable(key, variable):
     if key and variable:
         os.environ[key] = variable
+
+def get_environment_variables():
+    return os.environ
 
 def get_environment_variable(variable):
     if is_variable_in_environment(variable):
@@ -202,7 +197,7 @@ def parse_arg_list(arg_keys, cmd_args):
                 result[key] = cmd_args[key]
     return result
 
-def get_user_defined_variables():
+def _get_user_defined_variables():
     user_vars = {}
     for key in os.environ.keys():
         # Find global variables with the specified prefix
@@ -210,20 +205,15 @@ def get_user_defined_variables():
             user_vars[key.replace("CONT_VAR_", "")] = get_environment_variable(key)
     return user_vars
 
-def get_stdin():
-    buf = ""
-    for line in sys.stdin:
-        buf = buf + line
-    return buf
-
 def set_file_execution_rights(file_path):
     execute_command(["chmod", "+x", file_path])
+    
+def execute_command(command):
+    subprocess.call(command)
+    
+def execute_command_and_return_output(command):
+    return subprocess.check_output(command).decode("utf-8")
 
-loglevel = logging.INFO
-if is_variable_in_environment('LOG_LEVEL'):
-    loglevel = get_environment_variable('LOG_LEVEL')
-FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-logging.basicConfig(level=loglevel, format=FORMAT)
-
-def get_logger():
-    return logging.getLogger('oscar')    
+def kill_process(self, process):
+    # Using SIGKILL instead of SIGTERM to ensure the process finalization
+    os.killpg(os.getpgid(process.pid), subprocess.signal.SIGKILL)

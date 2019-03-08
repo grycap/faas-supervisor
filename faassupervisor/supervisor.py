@@ -12,38 +12,110 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import faassupervisor.utils as utils
+from faassupervisor.storage.auth import StorageAuthData
+from faassupervisor.storage.path import StoragePathData
+from faassupervisor.storage.storage import StorageProvider
+import abc
 import faassupervisor.exceptions as excp
+import faassupervisor.logger as logger
+import faassupervisor.utils as utils
 import importlib
-import json
-logger = utils.get_logger()
+from faassupervisor.events.events import EventProvider
+
+class SupervisorInterface(metaclass=abc.ABCMeta):
+    ''' All the different supervisors must inherit from this class
+    to ensure that the commands are defined consistently'''
+
+    @abc.abstractmethod    
+    def execute_function(self):
+        pass
+    
+    @abc.abstractmethod    
+    def create_response(self):
+        pass
+    
+    @abc.abstractmethod    
+    def create_error_response(self, message, status_code):
+        pass
 
 class Supervisor():
     
-    supervisor_type = { 'LAMBDA': {'module' : 'faassupervisor.providers.aws.lambda_.supervisor',
+    supervisor_type = { 'LAMBDA': {'module' : 'faassupervisor.faas.aws.lambda_.supervisor',
                                    'class_name' : 'LambdaSupervisor'},
-                        'BATCH': {'module' : 'faassupervisor.providers.aws.batch.supervisor',
+                        'BATCH': {'module' : 'faassupervisor.faas.aws.batch.supervisor',
                                   'class_name' : 'BatchSupervisor'},
-                        'OPENFAAS': {'module' : 'faassupervisor.providers.onpremises.openfaas.supervisor',
+                        'OPENFAAS': {'module' : 'faassupervisor.faas.onpremises.openfaas.supervisor',
                                      'class_name' : 'OpenfaasSupervisor'},
                         }
 
     def __init__(self, typ, **kwargs):
-        '''Dynamically loads the module and the supervisor class needed'''
+        # Temporal directories where the input/output data will be stored
+        # and deleted when the execution finishes
+        self._create_tmp_dirs()
+        # Parse the event data
+        self.event = EventProvider(kwargs['event'], self._get_input_dir())
+        self.input_data_providers = []
+        self.output_data_providers = []
+        # Create the supervisor
+        # Dynamically loads the module and the supervisor class needed
         module = importlib.import_module(self.supervisor_type[typ]['module'])
         class_ = getattr(module, self.supervisor_type[typ]['class_name'])
-        self.supervisor = class_(**kwargs) 
-
+        self.supervisor = class_(**kwargs)        
+        
+    def _create_tmp_dirs(self):
+        # Temporal directory where the data will be stored
+        # and deleted when the execution finishes
+        self.input_tmp_dir = utils.create_tmp_dir()
+        self.output_tmp_dir = utils.create_tmp_dir()
+        utils.set_environment_variable("STORAGE_INPUT_DIR", self.input_tmp_dir.name)
+        utils.set_environment_variable("STORAGE_OUTPUT_DIR", self.output_tmp_dir.name)
+        
+    def _get_input_dir(self):
+        return self.input_tmp_dir.name
+    
+    def _get_output_dir(self):
+        return self.output_tmp_dir.name    
+        
+    def _create_storage_providers(self):
+        storage_auths = StorageAuthData()
+        storage_paths = StoragePathData()
+        # Create input data providers
+        for storage_id, storage_path in storage_paths.input().items():
+            self.input_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
+        # Create output data providers
+        for storage_id, storage_path in storage_paths.output().items():
+            self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
+        
     def run(self):
         try:
-            self.supervisor.parse_input()
+            self._create_storage_providers()
+            self._parse_input()
             self.supervisor.execute_function()
-            self.supervisor.parse_output()
+            self._parse_output()
         except Exception:
             return self.supervisor.create_error_response()
         logger.info('Creating response')
         return self.supervisor.create_response()
+    
+    def _parse_input(self):
+        '''
+        Download input data from storage provider or 
+        save data from POST request
+        '''
+        # event_type could be: 'APIGATEWAY'|'MINIO'|'ONEDATA'|'S3'|'UNKNOWN'
+        event_type = self.event.get_event_type()
+        if event_type != 'APIGATEWAY' and event_type != 'UNKNOWN':
+            for data_provider in self.input_data_providers:
+                # data_provider.type could be: 'MINIO'|'ONEDATA'|'S3'
+                if data_provider.type == event_type:
+                    input_file_path = data_provider.download_input(self.event, self._get_input_dir())
+                    if input_file_path:
+                        utils.set_environment_variable("INPUT_FILE_PATH", input_file_path)
+                    break
+    
+    def _parse_output(self):
+        for data_provider in self.output_data_providers:
+            data_provider.upload_output(self.output_tmp_dir)
     
 def _get_supervisor_type():
     typ = utils.get_environment_variable("SUPERVISOR_TYPE")
@@ -54,12 +126,6 @@ def _get_supervisor_type():
 def _is_allowed_environment(typ):
     if typ not in Supervisor.supervisor_type:
         raise excp.InvalidSupervisorTypeError(sup_typ=typ)
-
-def _get_stdin():
-    buf = ""
-    for line in sys.stdin:
-        buf = buf + line
-    return buf
 
 def _start_supervisor(**kwargs):
     typ = _get_supervisor_type()
@@ -76,7 +142,7 @@ def main():
     ''' Called when running as binary.
     Receives the input from stdin.
     '''
-    kwargs = {'event': json.loads(_get_stdin())}
+    kwargs = {'event': utils.get_stdin()}
     return _start_supervisor(**kwargs)
     
 if __name__ == "__main__":

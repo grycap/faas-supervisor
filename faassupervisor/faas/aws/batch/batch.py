@@ -15,21 +15,22 @@
 import boto3
 import json
 import faassupervisor.utils as utils
-logger = utils.get_logger()
+import faassupervisor.logger as logger
 
-# Used for defining Batch jobs in the Batch environment
 class Batch():
+    '''Used for defining Batch jobs in the Batch environment
+    '''
     
     @utils.lazy_property
     def client(self):
         client = boto3.client('batch')
         return client    
     
-    def __init__(self, lambda_instance, scar_input_file):
+    def __init__(self, lambda_instance):
         self.lambda_instance = lambda_instance
         self.scar_batch_io_image_id = utils.get_environment_variable('BATCH_SUPERVISOR_IMG')
         self.script = self.get_user_script()
-        self.scar_input_file = scar_input_file
+        self.scar_input_file = utils.get_environment_variable("INPUT_FILE_PATH") if utils.is_variable_in_environment("INPUT_FILE_PATH") else ""
         self.io_job_name = "{0}-io".format(lambda_instance.function_name)
         self.container_environment_variables = []
         self.create_context()
@@ -47,8 +48,8 @@ class Batch():
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
         self.add_environment_variable("LAMBDA_EVENT", json.dumps(self.lambda_instance.event))
         self.add_environment_variable("LAMBDA_CONTEXT", json.dumps(self.context))
-        self.add_environment_variable("SCAR_INPUT_DIR", self.lambda_instance.input_folder)
-        self.add_environment_variable("SCAR_OUTPUT_DIR", self.lambda_instance.output_folder)
+        self.add_environment_variable("STORAGE_INPUT_DIR", utils.get_environment_variable('STORAGE_INPUT_DIR'))
+        self.add_environment_variable("STORAGE_OUTPUT_DIR", utils.get_environment_variable('STORAGE_OUTPUT_DIR'))
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
 
         if self.scar_input_file:
@@ -60,7 +61,7 @@ class Batch():
         if self.lambda_instance.has_output_bucket_folder():
             self.add_environment_variable("OUTPUT_FOLDER", self.lambda_instance.output_bucket_folder)                 
         
-        for user_var, value in utils.get_user_defined_variables().items():
+        for user_var, value in utils._get_user_defined_variables().items():
             self.add_environment_variable(user_var, value)
     
     def add_environment_variable(self, name, value):
@@ -102,6 +103,7 @@ class Batch():
         return job_def_args
     
     def register_job_definition(self, job_name, step):
+        logger.info("Registering new job definition with name '{}'".format(job_name))
         register_job_args = self.get_register_job_definition_args(job_name, step)
         self.client.register_job_definition(**register_job_args)
         
@@ -132,11 +134,10 @@ class Batch():
     
     def get_job_env_vars(self, step):
         variables= []
-        scar_input_file = "" if not self.scar_input_file else self.scar_input_file
         self.add_environment_variable("STEP", step)
         self.add_environment_variable("SCRIPT", self.get_user_script())
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
-        self.add_environment_variable("SCAR_INPUT_FILE", scar_input_file)
+        self.add_environment_variable("SCAR_INPUT_FILE", self.scar_input_file)
         self.add_environment_variable("SCAR_INPUT_DIR", self.lambda_instance.input_folder)
         self.add_environment_variable("SCAR_OUTPUT_DIR", self.lambda_instance.output_folder)
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
@@ -146,7 +147,7 @@ class Batch():
         if self.lambda_instance.has_output_bucket():
             self.add_environment_variable("OUTPUT_BUCKET", self.lambda_instance.output_bucket)
         
-        for user_var, value in utils.get_user_defined_variables().items():
+        for user_var, value in utils._get_user_defined_variables().items():
             variables.append({"name" : user_var, "value" : value})
         return variables
     

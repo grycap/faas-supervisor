@@ -13,8 +13,7 @@
 # limitations under the License.
 
 '''
-S3 event
-
+S3 event exaple:
 {'Records': [{'awsRegion': 'us-east-1',
               'eventName': 'ObjectCreated:Put',
               'eventSource': 'aws:s3',
@@ -35,3 +34,19 @@ S3 event
               'userIdentity': {'principalId': 'AWS:XXXXX'}}]}
 
 '''
+from urllib.parse import unquote_plus
+
+class S3Event():
+    
+    def __init__(self, event_info):
+        self.event = event_info['Records'][0]
+        self._set_event_params()
+        
+    def _set_event_params(self):
+        self.bucket_arn = self.event['s3']['bucket']['arn']
+        self.bucket_name = self.event['s3']['bucket']['name']
+        self.object_key = unquote_plus(self.event['s3']['object']['key'])
+        self.file_name = self.object_key.split('/')[-1]
+        
+        
+        

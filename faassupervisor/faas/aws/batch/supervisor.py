@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import faassupervisor.utils as utils
-import faassupervisor.exceptions as excp
-from faassupervisor.interfaces.supervisor import SupervisorInterface
 from faassupervisor.providers.aws.batch.job import BatchJob
 from faassupervisor.providers.aws.storage.s3 import S3
-
-logger = utils.get_logger()
+from faassupervisor.supervisor import SupervisorInterface
+import faassupervisor.exceptions as excp
+import faassupervisor.logger as logger
+import faassupervisor.utils as utils
 
 class BatchSupervisor(SupervisorInterface):
     
@@ -72,7 +71,7 @@ class BatchSupervisor(SupervisorInterface):
         pass    
     
     @excp.exception(logger)    
-    def parse_input(self):
+    def parse_input(self, data_providers):
         step = utils.get_environment_variable("STEP")
         if step == "INIT":
             logger.info("INIT STEP")
@@ -81,7 +80,7 @@ class BatchSupervisor(SupervisorInterface):
                 self.storage_client.download_input()  
     
     @excp.exception(logger)
-    def parse_output(self):
+    def parse_output(self, data_providers):
         step = utils.get_environment_variable("STEP")
         if step == "END":
             logger.info("END STEP")

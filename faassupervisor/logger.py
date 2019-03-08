@@ -14,35 +14,39 @@
 
 import json
 import logging
+import os
 
 loglevel = logging.INFO
+if "LOG_LEVEL" in os.environ:
+    loglevel = os.environ["LOG_LEVEL"]
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=loglevel, format=FORMAT)
+logger = logging.getLogger('supervisor')
 
 def debug(cli_msg, log_msg=None):
     if loglevel == logging.DEBUG:
         print(cli_msg)
-    logging.debug(log_msg) if log_msg else logging.debug(cli_msg)
+    logger.debug(log_msg) if log_msg else logger.debug(cli_msg)
 
 def info(cli_msg=None, log_msg=None):
     if cli_msg and loglevel == logging.INFO:
         print(cli_msg)
-    logging.info(log_msg) if log_msg else logging.info(cli_msg)
+    logger.info(log_msg) if log_msg else logger.info(cli_msg)
 
 def warning(cli_msg, log_msg=None):
     print(cli_msg)
-    logging.warning(log_msg) if log_msg else logging.warning(cli_msg)
+    logger.warning(log_msg) if log_msg else logger.warning(cli_msg)
 
 def error(cli_msg, log_msg=None):
     if log_msg:
         print(log_msg)
-        logging.error(log_msg)
+        logger.error(log_msg)
     else:
         print(cli_msg)
-        logging.error(cli_msg)
+        logger.error(cli_msg)
         
 def exception(msg):
-    logging.exception(msg)        
+    logger.exception(msg)        
 
 def log_exception(error_msg, exception):
     error(error_msg, error_msg + ": {0}".format(exception))
@@ -52,12 +56,12 @@ def print_json(value):
 
 def info_json(cli_msg, log_msg=None):
     print_json(cli_msg)
-    logging.info(log_msg) if log_msg else logging.info(cli_msg)
+    logger.info(log_msg) if log_msg else logger.info(cli_msg)
 
 def warning_json(cli_msg, log_msg=None):
     print_json(cli_msg)
-    logging.warning(log_msg) if log_msg else logging.warning(cli_msg)
+    logger.warning(log_msg) if log_msg else logger.warning(cli_msg)
 
 def error_json(cli_msg, log_msg=None):
     print_json(cli_msg)
-    logging.error(log_msg) if log_msg else logging.error(cli_msg)          
+    logger.error(log_msg) if log_msg else logger.error(cli_msg)          

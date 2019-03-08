@@ -98,4 +98,10 @@ class NoOutputStorageProviderDefinedWarning(NoStorageProviderDefinedWarning):
     """
     fmt = "There is no output storage provider defined for this function execution."    
  
+class StorageTypeError(FaasSupervisorError):
+    """
+    The storage type defined is not allowed
+
+    """
+    fmt = "The storage type '{typ}' is not allowed."
     

@@ -13,8 +13,7 @@
 # limitations under the License.
 
 '''
-API Gateway event
-
+API Gateway event example:
 {'body': '/9j/4AAQSkZJRgAB5Wp//Z',
  'headers': {'Accept': '*/*',
              'Accept-Encoding': 'gzip, deflate',
@@ -22,7 +21,7 @@ API Gateway event
              'Host': 'xxxxxx.execute-api.us-east-1.amazonaws.com',
              'User-Agent': 'python-requests/2.21.0',
              'X-Amzn-Trace-Id': 'Root=1-xxx-xxxxx',
-             'X-Forwarded-For': '84.123.4.23',
+             'X-Forwarded-For': '84.111.4.22',
              'X-Forwarded-Port': '443',
              'X-Forwarded-Proto': 'https'},
  'httpMethod': 'POST',
@@ -33,7 +32,7 @@ API Gateway event
                        'Host': ['xxxxxx.execute-api.us-east-1.amazonaws.com'],
                        'User-Agent': ['python-requests/2.21.0'],
                        'X-Amzn-Trace-Id': ['Root=1-xxx-xxxxx'],
-                       'X-Forwarded-For': ['84.123.4.23'],
+                       'X-Forwarded-For': ['84.111.4.22'],
                        'X-Forwarded-Port': ['443'],
                        'X-Forwarded-Proto': ['https']},
  'multiValueQueryStringParameters': None,
@@ -53,7 +52,7 @@ API Gateway event
                                  'cognitoAuthenticationType': None,
                                  'cognitoIdentityId': None,
                                  'cognitoIdentityPoolId': None,
-                                 'sourceIp': '84.123.4.23',
+                                 'sourceIp': '84.111.4.22',
                                  'user': None,
                                  'userAgent': 'python-requests/2.21.0',
                                  'userArn': None},
@@ -68,3 +67,59 @@ API Gateway event
  'resource': '/{proxy+}',
  'stageVariables': None}
  '''
+import base64
+import faassupervisor.logger as logger
+import faassupervisor.utils as utils
+
+class ApiGatewayEvent():
+     
+    def __init__(self, event_info, tmp_dir_path):
+        self.event_info = event_info
+        self.tmp_dir_path = tmp_dir_path
+        self._process_api_event()
+        
+    def _process_api_event(self):
+        if self._is_post_request_with_body():
+            self.file_path = self._save_post_body()
+        if self._is_request_with_parameters():
+            self.http_params = self._save_request_parameters()
+        if hasattr(self, 'file_path'):
+            utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
+        
+    def _is_post_request_with_body(self):
+        return self.event_info['httpMethod'] == 'POST' and \
+               'body' in self.event_info and self.event_info['body']
+
+    def _has_json_body(self):
+        return self.event_info['headers']['Content-Type'].strip() == 'application/json'
+
+    def _save_post_body(self):
+        '''
+        The received body must be a json or a base64 encoded file 
+        '''
+        if self._has_json_body():
+            file_path = self._save_json_body()
+        else:
+            file_path = self._save_body()
+        return file_path
+
+    def _save_json_body(self):
+        file_path = utils.join_paths(self.tmp_dir_path, "api_event.json")
+        logger.info("Received JSON from POST request and saved it in path '{0}'".format(file_path))
+        utils.create_file_with_content(file_path, self.event_info['body'])
+        return file_path
+
+    def _save_body(self):
+        file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")
+        logger.info("Received file from POST request and saved it in path '{0}'".format(file_path))
+        utils.create_file_with_content(file_path, base64.b64decode(self.event_info['body']), mode='wb')
+        return file_path
+        
+    def _is_request_with_parameters(self):
+        return "queryStringParameters" in self.event_info and self.event_info["queryStringParameters"]        
+        
+    def _save_request_parameters(self):
+        http_params = {}
+        for key, value in self.event_info["queryStringParameters"].items():
+            http_params[format(key)] = value
+        return http_params
