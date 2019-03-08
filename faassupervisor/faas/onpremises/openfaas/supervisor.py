@@ -16,6 +16,7 @@ from faassupervisor.supervisor import SupervisorInterface
 import faassupervisor.logger as logger
 import faassupervisor.utils as utils
 import subprocess
+import sys
 
 class OpenfaasSupervisor(SupervisorInterface):
     
@@ -31,9 +32,14 @@ class OpenfaasSupervisor(SupervisorInterface):
     def execute_function(self):
         if hasattr(self, 'script'):
             logger.info("Executing user defined script: '{}'".format(self.script))
-            logger.info(subprocess.call(['/bin/sh', self.script], stderr=subprocess.STDOUT))
+            return_code = subprocess.call(['/bin/sh', self.script], stderr=subprocess.STDOUT)
+            logger.info(return_code)
+            # Exit with user script return code if an error occurs (Kubernetes handles the error) 
+            if return_code != 0:
+                sys.exit(return_code)
         else:
-            logger.error('No user script found!')    
+            logger.error('No user script found!')
+             
 
     def create_response(self):
         pass
