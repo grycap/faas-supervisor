@@ -34,7 +34,7 @@ class Minio(DataProviderInterface):
         self.os_tmp_folder = utils.get_tmp_dir()
         self.output_folder = output_folder
     
-    @classmethod    
+    @classmethod
     def is_minio_event(cls, event):
         if utils.is_key_and_value_in_dictionary('Records', event):
             return event['Records'][0]['eventSource'] == 'minio:s3'
