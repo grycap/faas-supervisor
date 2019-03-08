@@ -14,19 +14,20 @@
 
 '''
 Onedata event
-{'Records': [{"id": "0000034500046EE9C6775...",
-              "file": "file.txt",
-              "path": "/my-onedata-space/files/file.txt",
-              "eventSource": "OneTrigger",
-              "eventTime": "2019-02-07T09:51:04.347823"}]}
+{"Key": "/my-onedata-space/files/file.txt",
+ "Records": [{"objectKey": "file.txt",
+              "objectId": "0000034500046EE9C6775...",
+              "eventTime": "2019-02-07T09:51:04.347823",
+              "eventSource": "OneTrigger"}]
+}              
 '''
 class OnedataEvent():
     
     def __init__(self, event_info):
+        self.object_key = event_info['Key']
         self.event = event_info['Records'][0]
         self._set_event_params()
         
     def _set_event_params(self):
-        self.bucket_name = self.event['path'].split('/')[1]
-        self.object_key = self.event['path']
-        self.file_name = self.event['file']
+        self.file_name = self.event['objectKey']
+                
