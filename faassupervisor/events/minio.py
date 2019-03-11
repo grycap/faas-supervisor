@@ -52,7 +52,7 @@ class MinioEvent():
         self._set_event_params()
         logger.info("Minio event created")        
         
-    def set_event_params(self):
+    def _set_event_params(self):
         self.bucket_arn = self.event['s3']['bucket']['arn']
         self.bucket_name = self.event['s3']['bucket']['name']
         self.file_name = unquote_plus(self.event['s3']['object']['key'])
