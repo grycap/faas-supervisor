@@ -77,7 +77,9 @@ class Supervisor():
         return self.output_tmp_dir.name    
         
     def _create_storage_providers(self):
+        logger.info("Reading STORAGE_AUTH variables")
         storage_auths = StorageAuthData()
+        logger.info("Reading STORAGE_PATH variables")
         storage_paths = StoragePathData()
         # Create input data providers
         for storage_id, storage_path in storage_paths.input().items():
@@ -88,17 +90,6 @@ class Supervisor():
             self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
             logger.info("Found '{}' output provider".format(self.input_data_providers[-1].type))
         
-    def run(self):
-        try:
-            self._create_storage_providers()
-            self._parse_input()
-            self.supervisor.execute_function()
-            self._parse_output()
-        except Exception:
-            return self.supervisor.create_error_response()
-        logger.info('Creating response')
-        return self.supervisor.create_response()
-    
     def _parse_input(self):
         '''
         Download input data from storage provider or 
@@ -120,6 +111,18 @@ class Supervisor():
     def _parse_output(self):
         for data_provider in self.output_data_providers:
             data_provider.upload_output(self.output_tmp_dir)
+            
+    def run(self):
+        try:
+            self._create_storage_providers()
+            self._parse_input()
+            self.supervisor.execute_function()
+            self._parse_output()
+        except Exception:
+            logger.error('Creating error response')
+            return self.supervisor.create_error_response()
+        logger.info('Creating response')
+        return self.supervisor.create_response()            
     
 def _get_supervisor_type():
     typ = utils.get_environment_variable("SUPERVISOR_TYPE")
