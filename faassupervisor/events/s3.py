@@ -35,12 +35,14 @@ S3 event exaple:
 
 '''
 from urllib.parse import unquote_plus
+import faassupervisor.logger as logger
 
 class S3Event():
     
     def __init__(self, event_info):
         self.event = event_info['Records'][0]
         self._set_event_params()
+        logger.info("S3 event created")
         
     def _set_event_params(self):
         self.bucket_arn = self.event['s3']['bucket']['arn']

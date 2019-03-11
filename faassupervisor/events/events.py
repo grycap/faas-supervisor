@@ -86,11 +86,11 @@ class EventProvider():
     def _create_storage_event(self, event_info):
         logger.info("Analizing storage event")
         if self._is_s3_event(event_info):
-            event = S3Event(event_info, self.tmp_dir_path)
+            event = S3Event(event_info)
         elif self._is_minio_event(event_info):
-            event = MinioEvent(event_info, self.tmp_dir_path)
+            event = MinioEvent(event_info)
         elif self._is_onedata_event(event_info):
-            event = OnedataEvent(event_info, self.tmp_dir_path)
+            event = OnedataEvent(event_info)
         else:
             event = UnknownEvent(event_info, self.tmp_dir_path, is_json=True)
         return event

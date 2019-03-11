@@ -21,12 +21,15 @@ Onedata event
               "eventSource": "OneTrigger"}]
 }              
 '''
+import faassupervisor.logger as logger
+
 class OnedataEvent():
     
     def __init__(self, event_info):
         self.object_key = event_info['Key']
         self.event = event_info['Records'][0]
         self._set_event_params()
+        logger.info("Onedata event created")        
         
     def _set_event_params(self):
         self.file_name = self.event['objectKey']

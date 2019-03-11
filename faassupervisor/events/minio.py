@@ -42,6 +42,7 @@ Minio event example:
  "EventName": "s3:ObjectCreated:Put"}
 '''
 from urllib.parse import unquote_plus
+import faassupervisor.logger as logger
 
 class MinioEvent():
     
@@ -49,6 +50,7 @@ class MinioEvent():
         self.event = event_info['Records'][0]
         self.object_key = event_info['Key']
         self._set_event_params()
+        logger.info("Minio event created")        
         
     def set_event_params(self):
         self.bucket_arn = self.event['s3']['bucket']['arn']
