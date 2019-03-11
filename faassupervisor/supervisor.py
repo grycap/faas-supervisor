@@ -82,11 +82,11 @@ class Supervisor():
         logger.info("Reading STORAGE_PATH variables")
         storage_paths = StoragePathData()
         # Create input data providers
-        for storage_id, storage_path in storage_paths.input().items():
+        for storage_id, storage_path in storage_paths.input.items():
             self.input_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
             logger.info("Found '{}' input provider".format(self.input_data_providers[-1].type))
         # Create output data providers
-        for storage_id, storage_path in storage_paths.output().items():
+        for storage_id, storage_path in storage_paths.output.items():
             self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
             logger.info("Found '{}' output provider".format(self.input_data_providers[-1].type))
         
@@ -118,7 +118,8 @@ class Supervisor():
             self._parse_input()
             self.supervisor.execute_function()
             self._parse_output()
-        except Exception:
+        except Exception as ex:
+            logger.error(str(ex))
             logger.error('Creating error response')
             return self.supervisor.create_error_response()
         logger.info('Creating response')
