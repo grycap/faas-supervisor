@@ -59,7 +59,7 @@ class EventProvider():
     
     def __init__(self, event, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path
-        logger.info("Received event:", event)
+        logger.info("Received event: {}".format(event))
         try:
             event_info = json.loads(event)
             # Check if the event comes from ApiGateway
@@ -68,10 +68,11 @@ class EventProvider():
             elif self._has_known_storage_keys(event_info):
                 self.event = self._create_storage_event(event_info)
             else:
-                self.event = UnknownEvent(event_info, self.input_tmp_dir.name, is_json=True)
+                self.event = UnknownEvent(event_info, self.tmp_dir_path, is_json=True)
             # In addition, we always save the JSON event
             save_unknown_json_event(event_info, self.tmp_dir_path)
-        except Exception:
+        except Exception as ex:
+            logger.exception(str(ex))
             self.event = UnknownEvent(event, self.tmp_dir_path)
             
         
@@ -80,9 +81,10 @@ class EventProvider():
 
     def _has_known_storage_keys(self, event_info):
         return 'Records' in event_info and event_info['Records'] and \
-               'eventSource' in event_info['Records'][0]['eventSource']
+               'eventSource' in event_info['Records'][0]
     
     def _create_storage_event(self, event_info):
+        logger.info("Analizing storage event")
         if self._is_s3_event(event_info):
             event = S3Event(event_info, self.tmp_dir_path)
         elif self._is_minio_event(event_info):

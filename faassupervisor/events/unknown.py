@@ -17,14 +17,14 @@ import faassupervisor.utils as utils
 
 def save_unknown_json_event(event, tmp_dir_path):
     file_path = utils.join_paths(tmp_dir_path, "event.json")
-    logger.info("Received unknown JSON event and saved it in path '{0}'".format(file_path))
     utils.create_file_with_content(file_path, event)
+    logger.info("Received unknown JSON event and saved it in path '{0}'".format(file_path))    
     return file_path
 
 def _save_unknown_event(event, tmp_dir_path):
     file_path = utils.join_paths(tmp_dir_path, "event_file")
-    logger.info("Received unknown event and saved it in path '{0}'".format(file_path))
-    utils.create_file_with_content(file_path, event, mode='wb')
+    utils.create_file_with_content(file_path, event)
+    logger.info("Received unknown event and saved it in path '{0}'".format(file_path))    
     return file_path
 
 class UnknownEvent():
