@@ -14,18 +14,7 @@
 
 import faassupervisor.logger as logger
 import faassupervisor.utils as utils
-
-def save_unknown_json_event(event, tmp_dir_path):
-    file_path = utils.join_paths(tmp_dir_path, "event.json")
-    utils.create_file_with_content(file_path, event)
-    logger.info("Received unknown JSON event and saved it in path '{0}'".format(file_path))    
-    return file_path
-
-def _save_unknown_event(event, tmp_dir_path):
-    file_path = utils.join_paths(tmp_dir_path, "event_file")
-    utils.create_file_with_content(file_path, event)
-    logger.info("Received unknown event and saved it in path '{0}'".format(file_path))    
-    return file_path
+import json
 
 class UnknownEvent():
     '''
@@ -33,9 +22,19 @@ class UnknownEvent():
     '''    
     def __init__(self, event, tmp_dir_path, is_json=False):
         if is_json:
-            self.file_path = save_unknown_json_event(event, tmp_dir_path)
+            self.file_path = self._save_unknown_json_event(event, tmp_dir_path)
         else:
-            self.file_path = _save_unknown_event(event, tmp_dir_path)
+            self.file_path = self._save_unknown_event(event, tmp_dir_path)
         utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
         
-
+    def _save_unknown_json_event(self, event, tmp_dir_path):
+        file_path = utils.join_paths(tmp_dir_path, "event.json")
+        utils.create_file_with_content(file_path, json.dumps(event))
+        logger.info("Received unknown JSON event and saved it in path '{0}'".format(file_path))    
+        return file_path
+    
+    def _save_unknown_event(self, event, tmp_dir_path):
+        file_path = utils.join_paths(tmp_dir_path, "event_file")
+        utils.create_file_with_content(file_path, event)
+        logger.info("Received unknown event and saved it in path '{0}'".format(file_path))    
+        return file_path

@@ -16,7 +16,8 @@ from faassupervisor.events.apigateway import ApiGatewayEvent
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.s3 import S3Event
-from faassupervisor.events.unknown import UnknownEvent, save_unknown_json_event
+from faassupervisor.events.unknown import UnknownEvent
+from faassupervisor.utils import join_paths, create_file_with_content
 import faassupervisor.logger as logger
 import json
 
@@ -69,12 +70,13 @@ class EventProvider():
                 self.event = self._create_storage_event(event_info)
             else:
                 self.event = UnknownEvent(event_info, self.tmp_dir_path, is_json=True)
-            # In addition, we always save the JSON event
-            save_unknown_json_event(event_info, self.tmp_dir_path)
+            # To finish we always save the JSON event
+            file_path = join_paths(tmp_dir_path, "event.json")
+            create_file_with_content(file_path, json.dumps(event))
+            logger.info("Save a copy of the JSON event in the path '{0}'".format(file_path))
         except Exception as ex:
             logger.exception(str(ex))
             self.event = UnknownEvent(event, self.tmp_dir_path)
-            
         
     def _is_api_gateway_event(self, event_info):
         return 'httpMethod' in event_info
