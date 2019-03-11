@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from faassupervisor.events.events import EventProvider
 from faassupervisor.storage.auth import StorageAuthData
 from faassupervisor.storage.path import StoragePathData
 from faassupervisor.storage.storage import StorageProvider
@@ -20,7 +21,6 @@ import faassupervisor.exceptions as excp
 import faassupervisor.logger as logger
 import faassupervisor.utils as utils
 import importlib
-from faassupervisor.events.events import EventProvider
 
 class SupervisorInterface(metaclass=abc.ABCMeta):
     ''' All the different supervisors must inherit from this class

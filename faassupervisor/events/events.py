@@ -17,6 +17,7 @@ from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.unknown import UnknownEvent, save_unknown_json_event
+import faassupervisor.logger as logger
 import json
 
 '''
@@ -58,6 +59,7 @@ class EventProvider():
     
     def __init__(self, event, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path
+        logger.info("Received event:", event)
         try:
             event_info = json.loads(event)
             # Check if the event comes from ApiGateway
