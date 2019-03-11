@@ -119,7 +119,7 @@ class Supervisor():
             self.supervisor.execute_function()
             self._parse_output()
         except Exception as ex:
-            logger.error(str(ex))
+            logger.error(ex)
             logger.error('Creating error response')
             return self.supervisor.create_error_response()
         logger.info('Creating response')

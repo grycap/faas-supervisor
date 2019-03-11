@@ -22,12 +22,12 @@ class Minio(DefaultStorageProvider):
     @utils.lazy_property
     def client(self):
         client = boto3.client('s3', endpoint_url='http://minio-service.minio:9000',
-                              aws_access_key_id=self.auth.get('USER'),
-                              aws_secret_access_key=self.auth.get('PASS'))
+                              aws_access_key_id=self.storage_auth.data.get('USER'),
+                              aws_secret_access_key=self.storage_auth.data.get('PASS'))
         return client
 
     def __init__(self, **kwargs):
-        self.auth = kwargs['Auth']
+        self.storage_auth = kwargs['Auth']
         # This is the output bucket in case of OUTPUT storage
         self.storage_path = kwargs['Path']
 

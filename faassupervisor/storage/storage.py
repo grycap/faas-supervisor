@@ -36,16 +36,16 @@ class StorageProvider(DefaultStorageProvider):
                            'class_name' : 'S3'},
                     }
 
-    def __init__(self, auth, path):
+    def __init__(self, storage_auth, storage_path):
         '''
         Receives StorageAuth class and a string with the storage path.
         Dynamically loads the module and the storage provider class needed.
         '''
-        module = importlib.import_module(self._storage_type[self.auth_data.type]['module'])
-        class_ = getattr(module, self._storage_type[self.auth_data.type]['class_name'])
-        kwargs = {'Auth' : auth, 'Path' : path}
+        module = importlib.import_module(self._storage_type[storage_auth.type]['module'])
+        class_ = getattr(module, self._storage_type[storage_auth.type]['class_name'])
+        kwargs = {'Auth' : storage_auth, 'Path' : storage_path}
         self.storage_provider = class_(**kwargs)
-        self.type = self.auth_data.type
+        self.type = storage_auth.type
 
     def download_input(self, event, input_dir_path):
         '''

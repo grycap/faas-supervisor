@@ -22,15 +22,15 @@ class Onedata(DefaultStorageProvider):
     CDMI_PATH = 'cdmi'
 
     def __init__(self, **kwargs):
-        self.auth = kwargs['Auth']
+        self.storage_auth = kwargs['Auth']
         # This is the output bucket in case of OUTPUT storage
         self.storage_path = kwargs['Path']
         self._set_onedata_environment()
 
     def _set_onedata_environment(self):
-        self.oneprovider_space = self.auth.get('SPACE')
-        self.oneprovider_host = self.auth.get('HOST')
-        self.headers = { 'X-Auth-Token': self.auth.get('TOKEN') }
+        self.oneprovider_space = self.storage_auth.data.get('SPACE')
+        self.oneprovider_host = self.storage_auth.data.get('HOST')
+        self.headers = { 'X-Auth-Token': self.storage_auth.data.get('TOKEN') }
 
     def download_input(self, event, input_dir_path):
         '''Downloads the file from the Onedata space and

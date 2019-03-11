@@ -25,7 +25,7 @@ class S3(DefaultStorageProvider):
         return client
     
     def __init__(self, **kwargs):
-        self.auth = kwargs['Auth']
+        self.storage_auth = kwargs['Auth']
         # This is the output bucket in case of OUTPUT storage
         # Contains at least BUCKET_NAME/FUNCTION_NAME
         self.storage_path = kwargs['Path']    
