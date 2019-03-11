@@ -35,14 +35,14 @@ class Onedata(DefaultStorageProvider):
     def download_input(self, event, input_dir_path):
         '''Downloads the file from the Onedata space and
         returns the path were the download is placed'''
-        url = 'https://{0}/{1}{2}'.format(self.oneprovider_host, self.CDMI_PATH, event.object_key)
-        logger.info("Downloading item from '{0}' with key '{1}'".format(event.bucket_name, event.object_key))
+        url = 'https://{0}/{1}{2}'.format(self.oneprovider_host, self.CDMI_PATH, event.data.object_key)
+        logger.info("Downloading item from '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
-            file_download_path = utils.join_paths(input_dir_path, event.file_name)
+            file_download_path = utils.join_paths(input_dir_path, event.data.file_name)
             utils.create_file_with_content(file_download_path, response.content, mode='wb')
-            logger.info("Successful download of file '{0}' from Oneprovider '{1}' in path '{2}'".format(event.file_name,
-                                                                                                         event.object_key,
+            logger.info("Successful download of file '{0}' from Oneprovider '{1}' in path '{2}'".format(event.data.file_name,
+                                                                                                         event.data.object_key,
                                                                                                          file_download_path))
             return file_download_path
         else:

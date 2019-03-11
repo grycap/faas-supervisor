@@ -65,18 +65,18 @@ class EventProvider():
             event_info = json.loads(event)
             # Check if the event comes from ApiGateway
             if self._is_api_gateway_event(event_info):
-                self.event = ApiGatewayEvent(event_info, self.tmp_dir_path)
+                self.data = ApiGatewayEvent(event_info, self.tmp_dir_path)
             elif self._has_known_storage_keys(event_info):
-                self.event = self._create_storage_event(event_info)
+                self.data = self._create_storage_event(event_info)
             else:
-                self.event = UnknownEvent(event_info, self.tmp_dir_path, is_json=True)
+                self.data = UnknownEvent(event_info, self.tmp_dir_path, is_json=True)
             # To finish we always save the JSON event
             file_path = join_paths(tmp_dir_path, "event.json")
             create_file_with_content(file_path, json.dumps(event))
             logger.info("A copy of the JSON event has been saved in the path '{0}'".format(file_path))
         except Exception as ex:
             logger.exception(str(ex))
-            self.event = UnknownEvent(event, self.tmp_dir_path)
+            self.data = UnknownEvent(event, self.tmp_dir_path)
         
     def _is_api_gateway_event(self, event_info):
         return 'httpMethod' in event_info
@@ -107,4 +107,4 @@ class EventProvider():
         return event_info['Records'][0]['eventSource'] == 'OneTrigger'        
 
     def get_event_type(self):
-        return self._event_type[type(self.event).__name__]
+        return self._event_type[type(self.data).__name__]

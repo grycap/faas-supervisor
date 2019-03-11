@@ -31,13 +31,13 @@ class S3(DefaultStorageProvider):
         self.storage_path = kwargs['Path']    
 
     def download_input(self, event, input_dir_path):
-        file_download_path = utils.join_paths(input_dir_path, event.file_name)
+        file_download_path = utils.join_paths(input_dir_path, event.data.file_name)
         '''Downloads the file from the S3 bucket and returns the path were the download is placed'''
-        logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.bucket_name, event.object_key))
+        logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
         with open(file_download_path, 'wb') as data:
-            self.client.download_fileobj(event.bucket_name, event.object_key, data)
-        logger.info("Successful download of file '{0}' from bucket '{1}' in path '{2}'".format(event.object_key, 
-                                                                                               event.bucket_name,
+            self.client.download_fileobj(event.data.bucket_name, event.data.object_key, data)
+        logger.info("Successful download of file '{0}' from bucket '{1}' in path '{2}'".format(event.data.object_key, 
+                                                                                               event.data.bucket_name,
                                                                                                file_download_path))
         return file_download_path
   

@@ -33,12 +33,12 @@ class Minio(DefaultStorageProvider):
 
     def download_input(self, event, input_dir_path):
         '''Downloads the file from the minio bucket'''
-        file_download_path = utils.join_paths(input_dir_path, event.file_name) 
-        logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.bucket_name, event.file_name))
+        file_download_path = utils.join_paths(input_dir_path, event.data.file_name) 
+        logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.data.bucket_name, event.data.file_name))
         with open(file_download_path, 'wb') as data:
-            self.client.download_fileobj(event.bucket_name, event.file_name, data)
-        logger.info("Successful download of file '{0}' from bucket '{1}' in path '{2}'".format(event.file_name,
-                                                                                               event.bucket_name,
+            self.client.download_fileobj(event.data.bucket_name, event.data.file_name, data)
+        logger.info("Successful download of file '{0}' from bucket '{1}' in path '{2}'".format(event.data.file_name,
+                                                                                               event.data.bucket_name,
                                                                                                file_download_path))
         return file_download_path
     
