@@ -82,9 +82,11 @@ class Supervisor():
         # Create input data providers
         for storage_id, storage_path in storage_paths.input().items():
             self.input_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
+            logger.info("Found '{}' input provider".format(self.input_data_providers[-1].type))
         # Create output data providers
         for storage_id, storage_path in storage_paths.output().items():
             self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
+            logger.info("Found '{}' output provider".format(self.input_data_providers[-1].type))
         
     def run(self):
         try:
@@ -104,6 +106,7 @@ class Supervisor():
         '''
         # event_type could be: 'APIGATEWAY'|'MINIO'|'ONEDATA'|'S3'|'UNKNOWN'
         event_type = self.event.get_event_type()
+        logger.info("Downloading input file from event type '{}'".format(event_type))
         if event_type != 'APIGATEWAY' and event_type != 'UNKNOWN':
             for data_provider in self.input_data_providers:
                 # data_provider.type could be: 'MINIO'|'ONEDATA'|'S3'
@@ -111,6 +114,7 @@ class Supervisor():
                     input_file_path = data_provider.download_input(self.event, self._get_input_dir())
                     if input_file_path:
                         utils.set_environment_variable("INPUT_FILE_PATH", input_file_path)
+                        logger.info("INPUT_FILE_PATH variable set to '{}'".format(input_file_path))
                     break
     
     def _parse_output(self):

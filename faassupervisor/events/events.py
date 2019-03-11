@@ -73,7 +73,7 @@ class EventProvider():
             # To finish we always save the JSON event
             file_path = join_paths(tmp_dir_path, "event.json")
             create_file_with_content(file_path, json.dumps(event))
-            logger.info("Save a copy of the JSON event in the path '{0}'".format(file_path))
+            logger.info("A copy of the JSON event has been saved in the path '{0}'".format(file_path))
         except Exception as ex:
             logger.exception(str(ex))
             self.event = UnknownEvent(event, self.tmp_dir_path)

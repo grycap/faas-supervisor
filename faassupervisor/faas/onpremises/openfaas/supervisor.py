@@ -32,11 +32,12 @@ class OpenfaasSupervisor(SupervisorInterface):
     def execute_function(self):
         if hasattr(self, 'script'):
             logger.info("Executing user defined script: '{}'".format(self.script))
-            return_code = subprocess.call(['/bin/sh', self.script], stderr=subprocess.STDOUT)
-            logger.info(return_code)
-            # Exit with user script return code if an error occurs (Kubernetes handles the error) 
-            if return_code != 0:
-                sys.exit(return_code)
+            try:
+                logger.info(subprocess.check_output(['/bin/sh', self.script], stderr=subprocess.STDOUT).decode("utf-8"))
+            # Exit with user script return code if an error occurs (Kubernetes handles the error)
+            except subprocess.CalledProcessError as cpe:
+                logger.error(cpe.output)
+                sys.exit(cpe.returncode)
         else:
             logger.error('No user script found!')
              
