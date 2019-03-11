@@ -29,7 +29,7 @@ class StorageAuth():
         self.data = {}
         
     def set_type(self, typ):
-        if typ in self._storageType:
+        if typ in self._storage_type:
             self.type = typ
         else:
             raise StorageTypeError(typ=typ)
