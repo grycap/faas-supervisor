@@ -110,7 +110,7 @@ class Supervisor():
     
     def _parse_output(self):
         for data_provider in self.output_data_providers:
-            data_provider.upload_output(self.output_tmp_dir)
+            data_provider.upload_output(self._get_output_dir())
             
     def run(self):
         try:
@@ -119,7 +119,7 @@ class Supervisor():
             self.supervisor.execute_function()
             self._parse_output()
         except Exception as ex:
-            logger.error(ex)
+            logger.exception(ex)
             logger.error('Creating error response')
             return self.supervisor.create_error_response()
         logger.info('Creating response')

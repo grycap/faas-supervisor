@@ -14,7 +14,7 @@
 
 from faassupervisor.storage.storage import DefaultStorageProvider
 import faassupervisor.logger as logger
-import faassupervisor.utils as utils
+from faassupervisor.utils import create_file_with_content, join_paths, get_all_files_in_directory
 import requests
 
 class Onedata(DefaultStorageProvider):
@@ -39,8 +39,8 @@ class Onedata(DefaultStorageProvider):
         logger.info("Downloading item from '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
-            file_download_path = utils.join_paths(input_dir_path, event.data.file_name)
-            utils.create_file_with_content(file_download_path, response.content, mode='wb')
+            file_download_path = join_paths(input_dir_path, event.data.file_name)
+            create_file_with_content(file_download_path, response.content, mode='wb')
             logger.info("Successful download of file '{0}' from Oneprovider '{1}' in path '{2}'".format(event.data.file_name,
                                                                                                          event.data.object_key,
                                                                                                          file_download_path))
@@ -49,7 +49,7 @@ class Onedata(DefaultStorageProvider):
             logger.error("File download from Onedata failed!")
 
     def upload_output(self, output_dir_path):
-        output_files = utils.get_all_files_in_directory(output_dir_path)
+        output_files = get_all_files_in_directory(output_dir_path)
         logger.info("Found the following files to upload: {0}".format(output_files))
         for file_path in output_files:
             file_name = file_path.replace("{0}/".format(output_dir_path), "")

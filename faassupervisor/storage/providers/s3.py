@@ -13,13 +13,13 @@
 # limitations under the License.
 
 from faassupervisor.storage.storage import DefaultStorageProvider
+from faassupervisor.utils import lazy_property, join_paths, get_all_files_in_directory, get_environment_variable, is_variable_in_environment
 import boto3
 import faassupervisor.logger as logger
-import faassupervisor.utils as utils
 
 class S3(DefaultStorageProvider):
     
-    @utils.lazy_property
+    @lazy_property
     def client(self):
         client = boto3.client('s3')
         return client
@@ -31,7 +31,7 @@ class S3(DefaultStorageProvider):
         self.storage_path = kwargs['Path']    
 
     def download_input(self, event, input_dir_path):
-        file_download_path = utils.join_paths(input_dir_path, event.data.file_name)
+        file_download_path = join_paths(input_dir_path, event.data.file_name)
         '''Downloads the file from the S3 bucket and returns the path were the download is placed'''
         logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
         with open(file_download_path, 'wb') as data:
@@ -46,15 +46,15 @@ class S3(DefaultStorageProvider):
         # There is a folder defined
         # Set the folder in the file path
         file_key = "{0}".format("/".join(storage_path[1:]))
-        if utils.is_variable_in_environment("AWS_LAMBDA_REQUEST_ID"):
+        if is_variable_in_environment("AWS_LAMBDA_REQUEST_ID"):
             # Set the request id in the file path
-            file_key = "{0}/{1}/{2}".format(file_key, utils.get_environment_variable("AWS_LAMBDA_REQUEST_ID"), file_name)
+            file_key = "{0}/{1}/{2}".format(file_key, get_environment_variable("AWS_LAMBDA_REQUEST_ID"), file_name)
         else:
             file_key = "{0}/{1}/{2}".format(file_key, file_name)
         return file_key
 
     def upload_output(self, output_dir_path):
-        output_files = utils.get_all_files_in_directory(output_dir_path)
+        output_files = get_all_files_in_directory(output_dir_path)
         logger.info("Found the following files to upload: {0}".format(output_files))
         for file_path in output_files:
             file_name = file_path.replace("{0}/".format(output_dir_path), "")

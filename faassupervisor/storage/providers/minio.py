@@ -13,13 +13,13 @@
 # limitations under the License.
 
 from faassupervisor.storage.storage import DefaultStorageProvider
+from faassupervisor.utils import lazy_property, join_paths, get_all_files_in_directory
 import boto3
 import faassupervisor.logger as logger
-import faassupervisor.utils as utils
 
 class Minio(DefaultStorageProvider):
 
-    @utils.lazy_property
+    @lazy_property
     def client(self):
         client = boto3.client('s3', endpoint_url='http://minio-service.minio:9000',
                               aws_access_key_id=self.storage_auth.data.get('USER'),
@@ -33,7 +33,7 @@ class Minio(DefaultStorageProvider):
 
     def download_input(self, event, input_dir_path):
         '''Downloads the file from the minio bucket'''
-        file_download_path = utils.join_paths(input_dir_path, event.data.file_name) 
+        file_download_path = join_paths(input_dir_path, event.data.file_name) 
         logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.data.bucket_name, event.data.file_name))
         with open(file_download_path, 'wb') as data:
             self.client.download_fileobj(event.data.bucket_name, event.data.file_name, data)
@@ -43,7 +43,8 @@ class Minio(DefaultStorageProvider):
         return file_download_path
     
     def upload_output(self, output_dir_path):
-        output_files = utils.get_all_files_in_directory(output_dir_path)
+        logger.info("Searching for files to upload in folder '{}'".format(output_dir_path))
+        output_files = get_all_files_in_directory(output_dir_path)
         logger.info("Found the following files to upload: {0}".format(output_files))
         for file_path in output_files:
             file_key = file_path.replace("{0}/".format(output_dir_path), "")
