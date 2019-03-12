@@ -56,8 +56,8 @@ class Onedata(DefaultStorageProvider):
             self.upload_file(file_path, file_name)
 
     def upload_file(self, file_path, file_name):
-        url = 'https://{0}/{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, self.storage_path, file_name)
-        logger.info("Uploading file '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, self.storage_path))
+        url = 'https://{0}/{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, self.storage_path.path, file_name)
+        logger.info("Uploading file '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, self.storage_path.path))
         with open(file_path, 'rb') as data:
             response = requests.put(url, data=data, headers=self.headers)
             if response.status_code not in [201, 202, 204]:

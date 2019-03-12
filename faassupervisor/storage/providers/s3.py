@@ -42,7 +42,7 @@ class S3(DefaultStorageProvider):
         return file_download_path
   
     def _get_file_key(self, file_name):
-        storage_path = self.storage_path.split('/')
+        storage_path = self.storage_path.path.split('/')
         # There is a folder defined
         # Set the folder in the file path
         file_key = "{0}".format("/".join(storage_path[1:]))
@@ -62,10 +62,10 @@ class S3(DefaultStorageProvider):
             self.upload_file(file_path, file_key)
             
     def upload_file(self, file_path, file_key):
-        logger.info("Uploading file  '{0}' to bucket '{1}'".format(file_key, self.storage_path))
+        logger.info("Uploading file  '{0}' to bucket '{1}'".format(file_key, self.storage_path.path))
         with open(file_path, 'rb') as data:
-            self.client.upload_fileobj(data, self.storage_path, file_key)
-        logger.info("Changing ACLs for public-read for object in bucket {0} with key {1}".format(self.storage_path, file_key))
-        obj = boto3.resource('s3').Object(self.storage_path, file_key)
+            self.client.upload_fileobj(data, self.storage_path.path, file_key)
+        logger.info("Changing ACLs for public-read for object in bucket {0} with key {1}".format(self.storage_path.path, file_key))
+        obj = boto3.resource('s3').Object(self.storage_path.path, file_key)
         obj.Acl().put(ACL='public-read')
         
