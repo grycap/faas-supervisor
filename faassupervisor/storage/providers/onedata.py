@@ -23,7 +23,7 @@ class Onedata(DefaultStorageProvider):
 
     def __init__(self, **kwargs):
         self.storage_auth = kwargs['Auth']
-        # This is the output bucket in case of OUTPUT storage
+        # This is the output path in case of OUTPUT storage
         self.storage_path = kwargs['Path']
         self._set_onedata_environment()
 
@@ -36,14 +36,14 @@ class Onedata(DefaultStorageProvider):
         '''Downloads the file from the Onedata space and
         returns the path were the download is placed'''
         url = 'https://{0}/{1}{2}'.format(self.oneprovider_host, self.CDMI_PATH, event.data.object_key)
-        logger.info("Downloading item from '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
+        logger.info("Downloading item from host '{0}' with key '{1}'".format(self.oneprovider_host, event.data.object_key))
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
             file_download_path = join_paths(input_dir_path, event.data.file_name)
             create_file_with_content(file_download_path, response.content, mode='wb')
-            logger.info("Successful download of file '{0}' from Oneprovider '{1}' in path '{2}'".format(event.data.file_name,
-                                                                                                         event.data.object_key,
-                                                                                                         file_download_path))
+            logger.info("Successful download of file '{0}' with key '{1}' in path '{2}'".format(event.data.file_name,
+                                                                                                event.data.object_key,
+                                                                                                file_download_path))
             return file_download_path
         else:
             logger.error("File download from Onedata failed!")

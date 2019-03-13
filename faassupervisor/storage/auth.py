@@ -56,7 +56,7 @@ class StorageAuthData():
         Variable schema:  STORAGE_AUTH_$1_$2_$3
         $1: MINIO | S3 | ONEDATA
         $2: STORAGE_ID (Specified in the function definition file, is unique for each storage defined)
-        $3: USER | PASS | TOKEN | SPACE
+        $3: USER | PASS | TOKEN | SPACE | HOST
         
         e.g.: STORAGE_AUTH_MINIO_12345_USER
         '''
