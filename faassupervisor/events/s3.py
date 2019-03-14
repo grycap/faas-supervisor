@@ -40,14 +40,15 @@ import faassupervisor.logger as logger
 class S3Event():
     
     def __init__(self, event_info):
-        self.event = event_info['Records'][0]
+        self.event = event_info
+        self.event_records = event_info['Records'][0]
         self._set_event_params()
         logger.info("S3 event created")
         
     def _set_event_params(self):
-        self.bucket_arn = self.event['s3']['bucket']['arn']
-        self.bucket_name = self.event['s3']['bucket']['name']
-        self.object_key = unquote_plus(self.event['s3']['object']['key'])
+        self.bucket_arn = self.event_records['s3']['bucket']['arn']
+        self.bucket_name = self.event_records['s3']['bucket']['name']
+        self.object_key = unquote_plus(self.event_records['s3']['object']['key'])
         self.file_name = self.object_key.split('/')[-1]
         
         

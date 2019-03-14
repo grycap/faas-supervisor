@@ -21,6 +21,8 @@ class UnknownEvent():
     Class to manage unknown events
     '''    
     def __init__(self, event, tmp_dir_path, is_json=False):
+        self.event = event
+        self.is_json = is_json
         if is_json:
             self.file_path = self._save_unknown_json_event(event, tmp_dir_path)
         else:

@@ -47,12 +47,13 @@ import faassupervisor.logger as logger
 class MinioEvent():
     
     def __init__(self, event_info):
-        self.event = event_info['Records'][0]
+        self.event = event_info
+        self.event_records = event_info['Records'][0]
         self.object_key = event_info['Key']
         self._set_event_params()
         logger.info("Minio event created")        
         
     def _set_event_params(self):
-        self.bucket_arn = self.event['s3']['bucket']['arn']
-        self.bucket_name = self.event['s3']['bucket']['name']
-        self.file_name = unquote_plus(self.event['s3']['object']['key'])
+        self.bucket_arn = self.event_records['s3']['bucket']['arn']
+        self.bucket_name = self.event_records['s3']['bucket']['name']
+        self.file_name = unquote_plus(self.event_records['s3']['object']['key'])

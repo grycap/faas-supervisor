@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
-import shutil
 import subprocess
 import socket
 import faassupervisor.utils as utils
@@ -92,29 +90,24 @@ class Udocker():
         self._add_container_volumes()
         self._add_container_environment_variables()
         # Container running script
-        if utils.is_value_in_dict(self.lambda_instance.event, 'script'): 
+        if hasattr(self.lambda_instance, 'script_path'): 
             # Add script in memory as entrypoint
-            script_path = "{0}/script.sh".format(self.lambda_instance.temporal_folder_path)
-            script_content = utils.base64_to_utf8_string(self.lambda_instance.event['script'])
-            utils.create_file_with_content(script_path, script_content)
-            self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, script_path), self.container_name]
+            self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, self.lambda_instance.script_path), self.container_name]
         # Container with args
-        elif utils.is_value_in_dict(self.lambda_instance.event,'cmd_args'):
+        elif hasattr(self.lambda_instance, 'cmd_args'):
             # Add args
             self.cmd_container_execution += [self.container_name]
-            self.cmd_container_execution += json.loads(self.lambda_instance.event['cmd_args'])
+            self.cmd_container_execution += self.lambda_instance.cmd_args
         # Script to be executed every time (if defined)
-        elif utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
+        elif hasattr(self.lambda_instance, 'init_script_path'):
             # Add init script
-            init_script_path = "{0}/init_script.sh".format(self.lambda_instance.temporal_folder_path)
-            shutil.copyfile(utils.get_environment_variable("INIT_SCRIPT_PATH"), init_script_path)    
-            self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, init_script_path), self.container_name]
+            self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, self.lambda_instance.init_script_path), self.container_name]
         # Only container
         else:
             self.cmd_container_execution += [self.container_name]
     
     def _add_container_volumes(self):
-        self.cmd_container_execution.extend(["-v", self.lambda_instance.temporal_folder_path])
+        self.cmd_container_execution.extend(["-v", self.lambda_instance.input_folder])
         self.cmd_container_execution.extend(["-v", "/dev", "-v", "/proc", "-v", "/etc/hosts", "--nosysdirs"])
         if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
             self.cmd_container_execution.extend(["-v", self.lambda_instance.permanent_folder])
@@ -156,13 +149,12 @@ class Udocker():
         return self._parse_container_environment_variable("INPUT_FILE_PATH", self.input_file_path)
     
     def _get_output_dir(self):
-        return self._parse_container_environment_variable("STORAGE_OUTPUT_DIR", utils.get_environment_variable("STORAGE_OUTPUT_DIR"))
+        return self._parse_container_environment_variable("STORAGE_OUTPUT_DIR", self.lambda_instance.output_folder)
             
     def _get_extra_payload_path(self):
         ppath = []
         if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
-            ppath += self._parse_container_environment_variable("EXTRA_PAYLOAD", 
-                                                               utils.get_environment_variable("EXTRA_PAYLOAD"))
+            ppath += self._parse_container_environment_variable("EXTRA_PAYLOAD", utils.get_environment_variable("EXTRA_PAYLOAD"))
         return ppath
           
     def launch_udocker_container(self):

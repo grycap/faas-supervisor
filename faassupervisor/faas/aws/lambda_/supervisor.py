@@ -36,7 +36,7 @@ class LambdaSupervisor(SupervisorInterface):
     
     def __init__(self, **kwargs):
         logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')
-        self.lambda_instance = LambdaInstance(kwargs['context'])
+        self.lambda_instance = LambdaInstance(kwargs['event'], kwargs['context'])
         self.body = {}
 
     def _is_batch_execution(self):
