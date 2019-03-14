@@ -120,7 +120,6 @@ class Udocker():
         self.cmd_container_execution += self._get_input_file()
         self.cmd_container_execution += self._get_output_dir()
         self.cmd_container_execution += self._get_extra_payload_path()
-        self.cmd_container_execution += self._get_lambda_output_variable()
        
     def _parse_container_environment_variable(self, key, value):
         return ["--env", str(key) + '=' + str(value)] if key and value else []
