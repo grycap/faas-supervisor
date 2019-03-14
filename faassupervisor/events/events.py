@@ -62,7 +62,7 @@ class EventProvider():
         self.tmp_dir_path = tmp_dir_path
         logger.info("Received event: {}".format(event))
         try:
-            event_info = json.loads(event)
+            event_info = event if type(event) == dict else json.loads(event)
             # Check if the event comes from ApiGateway
             if self._is_api_gateway_event(event_info):
                 self.data = ApiGatewayEvent(event_info, self.tmp_dir_path)
@@ -75,7 +75,7 @@ class EventProvider():
             create_file_with_content(file_path, json.dumps(event))
             logger.info("A copy of the JSON event has been saved in the path '{0}'".format(file_path))
         except Exception as ex:
-            logger.exception(str(ex))
+            logger.exception(ex)
             self.data = UnknownEvent(event, self.tmp_dir_path)
         
     def _is_api_gateway_event(self, event_info):
