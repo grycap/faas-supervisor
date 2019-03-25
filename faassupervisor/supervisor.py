@@ -139,6 +139,7 @@ def _is_allowed_environment(typ):
         raise excp.InvalidSupervisorTypeError(sup_typ=typ)
 
 def _start_supervisor(**kwargs):
+    logger.configure_logger()
     typ = _get_supervisor_type()
     supervisor = Supervisor(typ, **kwargs)
     return supervisor.run()
@@ -147,14 +148,12 @@ def python_main(**kwargs):
     ''' Called when running from a Python environment.
     Receives the input from the method arguments.
     '''
-    logger.configure_logger()
     return _start_supervisor(**kwargs)
 
 def main():
     ''' Called when running as binary.
     Receives the input from stdin.
     '''
-    logger.configure_logger()
     kwargs = {'event': utils.get_stdin()}
     return _start_supervisor(**kwargs)
     

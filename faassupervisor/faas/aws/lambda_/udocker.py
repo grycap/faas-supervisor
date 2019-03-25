@@ -140,8 +140,8 @@ class Udocker():
                      'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
         # Add IAM credentials
         for key,value in iam_creds.items():
-            if not utils.is_variable_in_environment(key):
-                credentials.extend(self._parse_container_environment_variable(value, utils.get_environment_variable(value)))
+            if utils.is_variable_in_environment(key):
+                credentials.extend(self._parse_container_environment_variable(value, utils.get_environment_variable(key)))
         return credentials
     
     def _get_input_file(self):
