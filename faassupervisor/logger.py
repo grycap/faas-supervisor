@@ -24,26 +24,28 @@ logging.basicConfig(level=loglevel, format=FORMAT)
 logger = logging.getLogger('supervisor')
 
 def debug(cli_msg, log_msg=None):
-    if loglevel == logging.DEBUG:
+    if logging.getLogger('supervisor').isEnabledFor(logging.DEBUG):
         print(cli_msg)
-    logger.debug(log_msg) if log_msg else logger.debug(cli_msg)
+        logger.debug(log_msg) if log_msg else logger.debug(cli_msg)
 
-def info(cli_msg=None, log_msg=None):
-    if cli_msg and loglevel == logging.INFO:
+def info(cli_msg, log_msg=None):
+    if logging.getLogger('supervisor').isEnabledFor(logging.INFO):
         print(cli_msg)
-    logger.info(log_msg) if log_msg else logger.info(cli_msg)
+        logger.info(log_msg) if log_msg else logger.info(cli_msg)
 
 def warning(cli_msg, log_msg=None):
-    print(cli_msg)
-    logger.warning(log_msg) if log_msg else logger.warning(cli_msg)
+    if logging.getLogger('supervisor').isEnabledFor(logging.WARNING):
+        print(cli_msg)
+        logger.warning(log_msg) if log_msg else logger.warning(cli_msg)
 
 def error(cli_msg, log_msg=None):
-    if log_msg:
-        print(log_msg)
-        logger.error(log_msg)
-    else:
-        print(cli_msg)
-        logger.error(cli_msg)
+    if logging.getLogger('supervisor').isEnabledFor(logging.ERROR):
+        if log_msg:
+            print(log_msg)
+            logger.error(log_msg)
+        else:
+            print(cli_msg)
+            logger.error(cli_msg)
         
 def exception(msg):
     logger.exception(msg)        

@@ -50,7 +50,7 @@ class LambdaSupervisor(SupervisorInterface):
     def _execute_udocker(self):
         try:
             udocker_output = self.udocker.launch_udocker_container()
-            logger.info("CONTAINER OUTPUT:\n " + udocker_output)
+            logger.info("CONTAINER OUTPUT:\n {}".format(udocker_output))
             self.body["udocker_output"] = udocker_output            
         except subprocess.TimeoutExpired:
             logger.warning("Container execution timed out")
