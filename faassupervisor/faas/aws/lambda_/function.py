@@ -32,14 +32,14 @@ class LambdaInstance():
         self._set_tmp_folders()
         
         # Check for script in function event
-        if utils.is_value_in_dict(self.raw_event, 'script'): 
+        if utils.is_value_in_dict('script', self.raw_event): 
             self.script_path = "{0}/script.sh".format(self.input_folder)
             script_content = utils.base64_to_utf8_string(self.raw_event['script'])
             utils.create_file_with_content(self.script_path, script_content)
         # Container with args
-        elif utils.is_value_in_dict(self.raw_event,'cmd_args'):
+        elif utils.is_value_in_dict('cmd_args', self.raw_event):
             # Add args
-            self.cmd_args += json.loads(self.raw_event['cmd_args'])
+            self.cmd_args = json.loads(self.raw_event['cmd_args'])
         # Script to be executed every time (if defined)
         elif utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
             # Add init script
