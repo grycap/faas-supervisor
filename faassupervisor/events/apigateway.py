@@ -68,8 +68,8 @@ API Gateway event example:
  'stageVariables': None}
  '''
 import base64
-import faassupervisor.logger as logger
 import faassupervisor.utils as utils
+import faassupervisor.logger as logger
 
 class ApiGatewayEvent():
      
@@ -105,13 +105,13 @@ class ApiGatewayEvent():
 
     def _save_json_body(self):
         file_path = utils.join_paths(self.tmp_dir_path, "api_event.json")
-        logger.info("Received JSON from POST request and saved it in path '{0}'".format(file_path))
+        logger.get_logger().info("Received JSON from POST request and saved it in path '{0}'".format(file_path))
         utils.create_file_with_content(file_path, self.event_info['body'])
         return file_path
 
     def _save_body(self):
         file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")
-        logger.info("Received file from POST request and saved it in path '{0}'".format(file_path))
+        logger.get_logger().info("Received file from POST request and saved it in path '{0}'".format(file_path))
         utils.create_file_with_content(file_path, base64.b64decode(self.event_info['body']), mode='wb')
         return file_path
         

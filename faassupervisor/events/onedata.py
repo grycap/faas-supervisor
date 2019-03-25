@@ -30,7 +30,7 @@ class OnedataEvent():
         self.event_records = event_info['Records'][0]
         self.object_key = event_info['Key']
         self._set_event_params()
-        logger.info("Onedata event created")        
+        logger.get_logger().info("Onedata event created")        
         
     def _set_event_params(self):
         self.file_name = self.event_records['objectKey']

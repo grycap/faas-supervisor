@@ -36,29 +36,29 @@ class Onedata(DefaultStorageProvider):
         '''Downloads the file from the Onedata space and
         returns the path were the download is placed'''
         url = 'https://{0}/{1}{2}'.format(self.oneprovider_host, self.CDMI_PATH, event.data.object_key)
-        logger.info("Downloading item from host '{0}' with key '{1}'".format(self.oneprovider_host, event.data.object_key))
+        logger.get_logger().info("Downloading item from host '{0}' with key '{1}'".format(self.oneprovider_host, event.data.object_key))
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
             file_download_path = join_paths(input_dir_path, event.data.file_name)
             create_file_with_content(file_download_path, response.content, mode='wb')
-            logger.info("Successful download of file '{0}' with key '{1}' in path '{2}'".format(event.data.file_name,
+            logger.get_logger().info("Successful download of file '{0}' with key '{1}' in path '{2}'".format(event.data.file_name,
                                                                                                 event.data.object_key,
                                                                                                 file_download_path))
             return file_download_path
         else:
-            logger.error("File download from Onedata failed!")
+            logger.get_logger().error("File download from Onedata failed!")
 
     def upload_output(self, output_dir_path):
         output_files = get_all_files_in_directory(output_dir_path)
-        logger.info("Found the following files to upload: {0}".format(output_files))
+        logger.get_logger().info("Found the following files to upload: {0}".format(output_files))
         for file_path in output_files:
             file_name = file_path.replace("{0}/".format(output_dir_path), "")
             self.upload_file(file_path, file_name)
 
     def upload_file(self, file_path, file_name):
         url = 'https://{0}/{1}/{2}/{3}/{4}'.format(self.oneprovider_host, self.CDMI_PATH, self.oneprovider_space, self.storage_path.path, file_name)
-        logger.info("Uploading file '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, self.storage_path.path))
+        logger.get_logger().info("Uploading file '{0}' to '{1}/{2}'".format(file_name, self.oneprovider_space, self.storage_path.path))
         with open(file_path, 'rb') as data:
             response = requests.put(url, data=data, headers=self.headers)
             if response.status_code not in [201, 202, 204]:
-                logger.error("Upload failed. Status code: {0}".format(response.status_code))
+                logger.get_logger().error("Upload failed. Status code: {0}".format(response.status_code))

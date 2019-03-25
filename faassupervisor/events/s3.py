@@ -43,7 +43,7 @@ class S3Event():
         self.event = event_info
         self.event_records = event_info['Records'][0]
         self._set_event_params()
-        logger.info("S3 event created")
+        logger.get_logger().info("S3 event created")
         
     def _set_event_params(self):
         self.bucket_arn = self.event_records['s3']['bucket']['arn']

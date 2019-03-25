@@ -12,58 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
-import os
+from faassupervisor.utils import is_variable_in_environment, get_environment_variable
 
-loglevel = logging.INFO
-if "LOG_LEVEL" in os.environ:
-    loglevel = os.environ["LOG_LEVEL"]
-FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-logging.basicConfig(level=loglevel, format=FORMAT)
-logger = logging.getLogger('supervisor')
-
-def debug(cli_msg, log_msg=None):
-    if logging.getLogger('supervisor').isEnabledFor(logging.DEBUG):
-        print(cli_msg)
-        logger.debug(log_msg) if log_msg else logger.debug(cli_msg)
-
-def info(cli_msg, log_msg=None):
-    if logging.getLogger('supervisor').isEnabledFor(logging.INFO):
-        print(cli_msg)
-        logger.info(log_msg) if log_msg else logger.info(cli_msg)
-
-def warning(cli_msg, log_msg=None):
-    if logging.getLogger('supervisor').isEnabledFor(logging.WARNING):
-        print(cli_msg)
-        logger.warning(log_msg) if log_msg else logger.warning(cli_msg)
-
-def error(cli_msg, log_msg=None):
-    if logging.getLogger('supervisor').isEnabledFor(logging.ERROR):
-        if log_msg:
-            print(log_msg)
-            logger.error(log_msg)
-        else:
-            print(cli_msg)
-            logger.error(cli_msg)
-        
-def exception(msg):
-    logger.exception(msg)        
-
-def log_exception(error_msg, exception):
-    error(error_msg, error_msg + ": {0}".format(exception))
-
-def print_json(value):
-    print(json.dumps(value))
-
-def info_json(cli_msg, log_msg=None):
-    print_json(cli_msg)
-    logger.info(log_msg) if log_msg else logger.info(cli_msg)
-
-def warning_json(cli_msg, log_msg=None):
-    print_json(cli_msg)
-    logger.warning(log_msg) if log_msg else logger.warning(cli_msg)
-
-def error_json(cli_msg, log_msg=None):
-    print_json(cli_msg)
-    logger.error(log_msg) if log_msg else logger.error(cli_msg)          
+def configure_logger():
+    # Set logger configuration
+    loglevel = logging.INFO
+    if is_variable_in_environment("LOG_LEVEL"):
+        loglevel = logging.getLevelName(get_environment_variable("LOG_LEVEL"))
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    
+    logger = logging.getLogger('supervisor')
+    logger.setLevel(loglevel)
+    logger.propagate = 0
+    logger.addHandler(ch)
+    
+def get_logger():
+    logging.getLogger('supervisor')

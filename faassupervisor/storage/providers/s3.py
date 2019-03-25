@@ -33,10 +33,10 @@ class S3(DefaultStorageProvider):
     def download_input(self, event, input_dir_path):
         file_download_path = join_paths(input_dir_path, event.data.file_name)
         '''Downloads the file from the S3 bucket and returns the path were the download is placed'''
-        logger.info("Downloading item from bucket '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
+        logger.get_logger().info("Downloading item from bucket '{0}' with key '{1}'".format(event.data.bucket_name, event.data.object_key))
         with open(file_download_path, 'wb') as data:
             self.client.download_fileobj(event.data.bucket_name, event.data.object_key, data)
-        logger.info("Successful download of file '{0}' from bucket '{1}' in path '{2}'".format(event.data.object_key, 
+        logger.get_logger().info("Successful download of file '{0}' from bucket '{1}' in path '{2}'".format(event.data.object_key, 
                                                                                                event.data.bucket_name,
                                                                                                file_download_path))
         return file_download_path
@@ -55,17 +55,17 @@ class S3(DefaultStorageProvider):
 
     def upload_output(self, output_dir_path):
         output_files = get_all_files_in_directory(output_dir_path)
-        logger.info("Found the following files to upload: {0}".format(output_files))
+        logger.get_logger().info("Found the following files to upload: {0}".format(output_files))
         for file_path in output_files:
             file_name = file_path.replace("{0}/".format(output_dir_path), "")
             file_key = self._get_file_key(file_name)
             self.upload_file(file_path, file_key)
             
     def upload_file(self, file_path, file_key):
-        logger.info("Uploading file  '{0}' to bucket '{1}'".format(file_key, self.storage_path.path))
+        logger.get_logger().info("Uploading file  '{0}' to bucket '{1}'".format(file_key, self.storage_path.path))
         with open(file_path, 'rb') as data:
             self.client.upload_fileobj(data, self.storage_path.path, file_key)
-        logger.info("Changing ACLs for public-read for object in bucket {0} with key {1}".format(self.storage_path.path, file_key))
+        logger.get_logger().info("Changing ACLs for public-read for object in bucket {0} with key {1}".format(self.storage_path.path, file_key))
         obj = boto3.resource('s3').Object(self.storage_path.path, file_key)
         obj.Acl().put(ACL='public-read')
         

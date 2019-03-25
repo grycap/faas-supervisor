@@ -103,7 +103,7 @@ class Batch():
         return job_def_args
     
     def register_job_definition(self, job_name, step):
-        logger.info("Registering new job definition with name '{}'".format(job_name))
+        logger.get_logger().info("Registering new job definition with name '{}'".format(job_name))
         register_job_args = self.get_register_job_definition_args(job_name, step)
         self.client.register_job_definition(**register_job_args)
         

@@ -36,7 +36,7 @@ class Udocker():
             self.container_image_id = utils.get_environment_variable("IMAGE_ID")
             self._set_udocker_commands()
         else:
-            logger.error("Container image id not specified")
+            logger.get_logger().error("Container image id not specified")
             raise Exception("Container image id not specified.")
     
     def _set_udocker_commands(self):
@@ -55,7 +55,7 @@ class Udocker():
 
     def _create_image(self):
         if self._is_container_image_downloaded():
-            logger.info("Container image '{0}' already available".format(self.container_image_id))
+            logger.get_logger().info("Container image '{0}' already available".format(self.container_image_id))
         else:
             if utils.is_variable_in_environment("IMAGE_FILE"):
                 self._load_local_container_image()
@@ -67,18 +67,18 @@ class Udocker():
         return self.container_image_id in cmd_out                
 
     def _load_local_container_image(self):
-        logger.info("Loading container image '{0}'".format(self.container_image_id))
+        logger.get_logger().info("Loading container image '{0}'".format(self.container_image_id))
         utils.execute_command(self.cmd_load_image)
         
     def _download_container_image(self):
-        logger.info("Pulling container '{0}' from Docker Hub".format(self.container_image_id))
+        logger.get_logger().info("Pulling container '{0}' from Docker Hub".format(self.container_image_id))
         utils.execute_command(self.cmd_download_image)
 
     def _create_container(self):
         if self._is_container_available():
-            logger.info("Container already available")
+            logger.get_logger().info("Container already available")
         else:
-            logger.info("Creating container based on image '{0}'.".format(self.container_image_id))
+            logger.get_logger().info("Creating container based on image '{0}'.".format(self.container_image_id))
             utils.execute_command(self.cmd_create_container)
         utils.execute_command(self.cmd_set_execution_mode)
 
@@ -158,8 +158,8 @@ class Udocker():
           
     def launch_udocker_container(self):
         remaining_seconds = self.lambda_instance.get_invocation_remaining_seconds()
-        logger.info("Executing udocker container. Timeout set to {0} seconds".format(remaining_seconds))
-        logger.debug("Udocker command: {0}".format(self.cmd_container_execution))
+        logger.get_logger().info("Executing udocker container. Timeout set to {0} seconds".format(remaining_seconds))
+        logger.get_logger().debug("Udocker command: {0}".format(self.cmd_container_execution))
         with open(self.container_output_file, "w", encoding="latin-1") as out:
             with subprocess.Popen(self.cmd_container_execution, 
                                   stderr=subprocess.STDOUT, 
@@ -168,9 +168,9 @@ class Udocker():
                 try:
                     process.wait(timeout=remaining_seconds)
                 except subprocess.TimeoutExpired:
-                    logger.info("Stopping process '{0}'".format(process))
+                    logger.get_logger().info("Stopping process '{0}'".format(process))
                     process.kill()
-                    logger.warning("Container timeout")
+                    logger.get_logger().warning("Container timeout")
                     raise
         if os.path.isfile(self.container_output_file):
             return utils.read_file(self.container_output_file, file_encoding="latin-1")

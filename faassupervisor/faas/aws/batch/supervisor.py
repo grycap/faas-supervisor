@@ -30,9 +30,9 @@ class BatchSupervisor(SupervisorInterface):
         return storage_client     
     
     def __init__(self, **kwargs):
-        logger.info('SUPERVISOR: Initializing AWS Batch supervisor')
-        logger.debug("EVENT: {}".format(kwargs['event']))
-        logger.debug("CONTEXT: {}".format(kwargs['context']))
+        logger.get_logger().info('SUPERVISOR: Initializing AWS Batch supervisor')
+        logger.get_logger().debug("EVENT: {}".format(kwargs['event']))
+        logger.get_logger().debug("CONTEXT: {}".format(kwargs['context']))
         self.batch_job = BatchJob(kwargs['event'], kwargs['context'])
 
     def create_user_script(self):
@@ -40,7 +40,7 @@ class BatchSupervisor(SupervisorInterface):
             script_path = utils.join_paths(self.batch_job.input_folder, 'script.sh')
             script_content = utils.base64_to_utf8_string(utils.get_environment_variable('SCRIPT'))
             utils.create_file_with_content(script_path, script_content)
-            logger.info("Script file created in '{0}'".format(script_path))
+            logger.get_logger().info("Script file created in '{0}'".format(script_path))
             utils.set_file_execution_rights(script_path)
      
     def upload_to_bucket(self):
@@ -49,15 +49,15 @@ class BatchSupervisor(SupervisorInterface):
     
         if self.batch_job.has_output_bucket():
             bucket_name = self.batch_job.output_bucket
-            logger.info("OUTPUT BUCKET SET TO {0}".format(bucket_name))
+            logger.get_logger().info("OUTPUT BUCKET SET TO {0}".format(bucket_name))
     
             if self.batch_job.has_output_bucket_folder():
                 bucket_folder = self.batch_job.output_bucket_folder
-                logger.info("OUTPUT FOLDER SET TO {0}".format(bucket_folder))
+                logger.get_logger().info("OUTPUT FOLDER SET TO {0}".format(bucket_folder))
     
         elif self.batch_job.has_input_bucket():
             bucket_name = self.batch_job.input_bucket
-            logger.info("OUTPUT BUCKET SET TO {0}".format(bucket_name))
+            logger.get_logger().info("OUTPUT BUCKET SET TO {0}".format(bucket_name))
     
         if bucket_name:
             self.storage_client.upload_output(bucket_name, bucket_folder)
@@ -70,20 +70,20 @@ class BatchSupervisor(SupervisorInterface):
     def execute_function(self):
         pass    
     
-    @excp.exception(logger)    
+    @excp.exception(logger.get_logger())
     def parse_input(self, data_providers):
         step = utils.get_environment_variable("STEP")
         if step == "INIT":
-            logger.info("INIT STEP")
+            logger.get_logger().info("INIT STEP")
             self.create_user_script()
             if utils.is_variable_in_environment('INPUT_BUCKET'):
                 self.storage_client.download_input()  
     
-    @excp.exception(logger)
+    @excp.exception(logger.get_logger())
     def parse_output(self, data_providers):
         step = utils.get_environment_variable("STEP")
         if step == "END":
-            logger.info("END STEP")
+            logger.get_logger().info("END STEP")
             self.upload_to_bucket()
         
     def create_response(self):

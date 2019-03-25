@@ -60,7 +60,7 @@ class EventProvider():
     
     def __init__(self, event, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path
-        logger.info("Received event: {}".format(event))
+        logger.get_logger().info("Received event: {}".format(event))
         try:
             event_info = event if type(event) == dict else json.loads(event)
             # Check if the event comes from ApiGateway
@@ -73,9 +73,9 @@ class EventProvider():
             # To finish we always save the JSON event
             file_path = join_paths(tmp_dir_path, "event.json")
             create_file_with_content(file_path, json.dumps(event))
-            logger.info("A copy of the JSON event has been saved in the path '{0}'".format(file_path))
+            logger.get_logger().info("A copy of the JSON event has been saved in the path '{0}'".format(file_path))
         except Exception as ex:
-            logger.exception(ex)
+            logger.get_logger().exception(ex)
             self.data = UnknownEvent(event, self.tmp_dir_path)
         
     def _is_api_gateway_event(self, event_info):
@@ -86,7 +86,7 @@ class EventProvider():
                'eventSource' in event_info['Records'][0]
     
     def _create_storage_event(self, event_info):
-        logger.info("Analizing storage event")
+        logger.get_logger().info("Analizing storage event")
         if self._is_s3_event(event_info):
             event = S3Event(event_info)
         elif self._is_minio_event(event_info):

@@ -35,7 +35,7 @@ class LambdaSupervisor(SupervisorInterface):
         return udocker
     
     def __init__(self, **kwargs):
-        logger.info('SUPERVISOR: Initializing AWS Lambda supervisor')
+        logger.get_logger().info('SUPERVISOR: Initializing AWS Lambda supervisor')
         self.lambda_instance = LambdaInstance(kwargs['event'], kwargs['context'])
         self.body = {}
 
@@ -50,10 +50,10 @@ class LambdaSupervisor(SupervisorInterface):
     def _execute_udocker(self):
         try:
             udocker_output = self.udocker.launch_udocker_container()
-            logger.info("CONTAINER OUTPUT:\n {}".format(udocker_output))
+            logger.get_logger().info("CONTAINER OUTPUT:\n {}".format(udocker_output))
             self.body["udocker_output"] = udocker_output            
         except subprocess.TimeoutExpired:
-            logger.warning("Container execution timed out")
+            logger.get_logger().warning("Container execution timed out")
             if(utils.get_environment_variable("EXECUTION_MODE") == "lambda-batch"):
                 self._execute_batch()
     
@@ -70,7 +70,7 @@ class LambdaSupervisor(SupervisorInterface):
             
     def create_error_response(self):
         exception_msg = traceback.format_exc()
-        logger.error("Exception launched:\n {0}".format(exception_msg))
+        logger.get_logger().error("Exception launched:\n {0}".format(exception_msg))
         return {"statusCode" : 500, 
                 "headers" : { 
                     "amz-lambda-request-id": self.lambda_instance.request_id, 

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import faassupervisor.utils as utils
-import faassupervisor.logger as logger
 
 # Executed inside the containers launched in each batch job
 class BatchJob():
