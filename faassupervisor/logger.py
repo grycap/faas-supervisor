@@ -30,4 +30,4 @@ def configure_logger():
     logger.addHandler(ch)
     
 def get_logger():
-    logging.getLogger('supervisor')
+    return logging.getLogger('supervisor')
