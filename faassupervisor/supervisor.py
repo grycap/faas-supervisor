@@ -44,7 +44,7 @@ class Supervisor():
                                    'class_name' : 'LambdaSupervisor'},
                         'BATCH': {'module' : 'faassupervisor.faas.aws.batch.supervisor',
                                   'class_name' : 'BatchSupervisor'},
-                        'OPENFAAS': {'module' : 'faassupervisor.faas.onpremises.openfaas.supervisor',
+                        'OPENFAAS': {'module' : 'faassupervisor.faas.openfaas.supervisor',
                                      'class_name' : 'OpenfaasSupervisor'},
                         }
 

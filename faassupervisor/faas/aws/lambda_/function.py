@@ -39,7 +39,7 @@ class LambdaInstance():
         # Container with args
         elif utils.is_value_in_dict(self.raw_event,'cmd_args'):
             # Add args
-            self.cmd_args += json.loads(self.lambda_instance.raw_event['cmd_args'])
+            self.cmd_args += json.loads(self.raw_event['cmd_args'])
         # Script to be executed every time (if defined)
         elif utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
             # Add init script
