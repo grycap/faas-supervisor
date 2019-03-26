@@ -43,14 +43,19 @@ class S3(DefaultStorageProvider):
   
     def _get_file_key(self, file_name):
         storage_path = self.storage_path.path.split('/')
-        # There is a folder defined
-        # Set the folder in the file path
-        file_key = "{0}".format("/".join(storage_path[1:]))
-        if is_variable_in_environment("AWS_LAMBDA_REQUEST_ID"):
-            # Set the request id in the file path
-            file_key = "{0}/{1}/{2}".format(file_key, get_environment_variable("AWS_LAMBDA_REQUEST_ID"), file_name)
+        #Path format => storage_path.path: bucket/<folder-path> 
+        #Last part is optional
+        if len(storage_path) > 1:
+            # There is a folder defined
+            # Set the folder in the file path
+            folder = "{0}".format("/".join(storage_path[1:]))
+            file_key = "{0}/{1}".format(folder, file_name)
         else:
-            file_key = "{0}/{1}/{2}".format(file_key, file_name)
+            # Set the default file path
+            file_key = "{0}/{1}/{2}/{3}".format(get_environment_variable("AWS_LAMBDA_FUNCTION_NAME"),
+                                                'output',
+                                                get_environment_variable("AWS_LAMBDA_REQUEST_ID"),
+                                                file_name)
         return file_key
 
     def upload_output(self, output_dir_path):
