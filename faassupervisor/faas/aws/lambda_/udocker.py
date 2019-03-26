@@ -108,6 +108,7 @@ class Udocker():
     
     def _add_container_volumes(self):
         self.cmd_container_execution.extend(["-v", self.lambda_instance.input_folder])
+        self.cmd_container_execution.extend(["-v", self.lambda_instance.output_folder])
         self.cmd_container_execution.extend(["-v", "/dev", "-v", "/proc", "-v", "/etc/hosts", "--nosysdirs"])
         if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
             self.cmd_container_execution.extend(["-v", self.lambda_instance.permanent_folder])
