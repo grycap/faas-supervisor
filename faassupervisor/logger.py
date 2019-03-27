@@ -16,18 +16,20 @@ import logging
 from faassupervisor.utils import is_variable_in_environment, get_environment_variable
 
 def configure_logger():
-    # Set logger configuration
-    loglevel = logging.INFO
-    if is_variable_in_environment("LOG_LEVEL"):
-        loglevel = logging.getLevelName(get_environment_variable("LOG_LEVEL"))
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch = logging.StreamHandler()
-    ch.setFormatter(formatter)
-    
     logger = logging.getLogger('supervisor')
-    logger.setLevel(loglevel)
-    logger.propagate = 0
-    logger.addHandler(ch)
+    # Avoid initializing the logger several times
+    if not logger.hasHandlers():    
+        # Set logger configuration
+        loglevel = logging.INFO
+        if is_variable_in_environment("LOG_LEVEL"):
+            loglevel = logging.getLevelName(get_environment_variable("LOG_LEVEL"))
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        
+        logger.setLevel(loglevel)
+        logger.propagate = 0
+        logger.addHandler(ch)
     
 def get_logger():
     return logging.getLogger('supervisor')
