@@ -13,21 +13,11 @@
 # limitations under the License.
 
 from faassupervisor.providers.aws.batch.job import BatchJob
-from faassupervisor.providers.aws.storage.s3 import S3
 from faassupervisor.supervisor import SupervisorInterface
-import faassupervisor.exceptions as excp
 import faassupervisor.logger as logger
 import faassupervisor.utils as utils
 
 class BatchSupervisor(SupervisorInterface):
-    
-    @utils.lazy_property
-    def storage_client(self):
-        if S3.is_s3_event(self.batch_job.event):
-            storage_client = S3(self.batch_job)
-        else:
-            raise excp.NoStorageProviderDefinedWarning()
-        return storage_client     
     
     def __init__(self, **kwargs):
         logger.get_logger().info('SUPERVISOR: Initializing AWS Batch supervisor')
@@ -43,25 +33,6 @@ class BatchSupervisor(SupervisorInterface):
             logger.get_logger().info("Script file created in '{0}'".format(script_path))
             utils.set_file_execution_rights(script_path)
      
-    def upload_to_bucket(self):
-        bucket_name = None
-        bucket_folder = None
-    
-        if self.batch_job.has_output_bucket():
-            bucket_name = self.batch_job.output_bucket
-            logger.get_logger().info("OUTPUT BUCKET SET TO {0}".format(bucket_name))
-    
-            if self.batch_job.has_output_bucket_folder():
-                bucket_folder = self.batch_job.output_bucket_folder
-                logger.get_logger().info("OUTPUT FOLDER SET TO {0}".format(bucket_folder))
-    
-        elif self.batch_job.has_input_bucket():
-            bucket_name = self.batch_job.input_bucket
-            logger.get_logger().info("OUTPUT BUCKET SET TO {0}".format(bucket_name))
-    
-        if bucket_name:
-            self.storage_client.upload_output(bucket_name, bucket_folder)
-
     ##################################################################
     ## The methods below must be defined for the supervisor to work ##
     ##################################################################
@@ -70,22 +41,9 @@ class BatchSupervisor(SupervisorInterface):
     def execute_function(self):
         pass    
     
-    @excp.exception(logger.get_logger())
-    def parse_input(self, data_providers):
-        step = utils.get_environment_variable("STEP")
-        if step == "INIT":
-            logger.get_logger().info("INIT STEP")
-            self.create_user_script()
-            if utils.is_variable_in_environment('INPUT_BUCKET'):
-                self.storage_client.download_input()  
+    def parse_input(self):
+        self.create_user_script()
     
-    @excp.exception(logger.get_logger())
-    def parse_output(self, data_providers):
-        step = utils.get_environment_variable("STEP")
-        if step == "END":
-            logger.get_logger().info("END STEP")
-            self.upload_to_bucket()
-        
     def create_response(self):
         pass
     

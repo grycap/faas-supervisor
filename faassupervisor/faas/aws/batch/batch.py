@@ -18,7 +18,8 @@ import faassupervisor.utils as utils
 import faassupervisor.logger as logger
 
 class Batch():
-    '''Used for defining Batch jobs in the Batch environment
+    '''
+    Used for defining Batch jobs in the Batch environment
     '''
     
     @utils.lazy_property
@@ -30,7 +31,7 @@ class Batch():
         self.lambda_instance = lambda_instance
         self.scar_batch_io_image_id = utils.get_environment_variable('BATCH_SUPERVISOR_IMG')
         self.script = self.get_user_script()
-        self.scar_input_file = utils.get_environment_variable("INPUT_FILE_PATH") if utils.is_variable_in_environment("INPUT_FILE_PATH") else ""
+        self.input_file_path = utils.get_environment_variable("INPUT_FILE_PATH") if utils.is_variable_in_environment("INPUT_FILE_PATH") else ""
         self.io_job_name = "{0}-io".format(lambda_instance.function_name)
         self.container_environment_variables = []
         self.create_context()
@@ -52,8 +53,10 @@ class Batch():
         self.add_environment_variable("STORAGE_OUTPUT_DIR", utils.get_environment_variable('STORAGE_OUTPUT_DIR'))
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
 
-        if self.scar_input_file:
-            self.add_environment_variable("SCAR_INPUT_FILE", self.scar_input_file)
+        if self.input_file_path:
+            self.add_environment_variable("INPUT_FILE_PATH", self.input_file_path)
+            
+            
         if self.lambda_instance.has_input_bucket():
             self.add_environment_variable("INPUT_BUCKET", self.lambda_instance.input_bucket)
         if self.lambda_instance.has_output_bucket():
@@ -137,15 +140,14 @@ class Batch():
         self.add_environment_variable("STEP", step)
         self.add_environment_variable("SCRIPT", self.get_user_script())
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
-        self.add_environment_variable("SCAR_INPUT_FILE", self.scar_input_file)
-        self.add_environment_variable("SCAR_INPUT_DIR", self.lambda_instance.input_folder)
-        self.add_environment_variable("SCAR_OUTPUT_DIR", self.lambda_instance.output_folder)
+        self.add_environment_variable("INPUT_FILE_PATH", self.input_file_path)
+        self.add_environment_variable("STORAGE_INPUT_DIR", self.lambda_instance.input_folder)
+        self.add_environment_variable("STORAGE_OUTPUT_DIR", self.lambda_instance.output_folder)
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
 
-        if self.lambda_instance.has_input_bucket():
-            self.add_environment_variable("INPUT_BUCKET", self.lambda_instance.input_bucket)
-        if self.lambda_instance.has_output_bucket():
-            self.add_environment_variable("OUTPUT_BUCKET", self.lambda_instance.output_bucket)
+        for key,val in utils.get_environment_variables().items():
+            if key.startswith('STORAGE_'):
+                self.add_environment_variable(key, val)
         
         for user_var, value in utils._get_user_defined_variables().items():
             variables.append({"name" : user_var, "value" : value})

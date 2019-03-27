@@ -96,6 +96,13 @@ class Supervisor():
         Download input data from storage provider or 
         save data from POST request
         '''
+        if self._is_batch_environment():
+            # Don't download anything if not INIT step
+            if utils.get_environment_variable("STEP") != "INIT":
+                return
+            # Manage batch extra steps
+            self.supervisor.parse_input()
+        
         # event_type could be: 'APIGATEWAY'|'MINIO'|'ONEDATA'|'S3'|'UNKNOWN'
         event_type = self.event.get_event_type()
         logger.get_logger().info("Downloading input file from event type '{}'".format(event_type))
@@ -111,8 +118,15 @@ class Supervisor():
     
     @excp.exception(logger.get_logger())
     def _parse_output(self):
+        # Don't upload anything if not END step
+        if self._is_batch_environment() and utils.get_environment_variable("STEP") != "END":
+            return
+        
         for data_provider in self.output_data_providers:
             data_provider.upload_output(self._get_output_dir())
+            
+    def _is_batch_environment(self):
+        return self._get_supervisor_type() == 'BATCH'
             
     @excp.exception(logger.get_logger())
     def run(self):
