@@ -18,7 +18,7 @@ from faassupervisor.utils import is_variable_in_environment, get_environment_var
 def configure_logger():
     logger = logging.getLogger('supervisor')
     # Avoid initializing the logger several times
-    if not logger.hasHandlers():    
+    if not logger.handlers:
         # Set logger configuration
         loglevel = logging.INFO
         if is_variable_in_environment("LOG_LEVEL"):
