@@ -139,7 +139,7 @@ class Supervisor():
         logger.get_logger().info('Creating response')
         return self.supervisor.create_response()            
 
-def _is_batch_environment(self):
+def _is_batch_environment():
     return _get_supervisor_type() == 'BATCH'    
     
 def _get_supervisor_type():
