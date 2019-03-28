@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from faassupervisor.providers.aws.batch.job import BatchJob
+from faassupervisor.faas.aws.batch.job import BatchJob
 from faassupervisor.supervisor import SupervisorInterface
 import faassupervisor.logger as logger
 import faassupervisor.utils as utils
