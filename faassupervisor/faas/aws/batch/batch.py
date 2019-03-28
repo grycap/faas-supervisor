@@ -32,7 +32,6 @@ class Batch():
         self.scar_batch_io_image_id = utils.get_environment_variable('BATCH_SUPERVISOR_IMG')
         self.script = self.get_user_script()
         self.input_file_path = utils.get_environment_variable("INPUT_FILE_PATH") if utils.is_variable_in_environment("INPUT_FILE_PATH") else ""
-        self.io_job_name = "{0}-io".format(lambda_instance.function_name)
         self.container_environment_variables = []
         self.create_context()
     
@@ -106,9 +105,9 @@ class Batch():
 
     def invoke_batch_function(self):
         # Register batch Jobs
-        self.register_job_definition(self.io_job_name, "INIT")
+        self.register_job_definition("{}-in".format(self.lambda_instance.function_name), "INIT")
         self.register_job_definition(self.lambda_instance.function_name, "MED")
-        self.register_job_definition(self.io_job_name, "END")
+        self.register_job_definition("{}-out".format(self.lambda_instance.function_name), "END")
         # Submit batch jobs
         job_id = self.submit_init_job()
         lambda_job_id = self.submit_lambda_job(job_id)
@@ -143,7 +142,11 @@ class Batch():
         return variables
     
     def get_job_args(self, step, job_id=None):
-        job_name =  self.lambda_instance.function_name if step == 'MED' else self.io_job_name
+        job_name =  self.lambda_instance.function_name
+        if step == 'INIT':
+            job_name = "{}-in".format(job_name)
+        elif step == 'END':
+            job_name = "{}-out".format(job_name)
         job_def = {"jobDefinition" : job_name,
                    "jobName" : job_name,
                    "jobQueue" : self.lambda_instance.function_name,
