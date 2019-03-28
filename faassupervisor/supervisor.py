@@ -65,25 +65,25 @@ class Supervisor():
     def _create_tmp_dirs(self):
         if _is_batch_environment():
             if utils.get_environment_variable("STEP") == "INIT":
-                utils.create_folder(utils.get_environment_variable("STORAGE_INPUT_DIR"))
-                utils.create_folder(utils.get_environment_variable("STORAGE_OUTPUT_DIR"))
+                utils.create_folder(utils.get_environment_variable("TMP_INPUT_DIR"))
+                utils.create_folder(utils.get_environment_variable("TMP_OUTPUT_DIR"))
         else:
             # Temporal directory where the data will be stored
             # and deleted when the execution finishes
             self.input_tmp_dir = utils.create_tmp_dir()
             self.output_tmp_dir = utils.create_tmp_dir()
-            utils.set_environment_variable("STORAGE_INPUT_DIR", self.input_tmp_dir.name)
-            utils.set_environment_variable("STORAGE_OUTPUT_DIR", self.output_tmp_dir.name)
+            utils.set_environment_variable("TMP_INPUT_DIR", self.input_tmp_dir.name)
+            utils.set_environment_variable("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
         
     def _get_input_dir(self):
         if _is_batch_environment():
-            return utils.get_environment_variable("STORAGE_INPUT_DIR")
+            return utils.get_environment_variable("TMP_INPUT_DIR")
         return self.input_tmp_dir.name
     
     def _get_output_dir(self):
         if _is_batch_environment():
-            return utils.get_environment_variable("STORAGE_OUTPUT_DIR")
-        return self.output_tmp_dir.name    
+            return utils.get_environment_variable("TMP_OUTPUT_DIR")
+        return self.output_tmp_dir.name
         
     def _create_storage_providers(self):
         logger.get_logger().info("Reading STORAGE_AUTH variables")

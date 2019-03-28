@@ -48,8 +48,8 @@ class Batch():
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
         self.add_environment_variable("LAMBDA_EVENT", json.dumps(self.lambda_instance.raw_event))
         self.add_environment_variable("LAMBDA_CONTEXT", json.dumps(self.context))
-        self.add_environment_variable("STORAGE_INPUT_DIR", self.lambda_instance.input_folder)
-        self.add_environment_variable("STORAGE_OUTPUT_DIR",self.lambda_instance.output_folder)
+        self.add_environment_variable("TMP_INPUT_DIR", self.lambda_instance.input_folder)
+        self.add_environment_variable("TMP_OUTPUT_DIR",self.lambda_instance.output_folder)
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
 
         if self.input_file_path:
@@ -77,15 +77,15 @@ class Batch():
                 "command": ["scar-batch-io"],
                 "volumes": [
                     {"host": {"sourcePath": self.lambda_instance.input_folder},
-                     "name": "STORAGE_INPUT_DIR"},
+                     "name": "TMP_INPUT_DIR"},
                     {"host":{"sourcePath": self.lambda_instance.output_folder},
-                     "name": "STORAGE_OUTPUT_DIR"},
+                     "name": "TMP_OUTPUT_DIR"},
                 ],
                 "environment" : self.container_environment_variables,                             
                 'mountPoints': [
-                    {"sourceVolume": "STORAGE_INPUT_DIR",
+                    {"sourceVolume": "TMP_INPUT_DIR",
                      "containerPath": self.lambda_instance.input_folder},
-                    {"sourceVolume": "STORAGE_OUTPUT_DIR",
+                    {"sourceVolume": "TMP_OUTPUT_DIR",
                      "containerPath": self.lambda_instance.output_folder},
                 ],
             },
@@ -129,8 +129,8 @@ class Batch():
         self.add_environment_variable("SCRIPT", self.get_user_script())
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
         self.add_environment_variable("INPUT_FILE_PATH", self.input_file_path)
-        self.add_environment_variable("STORAGE_INPUT_DIR", self.lambda_instance.input_folder)
-        self.add_environment_variable("STORAGE_OUTPUT_DIR", self.lambda_instance.output_folder)
+        self.add_environment_variable("TMP_INPUT_DIR", self.lambda_instance.input_folder)
+        self.add_environment_variable("TMP_OUTPUT_DIR", self.lambda_instance.output_folder)
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
 
         for key,val in utils.get_environment_variables().items():

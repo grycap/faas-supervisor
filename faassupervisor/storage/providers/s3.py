@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from faassupervisor.storage.storage import DefaultStorageProvider
-from faassupervisor.utils import lazy_property, join_paths, get_all_files_in_directory, get_environment_variable, is_variable_in_environment
+from faassupervisor.utils import lazy_property, join_paths, get_all_files_in_directory, get_environment_variable
 import boto3
 import faassupervisor.logger as logger
 

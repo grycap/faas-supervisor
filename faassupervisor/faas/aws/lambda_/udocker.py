@@ -30,7 +30,7 @@ class Udocker():
         utils.create_folder(utils.get_environment_variable("UDOCKER_DIR"))
         
         self.udocker_exec = [utils.get_environment_variable("UDOCKER_EXEC")]
-        self.container_output_file = utils.join_paths(utils.get_environment_variable("STORAGE_OUTPUT_DIR"), "container-stdout.txt")
+        self.container_output_file = utils.join_paths(utils.get_environment_variable("TMP_OUTPUT_DIR"), "container-stdout.txt")
         
         if utils.is_variable_in_environment("IMAGE_ID"):
             self.container_image_id = utils.get_environment_variable("IMAGE_ID")
@@ -149,7 +149,7 @@ class Udocker():
         return self._parse_container_environment_variable("INPUT_FILE_PATH", self.input_file_path)
     
     def _get_output_dir(self):
-        return self._parse_container_environment_variable("STORAGE_OUTPUT_DIR", self.lambda_instance.output_folder)
+        return self._parse_container_environment_variable("TMP_OUTPUT_DIR", self.lambda_instance.output_folder)
             
     def _get_extra_payload_path(self):
         ppath = []

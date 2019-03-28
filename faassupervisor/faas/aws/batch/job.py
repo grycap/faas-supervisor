@@ -30,5 +30,5 @@ class BatchJob():
         self.log_stream_name = context['log_stream_name']        
 
     def _set_tmp_folders(self):
-        self.input_folder = utils.get_environment_variable("STORAGE_INPUT_DIR")
-        self.output_folder = utils.get_environment_variable("STORAGE_OUTPUT_DIR")       
+        self.input_folder = utils.get_environment_variable("TMP_INPUT_DIR")
+        self.output_folder = utils.get_environment_variable("TMP_OUTPUT_DIR")       
