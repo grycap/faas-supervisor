@@ -66,7 +66,7 @@ class Supervisor():
         if _is_batch_environment():
             if utils.get_environment_variable("STEP") == "INIT":
                 utils.create_folder(utils.get_environment_variable("STORAGE_INPUT_DIR"))
-                utils.create_folder(utils.get_environment_variable("STORAGE_OUTPUT_DIR"))                
+                utils.create_folder(utils.get_environment_variable("STORAGE_OUTPUT_DIR"))
         else:
             # Temporal directory where the data will be stored
             # and deleted when the execution finishes
@@ -76,9 +76,13 @@ class Supervisor():
             utils.set_environment_variable("STORAGE_OUTPUT_DIR", self.output_tmp_dir.name)
         
     def _get_input_dir(self):
+        if _is_batch_environment():
+            return utils.get_environment_variable("STORAGE_INPUT_DIR")
         return self.input_tmp_dir.name
     
     def _get_output_dir(self):
+        if _is_batch_environment():
+            return utils.get_environment_variable("STORAGE_OUTPUT_DIR")
         return self.output_tmp_dir.name    
         
     def _create_storage_providers(self):
