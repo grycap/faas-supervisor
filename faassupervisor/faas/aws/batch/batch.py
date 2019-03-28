@@ -47,7 +47,7 @@ class Batch():
         self.add_environment_variable("STEP", step)
         self.add_environment_variable("SCRIPT", self.script)
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
-        self.add_environment_variable("LAMBDA_EVENT", json.dumps(self.lambda_instance.event))
+        self.add_environment_variable("LAMBDA_EVENT", json.dumps(self.lambda_instance.raw_event))
         self.add_environment_variable("LAMBDA_CONTEXT", json.dumps(self.context))
         self.add_environment_variable("STORAGE_INPUT_DIR", utils.get_environment_variable('STORAGE_INPUT_DIR'))
         self.add_environment_variable("STORAGE_OUTPUT_DIR", utils.get_environment_variable('STORAGE_OUTPUT_DIR'))
@@ -55,14 +55,10 @@ class Batch():
 
         if self.input_file_path:
             self.add_environment_variable("INPUT_FILE_PATH", self.input_file_path)
-            
-            
-        if self.lambda_instance.has_input_bucket():
-            self.add_environment_variable("INPUT_BUCKET", self.lambda_instance.input_bucket)
-        if self.lambda_instance.has_output_bucket():
-            self.add_environment_variable("OUTPUT_BUCKET", self.lambda_instance.output_bucket)
-        if self.lambda_instance.has_output_bucket_folder():
-            self.add_environment_variable("OUTPUT_FOLDER", self.lambda_instance.output_bucket_folder)                 
+        
+        for key, val in utils.get_environment_variables().items():
+            if key.startswith("STORAGE_"):
+                self.add_environment_variable(key, val)
         
         for user_var, value in utils._get_user_defined_variables().items():
             self.add_environment_variable(user_var, value)
@@ -81,18 +77,16 @@ class Batch():
                 "memory": self.lambda_instance.memory,                       
                 "command": ["scar-batch-io"],
                 "volumes": [
-                    {"host": {
-                        "sourcePath": self.lambda_instance.input_folder},
-                     "name": "SCAR_INPUT_DIR"},
-                    {"host":{
-                        "sourcePath": self.lambda_instance.output_folder},
-                     "name": "SCAR_OUTPUT_DIR"},
+                    {"host": { "sourcePath": self.lambda_instance.input_folder},
+                     "name": "STORAGE_INPUT_DIR"},
+                    {"host":{ "sourcePath": self.lambda_instance.output_folder},
+                     "name": "STORAGE_OUTPUT_DIR"},
                 ],
                 "environment" : self.container_environment_variables,                             
                 'mountPoints': [
-                    {"sourceVolume": "SCAR_INPUT_DIR",
+                    {"sourceVolume": "STORAGE_INPUT_DIR",
                      "containerPath": self.lambda_instance.input_folder},
-                    {"sourceVolume": "SCAR_OUTPUT_DIR",
+                    {"sourceVolume": "STORAGE_OUTPUT_DIR",
                      "containerPath": self.lambda_instance.output_folder},
                 ],
             },
@@ -100,7 +94,7 @@ class Batch():
         if step == "MED":
             job_def_args["containerProperties"]["command"] = []
             job_def_args["containerProperties"]["image"] = utils.get_environment_variable("IMAGE_ID")
-            if self.script != "":
+            if self.script:
                 job_def_args["containerProperties"]["command"] = ["{0}/script.sh".format(self.lambda_instance.input_folder)]
         
         return job_def_args
@@ -109,30 +103,25 @@ class Batch():
         logger.get_logger().info("Registering new job definition with name '{}'".format(job_name))
         register_job_args = self.get_register_job_definition_args(job_name, step)
         self.client.register_job_definition(**register_job_args)
-        
+
     def invoke_batch_function(self):
-        # Register lambda Job
+        # Register batch Jobs
+        self.register_job_definition(self.io_job_name, "INIT")
         self.register_job_definition(self.lambda_instance.function_name, "MED")
-        # Submit download input Job
-        job_id = None
-        if self.lambda_instance.has_input_bucket() or self.script != "":
-            self.register_job_definition(self.io_job_name, "INIT")
-            job_id = self.submit_init_job()
-        # Submit lambda Job
+        self.register_job_definition(self.io_job_name, "END")
+        # Submit batch jobs
+        job_id = self.submit_init_job()
         lambda_job_id = self.submit_lambda_job(job_id)
-        # Submit store output Job
-        if self.lambda_instance.has_input_bucket() or self.lambda_instance.has_output_bucket():
-            self.register_job_definition(self.io_job_name, "END")
-            self.submit_end_job(lambda_job_id)
+        self.submit_end_job(lambda_job_id)
         return lambda_job_id
-    
+
     def get_user_script(self):
         script = ""
         if utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
             file_content = utils.read_file(utils.get_environment_variable('INIT_SCRIPT_PATH'), file_mode='rb')
-            script = utils.utf8_to_base64_string(file_content)        
-        if utils.is_value_in_dict('script', self.lambda_instance.event):
-            script = self.lambda_instance.event['script']
+            script = utils.utf8_to_base64_string(file_content)
+        if utils.is_value_in_dict('script', self.lambda_instance.raw_event):
+            script = self.lambda_instance.raw_event['script']
         return script
     
     def get_job_env_vars(self, step):
