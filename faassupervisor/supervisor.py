@@ -96,7 +96,7 @@ class Supervisor():
         Download input data from storage provider or 
         save data from POST request
         '''
-        if self._is_batch_environment():
+        if _is_batch_environment():
             # Don't download anything if not INIT step
             if utils.get_environment_variable("STEP") != "INIT":
                 return
@@ -119,14 +119,11 @@ class Supervisor():
     @excp.exception(logger.get_logger())
     def _parse_output(self):
         # Don't upload anything if not END step
-        if self._is_batch_environment() and utils.get_environment_variable("STEP") != "END":
+        if _is_batch_environment() and utils.get_environment_variable("STEP") != "END":
             return
         
         for data_provider in self.output_data_providers:
             data_provider.upload_output(self._get_output_dir())
-            
-    def _is_batch_environment(self):
-        return self._get_supervisor_type() == 'BATCH'
             
     @excp.exception(logger.get_logger())
     def run(self):
@@ -141,6 +138,9 @@ class Supervisor():
             return self.supervisor.create_error_response()
         logger.get_logger().info('Creating response')
         return self.supervisor.create_response()            
+
+def _is_batch_environment(self):
+    return _get_supervisor_type() == 'BATCH'    
     
 def _get_supervisor_type():
     typ = utils.get_environment_variable("SUPERVISOR_TYPE")
