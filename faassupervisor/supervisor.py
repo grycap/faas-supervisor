@@ -63,12 +63,17 @@ class Supervisor():
         self.supervisor = class_(**kwargs)        
         
     def _create_tmp_dirs(self):
-        # Temporal directory where the data will be stored
-        # and deleted when the execution finishes
-        self.input_tmp_dir = utils.create_tmp_dir()
-        self.output_tmp_dir = utils.create_tmp_dir()
-        utils.set_environment_variable("STORAGE_INPUT_DIR", self.input_tmp_dir.name)
-        utils.set_environment_variable("STORAGE_OUTPUT_DIR", self.output_tmp_dir.name)
+        if _is_batch_environment():
+            if utils.get_environment_variable("STEP") == "INIT":
+                utils.create_folder(utils.get_environment_variable("STORAGE_INPUT_DIR"))
+                utils.create_folder(utils.get_environment_variable("STORAGE_OUTPUT_DIR"))                
+        else:
+            # Temporal directory where the data will be stored
+            # and deleted when the execution finishes
+            self.input_tmp_dir = utils.create_tmp_dir()
+            self.output_tmp_dir = utils.create_tmp_dir()
+            utils.set_environment_variable("STORAGE_INPUT_DIR", self.input_tmp_dir.name)
+            utils.set_environment_variable("STORAGE_OUTPUT_DIR", self.output_tmp_dir.name)
         
     def _get_input_dir(self):
         return self.input_tmp_dir.name

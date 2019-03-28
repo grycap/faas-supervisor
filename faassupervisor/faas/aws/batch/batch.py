@@ -48,8 +48,8 @@ class Batch():
         self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
         self.add_environment_variable("LAMBDA_EVENT", json.dumps(self.lambda_instance.raw_event))
         self.add_environment_variable("LAMBDA_CONTEXT", json.dumps(self.context))
-        self.add_environment_variable("STORAGE_INPUT_DIR", utils.get_environment_variable('STORAGE_INPUT_DIR'))
-        self.add_environment_variable("STORAGE_OUTPUT_DIR", utils.get_environment_variable('STORAGE_OUTPUT_DIR'))
+        self.add_environment_variable("STORAGE_INPUT_DIR", self.lambda_instance.input_folder)
+        self.add_environment_variable("STORAGE_OUTPUT_DIR",self.lambda_instance.output_folder)
         self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
 
         if self.input_file_path:
@@ -76,9 +76,9 @@ class Batch():
                 "memory": self.lambda_instance.memory,                       
                 "command": ["scar-batch-io"],
                 "volumes": [
-                    {"host": { "sourcePath": self.lambda_instance.input_folder},
+                    {"host": {"sourcePath": self.lambda_instance.input_folder},
                      "name": "STORAGE_INPUT_DIR"},
-                    {"host":{ "sourcePath": self.lambda_instance.output_folder},
+                    {"host":{"sourcePath": self.lambda_instance.output_folder},
                      "name": "STORAGE_OUTPUT_DIR"},
                 ],
                 "environment" : self.container_environment_variables,                             
