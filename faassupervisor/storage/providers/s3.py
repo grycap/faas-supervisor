@@ -58,19 +58,23 @@ class S3(DefaultStorageProvider):
                                                 file_name)
         return file_key
 
+    def _get_bucket_name(self):
+        return self.storage_path.path.split("/")[0]
+
     def upload_output(self, output_dir_path):
         output_files = get_all_files_in_directory(output_dir_path)
         logger.get_logger().info("Found the following files to upload: {0}".format(output_files))
         for file_path in output_files:
             file_name = file_path.replace("{0}/".format(output_dir_path), "")
             file_key = self._get_file_key(file_name)
-            self.upload_file(file_path, file_key)
+            self._upload_file(file_path, file_key)
             
-    def upload_file(self, file_path, file_key):
-        logger.get_logger().info("Uploading file  '{0}' to bucket '{1}'".format(file_key, self.storage_path.path))
+    def _upload_file(self, file_path, file_key):
+        bucket_name = self._get_bucket_name()
+        logger.get_logger().info("Uploading file  '{0}' to bucket '{1}'".format(file_key, bucket_name))
         with open(file_path, 'rb') as data:
-            self.client.upload_fileobj(data, self.storage_path.path, file_key)
-        logger.get_logger().info("Changing ACLs for public-read for object in bucket {0} with key {1}".format(self.storage_path.path, file_key))
-        obj = boto3.resource('s3').Object(self.storage_path.path, file_key)
+            self.client.upload_fileobj(data, bucket_name, file_key)
+        logger.get_logger().info("Changing ACLs for public-read for object in bucket {0} with key {1}".format(bucket_name, file_key))
+        obj = boto3.resource('s3').Object(bucket_name, file_key)
         obj.Acl().put(ACL='public-read')
         
