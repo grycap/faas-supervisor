@@ -13,51 +13,43 @@
 # limitations under the License.
 
 import faassupervisor.utils as utils
-logger = utils.get_logger()
+import json
+from shutil import copyfile
 
-class Lambda():
+class LambdaInstance():
 
     def __init__(self, event, context):
-        self.event = event
+        self.raw_event = event
         self.context = context
         self.request_id = context.aws_request_id
+        utils.set_environment_variable('AWS_LAMBDA_REQUEST_ID', context.aws_request_id)
         self.memory = int(context.memory_limit_in_mb)
         self.arn = context.invoked_function_arn
         self.function_name = context.function_name
         self.log_group_name = self.context.log_group_name
         self.log_stream_name = self.context.log_stream_name  
         self.permanent_folder = "/var/task"
-        self._set_tmp_folders()         
+        self._set_tmp_folders()
+        
+        # Check for script in function event
+        if utils.is_value_in_dict('script', self.raw_event): 
+            self.script_path = "{0}/script.sh".format(self.input_folder)
+            script_content = utils.base64_to_utf8_string(self.raw_event['script'])
+            utils.create_file_with_content(self.script_path, script_content)
+        # Container with args
+        elif utils.is_value_in_dict('cmd_args', self.raw_event):
+            # Add args
+            self.cmd_args = json.loads(self.raw_event['cmd_args'])
+        # Script to be executed every time (if defined)
+        elif utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
+            # Add init script
+            self.init_script_path = "{0}/init_script.sh".format(self.input_folder)
+            copyfile(utils.get_environment_variable("INIT_SCRIPT_PATH"), self.init_script_path)    
+                  
 
     def _set_tmp_folders(self):
-        self.temporal_folder = utils.create_tmp_dir()
-        self.temporal_folder_path = self.temporal_folder.name
-        self.input_folder = "{}/input".format(self.temporal_folder_path)
-        self.output_folder = "{}/output".format(self.temporal_folder_path)            
-
-    @utils.lazy_property
-    def output_bucket(self):
-        output_bucket = utils.get_environment_variable('OUTPUT_BUCKET')
-        return output_bucket
-    
-    @utils.lazy_property
-    def output_bucket_folder(self):
-        output_bucket_folder = utils.get_environment_variable('OUTPUT_FOLDER')
-        return output_bucket_folder
-    
-    @utils.lazy_property
-    def input_bucket(self):
-        input_bucket = utils.get_environment_variable('INPUT_BUCKET')
-        return input_bucket
-    
-    def has_output_bucket(self):
-        return utils.is_variable_in_environment('OUTPUT_BUCKET')
-
-    def has_output_bucket_folder(self):
-        return utils.is_variable_in_environment('OUTPUT_FOLDER')
-    
-    def has_input_bucket(self):
-        return utils.is_variable_in_environment('INPUT_BUCKET')
+        self.input_folder = utils.get_environment_variable("TMP_INPUT_DIR")
+        self.output_folder = utils.get_environment_variable("TMP_OUTPUT_DIR")
 
     def get_invocation_remaining_seconds(self):
         return int(self.context.get_remaining_time_in_millis() / 1000) - int(utils.get_environment_variable('TIMEOUT_THRESHOLD'))

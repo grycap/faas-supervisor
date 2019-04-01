@@ -29,17 +29,17 @@ def exception(logger):
             except ClientError as ce:
                 print("There was an exception in {0}".format(func.__name__))
                 print(ce.response['Error']['Message'])
-                logger.exception(ce)
+                logger.error(ce)
                 sys.exit(1)
             except FaasSupervisorError as fse:
                 print(fse.args[0])
-                logger.exception(fse)
+                logger.error(fse)
                 # Finish the execution if it's an error
                 if 'Error' in fse.__class__.__name__:
                     sys.exit(1)
             except Exception as ex:
                 print("There was an unmanaged exception in {0}".format(func.__name__))
-                logger.exception(ex)
+                logger.error(ex)
                 sys.exit(1)
         return wrapper
     return decorator
@@ -98,4 +98,10 @@ class NoOutputStorageProviderDefinedWarning(NoStorageProviderDefinedWarning):
     """
     fmt = "There is no output storage provider defined for this function execution."    
  
+class StorageTypeError(FaasSupervisorError):
+    """
+    The storage type defined is not allowed
+
+    """
+    fmt = "The storage type '{typ}' is not allowed."
     

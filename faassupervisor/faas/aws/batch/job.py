@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import faassupervisor.utils as utils
-logger = utils.get_logger()
 
 # Executed inside the containers launched in each batch job
 class BatchJob():
@@ -31,30 +30,5 @@ class BatchJob():
         self.log_stream_name = context['log_stream_name']        
 
     def _set_tmp_folders(self):
-        self.input_folder = utils.get_environment_variable('SCAR_INPUT_DIR')
-        self.output_folder = utils.get_environment_variable('SCAR_OUTPUT_DIR')        
-
-    @utils.lazy_property
-    def output_bucket(self):
-        output_bucket = utils.get_environment_variable('OUTPUT_BUCKET')
-        return output_bucket
-    
-    @utils.lazy_property
-    def output_bucket_folder(self):
-        output_bucket_folder = utils.get_environment_variable('OUTPUT_FOLDER')
-        return output_bucket_folder
-    
-    @utils.lazy_property
-    def input_bucket(self):
-        input_bucket = utils.get_environment_variable('INPUT_BUCKET')
-        return input_bucket
-    
-    def has_output_bucket(self):
-        return utils.is_variable_in_environment('OUTPUT_BUCKET')
-
-    def has_output_bucket_folder(self):
-        return utils.is_variable_in_environment('OUTPUT_FOLDER')
-    
-    def has_input_bucket(self):
-        return utils.is_variable_in_environment('INPUT_BUCKET')
-    
+        self.input_folder = utils.get_environment_variable("TMP_INPUT_DIR")
+        self.output_folder = utils.get_environment_variable("TMP_OUTPUT_DIR")       
