@@ -45,12 +45,12 @@ class Batch():
     def set_container_variables(self, step):
         self.add_environment_variable("STEP", step)
         self.add_environment_variable("SCRIPT", self.script)
-        self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
-        self.add_environment_variable("LAMBDA_EVENT", json.dumps(self.lambda_instance.raw_event))
-        self.add_environment_variable("LAMBDA_CONTEXT", json.dumps(self.context))
+        self.add_environment_variable("AWS_LAMBDA_FUNCTION_NAME", self.lambda_instance.function_name)
+        self.add_environment_variable("AWS_LAMBDA_EVENT", json.dumps(self.lambda_instance.raw_event))
+        self.add_environment_variable("AWS_LAMBDA_CONTEXT", json.dumps(self.context))
         self.add_environment_variable("TMP_INPUT_DIR", self.lambda_instance.input_folder)
         self.add_environment_variable("TMP_OUTPUT_DIR",self.lambda_instance.output_folder)
-        self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
+        self.add_environment_variable("AWS_LAMBDA_REQUEST_ID", self.lambda_instance.request_id)
 
         if self.input_file_path:
             self.add_environment_variable("INPUT_FILE_PATH", self.input_file_path)
@@ -127,11 +127,11 @@ class Batch():
         variables= []
         self.add_environment_variable("STEP", step)
         self.add_environment_variable("SCRIPT", self.get_user_script())
-        self.add_environment_variable("FUNCTION_NAME", self.lambda_instance.function_name)
+        self.add_environment_variable("AWS_LAMBDA_FUNCTION_NAME", self.lambda_instance.function_name)
         self.add_environment_variable("INPUT_FILE_PATH", self.input_file_path)
         self.add_environment_variable("TMP_INPUT_DIR", self.lambda_instance.input_folder)
         self.add_environment_variable("TMP_OUTPUT_DIR", self.lambda_instance.output_folder)
-        self.add_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
+        self.add_environment_variable("AWS_LAMBDA_REQUEST_ID", self.lambda_instance.request_id)
 
         for key,val in utils.get_environment_variables().items():
             if key.startswith('STORAGE_'):
