@@ -12,7 +12,7 @@ jobs:
     - stage: Build binary and deploy to github on new releases
       script: >
         pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
-        --hidden-import faassupervisor.faas.onpremises.openfaas.supervisor
+        --hidden-import faassupervisor.faas.openfaas.supervisor
         --hidden-import faassupervisor.faas.aws.lambda_.supervisor
         --hidden-import faassupervisor.faas.aws.batch.supervisor
         --hidden-import faassupervisor.events.apigateway
