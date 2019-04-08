@@ -129,9 +129,6 @@ class Udocker():
         result = []
         for key,value in utils._get_user_defined_variables().items():
             result.extend(self._parse_container_environment_variable(key, value))
-        if hasattr(self.lambda_instance, "http_params") and self.lambda_instance.http_params:
-            for key,value in self.lambda_instance.http_params.items():
-                result.extend(self._parse_container_environment_variable(key, value))
         return result
 
     def _get_iam_credentials(self):

@@ -116,10 +116,11 @@ class ApiGatewayEvent():
         return file_path
         
     def _is_request_with_parameters(self):
-        return "queryStringParameters" in self.event_info and self.event_info["queryStringParameters"]        
+        return "queryStringParameters" in self.event_info and self.event_info["queryStringParameters"]
         
     def _save_request_parameters(self):
         http_params = {}
+        # Add passed HTTP parameters to container variables
         for key, value in self.event_info["queryStringParameters"].items():
-            http_params[format(key)] = value
+            utils.set_environment_variable("CONT_VAR_{}".format(key), value)
         return http_params
