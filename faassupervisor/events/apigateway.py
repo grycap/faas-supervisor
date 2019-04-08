@@ -82,7 +82,7 @@ class ApiGatewayEvent():
         if self._is_post_request_with_body():
             self.file_path = self._save_post_body()
         if self._is_request_with_parameters():
-            self.http_params = self._save_request_parameters()
+            self._save_request_parameters()
         if hasattr(self, 'file_path'):
             utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
         
@@ -119,8 +119,6 @@ class ApiGatewayEvent():
         return "queryStringParameters" in self.event_info and self.event_info["queryStringParameters"]
         
     def _save_request_parameters(self):
-        http_params = {}
         # Add passed HTTP parameters to container variables
         for key, value in self.event_info["queryStringParameters"].items():
             utils.set_environment_variable("CONT_VAR_{}".format(key), value)
-        return http_params
