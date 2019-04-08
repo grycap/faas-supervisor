@@ -45,7 +45,6 @@ class LambdaInstance():
             # Add init script
             self.init_script_path = "{0}/init_script.sh".format(self.input_folder)
             copyfile(utils.get_environment_variable("INIT_SCRIPT_PATH"), self.init_script_path)    
-                  
 
     def _set_tmp_folders(self):
         self.input_folder = utils.get_environment_variable("TMP_INPUT_DIR")
