@@ -19,7 +19,7 @@ import subprocess
 import sys
 
 class OpenfaasSupervisor(SupervisorInterface):
-    
+
     def __init__(self, **kwargs):
         logger.get_logger().info('SUPERVISOR: Initializing Openfaas supervisor')
         if utils.is_variable_in_environment('sprocess'):
@@ -28,7 +28,7 @@ class OpenfaasSupervisor(SupervisorInterface):
     ##################################################################
     ## The methods below must be defined for the supervisor to work ##
     ##################################################################
-    
+
     def execute_function(self):
         if hasattr(self, 'script'):
             logger.get_logger().info("Executing user defined script: '{}'".format(self.script))
@@ -36,14 +36,13 @@ class OpenfaasSupervisor(SupervisorInterface):
                 logger.get_logger().info(subprocess.check_output(['/bin/sh', self.script], stderr=subprocess.STDOUT).decode("utf-8"))
             # Exit with user script return code if an error occurs (Kubernetes handles the error)
             except subprocess.CalledProcessError as cpe:
-                logger.get_logger().error(cpe.output)
+                logger.get_logger().error(cpe.output.decode('utf-8'))
                 sys.exit(cpe.returncode)
         else:
             logger.get_logger().error('No user script found!')
-             
 
     def create_response(self):
         pass
-    
+
     def create_error_response(self):
         pass
