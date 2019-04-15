@@ -171,4 +171,4 @@ class Udocker():
                     logger.get_logger().warning("Container timeout")
                     raise
         if os.path.isfile(self.container_output_file):
-            return utils.read_file(self.container_output_file, file_encoding="latin-1")
+            return utils.encode_to_base64(utils.read_file(self.container_output_file, file_encoding="latin-1"))
