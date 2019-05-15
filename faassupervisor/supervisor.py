@@ -141,12 +141,13 @@ class Supervisor():
             self._parse_input()
             self.supervisor.execute_function()
             self._parse_output()
+            logger.get_logger().info('Creating response')
+            return self.supervisor.create_response()
         except Exception as ex:
             logger.get_logger().exception(ex)
             logger.get_logger().error('Creating error response')
             return self.supervisor.create_error_response()
-        logger.get_logger().info('Creating response')
-        return self.supervisor.create_response()            
+
 
 def _is_batch_environment():
     return _get_supervisor_type() == 'BATCH'    
