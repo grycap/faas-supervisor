@@ -1,7 +1,11 @@
+sudo: required
 dist: xenial
 language: python
 python:
   - "3.7.1"
+
+services:
+  - docker
 
 install:
   - pip3 install -U pyinstaller
@@ -40,3 +44,9 @@ jobs:
           on:
             tags: true
       if: tag IS present
+
+after_success:
+  - docker login -u $DOCKER_CLOUD_USER -p $DOCKER_CLOUD_PASS
+  - export REPO=grycap/scar-batch-io
+  - docker build -t $REPO:$COMMIT -f faassupervisor/faas/aws/batch/docker_image/Dockerfile faassupervisor/faas/aws/batch/docker_image/
+  - docker push $REPO
