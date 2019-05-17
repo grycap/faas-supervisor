@@ -97,7 +97,7 @@ class Supervisor():
         # Create output data providers
         for storage_id, storage_path in storage_paths.output.items():
             self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
-            logger.get_logger().info("Found '{}' output provider".format(self.input_data_providers[-1].type))
+            logger.get_logger().info("Found '{}' output provider".format(self.output_data_providers[-1].type))
         
     @excp.exception(logger.get_logger())
     def _parse_input(self):
