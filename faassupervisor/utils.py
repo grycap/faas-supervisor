@@ -86,6 +86,12 @@ def base64_to_utf8_string(value):
 def utf8_to_base64_string(value):
     return base64.b64encode(value).decode('utf-8')
 
+def encode_to_base64(value):
+    return base64.b64encode(value)
+
+def decode_from_base64(value):
+    return value.decode()
+
 def dict_to_base64_string(value):
     return base64.b64encode(json.dumps(value)).decode("utf-8")
 

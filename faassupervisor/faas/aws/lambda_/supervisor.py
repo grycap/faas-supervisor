@@ -86,5 +86,5 @@ class LambdaSupervisor(SupervisorInterface):
                     "amz-lambda-request-id": self.lambda_instance.request_id, 
                     "amz-log-group-name": self.lambda_instance.log_group_name, 
                     "amz-log-stream-name": self.lambda_instance.log_stream_name },
-                "body" : json.dumps(self.body),
+                "body" : self.body["udocker_output"].decode('latin-1'),
                 "isBase64Encoded" : False }             
