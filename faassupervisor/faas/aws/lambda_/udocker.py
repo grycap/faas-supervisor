@@ -141,24 +141,24 @@ class Udocker():
             if utils.is_variable_in_environment(key):
                 credentials.extend(self._parse_container_environment_variable(value, utils.get_environment_variable(key)))
         return credentials
-    
+
     def _get_input_file(self):
         return self._parse_container_environment_variable("INPUT_FILE_PATH", self.input_file_path)
-    
+
     def _get_output_dir(self):
         return self._parse_container_environment_variable("TMP_OUTPUT_DIR", self.lambda_instance.output_folder)
-            
+
     def _get_extra_payload_path(self):
         ppath = []
         if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
             ppath += self._parse_container_environment_variable("EXTRA_PAYLOAD", utils.get_environment_variable("EXTRA_PAYLOAD"))
         return ppath
-          
+
     def launch_udocker_container(self):
         remaining_seconds = self.lambda_instance.get_invocation_remaining_seconds()
         logger.get_logger().info("Executing udocker container. Timeout set to {0} seconds".format(remaining_seconds))
         logger.get_logger().debug("Udocker command: {0}".format(self.cmd_container_execution))
-        with open(self.container_output_file, "w", encoding="latin-1") as out:
+        with open(self.container_output_file, "wb") as out:
             with subprocess.Popen(self.cmd_container_execution, 
                                   stderr=subprocess.STDOUT, 
                                   stdout=out, 
@@ -171,4 +171,4 @@ class Udocker():
                     logger.get_logger().warning("Container timeout")
                     raise
         if os.path.isfile(self.container_output_file):
-            return utils.encode_to_base64(utils.read_file(self.container_output_file, file_encoding="latin-1"))
+            return utils.encode_to_base64(utils.read_file(self.container_output_file, file_mode="rb"))

@@ -31,10 +31,10 @@ Event identification flow:
          |
          V      
     Is APIGateway? --(yes)--> Read Body, Parameters
-         |
-        (no)
-         |
-         V
+         |                             |
+        (no)                         (then)
+         |-----------------------------|
+         V                               
      Read Event.
      Storage keys? --(yes)-->  Read keys (minio, s3, onedata)
          |
@@ -66,9 +66,9 @@ class EventProvider():
             # Check if the event comes from ApiGateway
             if self._is_api_gateway_event(event_info):
                 self.data = ApiGatewayEvent(event_info, self.tmp_dir_path)
-            elif self._has_known_storage_keys(event_info):
+            if self._has_known_storage_keys(event_info):
                 self.data = self._create_storage_event(event_info)
-            else:
+            if not self.data:
                 self.data = UnknownEvent(event_info, self.tmp_dir_path, is_json=True)
             # To finish we always save the JSON event
             file_path = join_paths(tmp_dir_path, "event.json")
