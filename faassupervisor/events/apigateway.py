@@ -68,6 +68,7 @@ API Gateway event example:
  'stageVariables': None}
  '''
 import base64
+import json
 import faassupervisor.utils as utils
 import faassupervisor.logger as logger
 
@@ -80,7 +81,7 @@ class ApiGatewayEvent():
         
     def _process_api_event(self):
         if self._is_post_request_with_body():
-            self.file_path = self._save_post_body()
+            self._process_request_body()
         if self._is_request_with_parameters():
             self._save_request_parameters()
         if hasattr(self, 'file_path'):
@@ -93,21 +94,15 @@ class ApiGatewayEvent():
     def _has_json_body(self):
         return self.event_info['headers']['Content-Type'].strip() == 'application/json'
 
-    def _save_post_body(self):
+    def _process_request_body(self):
         '''
         The received body must be a json or a base64 encoded file 
         '''
         if self._has_json_body():
-            file_path = self._save_json_body()
+            body = self.event_info['body']
+            self.event_info = body if type(body) == dict else json.loads(body)
         else:
-            file_path = self._save_body()
-        return file_path
-
-    def _save_json_body(self):
-        file_path = utils.join_paths(self.tmp_dir_path, "api_event.json")
-        logger.get_logger().info("Received JSON from POST request and saved it in path '{0}'".format(file_path))
-        utils.create_file_with_content(file_path, self.event_info['body'])
-        return file_path
+            self.file_path = self._save_body()
 
     def _save_body(self):
         file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")

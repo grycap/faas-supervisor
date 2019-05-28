@@ -97,7 +97,7 @@ class Supervisor():
         # Create output data providers
         for storage_id, storage_path in storage_paths.output.items():
             self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
-            logger.get_logger().info("Found '{}' output provider".format(self.input_data_providers[-1].type))
+            logger.get_logger().info("Found '{}' output provider".format(self.output_data_providers[-1].type))
         
     @excp.exception(logger.get_logger())
     def _parse_input(self):
@@ -141,12 +141,13 @@ class Supervisor():
             self._parse_input()
             self.supervisor.execute_function()
             self._parse_output()
+            logger.get_logger().info('Creating response')
+            return self.supervisor.create_response()
         except Exception as ex:
             logger.get_logger().exception(ex)
             logger.get_logger().error('Creating error response')
             return self.supervisor.create_error_response()
-        logger.get_logger().info('Creating response')
-        return self.supervisor.create_response()            
+
 
 def _is_batch_environment():
     return _get_supervisor_type() == 'BATCH'    

@@ -66,6 +66,7 @@ class EventProvider():
             # Check if the event comes from ApiGateway
             if self._is_api_gateway_event(event_info):
                 self.data = ApiGatewayEvent(event_info, self.tmp_dir_path)
+                event_info = self.data.event_info
             if self._has_known_storage_keys(event_info):
                 self.data = self._create_storage_event(event_info)
             if not self.data:
