@@ -13,10 +13,11 @@
 # limitations under the License.
 
 from botocore.exceptions import ClientError
+import faassupervisor.logger as logger
 import functools
 import sys
 
-def exception(logger):
+def exception():
     '''
     A decorator that wraps the passed in function and logs exceptions
     @param logger: The logging object
@@ -29,17 +30,18 @@ def exception(logger):
             except ClientError as ce:
                 print("There was an exception in {0}".format(func.__name__))
                 print(ce.response['Error']['Message'])
-                logger.error(ce)
+                logger.get_logger().error(ce)
                 sys.exit(1)
             except FaasSupervisorError as fse:
                 print(fse.args[0])
-                logger.error(fse)
+                logger.get_logger().error(fse)
                 # Finish the execution if it's an error
                 if 'Error' in fse.__class__.__name__:
                     sys.exit(1)
             except Exception as ex:
                 print("There was an unmanaged exception in {0}".format(func.__name__))
-                logger.error(ex)
+                print(ex)
+                logger.get_logger().error(ex)
                 sys.exit(1)
         return wrapper
     return decorator

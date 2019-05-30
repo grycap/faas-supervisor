@@ -22,29 +22,6 @@ import sys
 import tarfile
 import tempfile
 import uuid
-# import platform
-# from faassupervisor.exceptions import InvalidPlatformError
-#
-# def resource_path(relative_path, bin_path=None):
-#     """ Get absolute path to resource, works for dev and for PyInstaller """
-#     try:
-#         # PyInstaller creates a temp folder and stores path in _MEIPASS
-#         base_path = sys._MEIPASS
-#     except Exception:
-#         if bin_path:
-#             return bin_path
-#         else:
-#             base_path = os.path.abspath(".")
-#     return os.path.join(base_path, relative_path)
-#
-# def is_binary_execution():
-#     try:
-#         binary_env = sys._MEIPASS
-#         if platform.system().lower() != 'linux':
-#             raise InvalidPlatformError()
-#         return True
-#     except Exception:
-#         return False
 
 def get_stdin():
     return sys.stdin.read()
@@ -90,7 +67,7 @@ def encode_to_base64(value):
     return base64.b64encode(value)
 
 def decode_from_base64(value):
-    return value.decode()
+    return base64.b64decode(value)
 
 def dict_to_base64_string(value):
     return base64.b64encode(json.dumps(value)).decode("utf-8")
@@ -150,6 +127,8 @@ def create_folder(folder_name):
         
 def create_file_with_content(path, content, mode='w'):
     with open(path, mode) as f:
+        if isinstance(content, dict):
+            content = json.dumps(content)
         f.write(content)        
 
 def read_file(file_path, file_mode="r", file_encoding="utf-8"):

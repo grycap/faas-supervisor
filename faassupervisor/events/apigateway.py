@@ -72,21 +72,21 @@ import json
 import faassupervisor.utils as utils
 import faassupervisor.logger as logger
 
+
 class ApiGatewayEvent():
-     
+
     def __init__(self, event_info, tmp_dir_path):
         self.event_info = event_info
         self.tmp_dir_path = tmp_dir_path
+        self.file_path = ''
         self._process_api_event()
-        
+
     def _process_api_event(self):
         if self._is_post_request_with_body():
             self._process_request_body()
         if self._is_request_with_parameters():
             self._save_request_parameters()
-        if hasattr(self, 'file_path'):
-            utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
-        
+
     def _is_post_request_with_body(self):
         return self.event_info['httpMethod'] == 'POST' and \
                'body' in self.event_info and self.event_info['body']
@@ -96,23 +96,30 @@ class ApiGatewayEvent():
 
     def _process_request_body(self):
         '''
-        The received body must be a json or a base64 encoded file 
+        The received body must be a json or a base64 encoded file
         '''
         if self._has_json_body():
             body = self.event_info['body']
-            self.event_info = body if type(body) == dict else json.loads(body)
+            self.event_info = body if isinstance(body, dict) else json.loads(body)
         else:
-            self.file_path = self._save_body()
+            self._save_body()
 
     def _save_body(self):
-        file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")
-        logger.get_logger().info("Received file from POST request and saved it in path '{0}'".format(file_path))
-        utils.create_file_with_content(file_path, base64.b64decode(self.event_info['body']), mode='wb')
-        return file_path
-        
+        tmp_file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")
+        logger.get_logger().info("Received file from POST request")
+        logger.get_logger().info("File saved in path '{0}'".format(tmp_file_path))
+        utils.create_file_with_content(tmp_file_path,
+                                       base64.b64decode(self.event_info['body']),
+                                       mode='wb')
+        self.file_path = tmp_file_path
+        utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
+        logger.get_logger().info("INPUT_FILE_PATH set to '{}'".format(self.file_path))
+
+
     def _is_request_with_parameters(self):
-        return "queryStringParameters" in self.event_info and self.event_info["queryStringParameters"]
-        
+        return "queryStringParameters" in self.event_info \
+                and self.event_info["queryStringParameters"]
+
     def _save_request_parameters(self):
         # Add passed HTTP parameters to container variables
         for key, value in self.event_info["queryStringParameters"].items():
