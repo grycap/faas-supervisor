@@ -52,7 +52,7 @@ class EventProvider():
     '''
     Receives an event a creates the appropriate class
     '''
-    _event_type = {'ApiGatewayEvent' : 'APIGATEWAY',
+    _EVENT_TYPE = {'ApiGatewayEvent' : 'APIGATEWAY',
                    'MinioEvent' : 'MINIO',
                    'OnedataEvent' : 'ONEDATA',
                    'S3Event' : 'S3',
@@ -108,4 +108,4 @@ class EventProvider():
         return event_info['Records'][0]['eventSource'] == 'OneTrigger'        
 
     def get_event_type(self):
-        return self._event_type[type(self.data).__name__]
+        return self._EVENT_TYPE.get(type(self.data).__name__)

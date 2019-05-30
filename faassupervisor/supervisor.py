@@ -17,29 +17,31 @@ from faassupervisor.storage.auth import StorageAuthData
 from faassupervisor.storage.path import StoragePathData
 from faassupervisor.storage.storage import StorageProvider
 import abc
-import faassupervisor.exceptions as excp
+from faassupervisor.exceptions import exception, InvalidSupervisorTypeError
 import faassupervisor.logger as logger
 import faassupervisor.utils as utils
 import importlib
+
 
 class SupervisorInterface(metaclass=abc.ABCMeta):
     ''' All the different supervisors must inherit from this class
     to ensure that the commands are defined consistently'''
 
-    @abc.abstractmethod    
+    @abc.abstractmethod
     def execute_function(self):
         pass
-    
-    @abc.abstractmethod    
+
+    @abc.abstractmethod
     def create_response(self):
         pass
-    
-    @abc.abstractmethod    
+
+    @abc.abstractmethod
     def create_error_response(self, message, status_code):
         pass
 
+
 class Supervisor():
-    
+
     supervisor_type = { 'LAMBDA': {'module' : 'faassupervisor.faas.aws.lambda_.supervisor',
                                    'class_name' : 'LambdaSupervisor'},
                         'BATCH': {'module' : 'faassupervisor.faas.aws.batch.supervisor',
@@ -60,8 +62,8 @@ class Supervisor():
         # Dynamically loads the module and the supervisor class needed
         module = importlib.import_module(self.supervisor_type[typ]['module'])
         class_ = getattr(module, self.supervisor_type[typ]['class_name'])
-        self.supervisor = class_(**kwargs)        
-        
+        self.supervisor = class_(**kwargs)
+
     def _create_tmp_dirs(self):
         if _is_batch_environment():
             if utils.get_environment_variable("STEP") == "INIT":
@@ -74,17 +76,17 @@ class Supervisor():
             self.output_tmp_dir = utils.create_tmp_dir()
             utils.set_environment_variable("TMP_INPUT_DIR", self.input_tmp_dir.name)
             utils.set_environment_variable("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
-        
+
     def _get_input_dir(self):
         if _is_batch_environment():
             return utils.get_environment_variable("TMP_INPUT_DIR")
         return self.input_tmp_dir.name
-    
+
     def _get_output_dir(self):
         if _is_batch_environment():
             return utils.get_environment_variable("TMP_OUTPUT_DIR")
         return self.output_tmp_dir.name
-        
+
     def _create_storage_providers(self):
         logger.get_logger().info("Reading STORAGE_AUTH variables")
         storage_auths = StorageAuthData()
@@ -98,11 +100,11 @@ class Supervisor():
         for storage_id, storage_path in storage_paths.output.items():
             self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
             logger.get_logger().info("Found '{}' output provider".format(self.output_data_providers[-1].type))
-        
-    @excp.exception(logger.get_logger())
+
+    @exception()
     def _parse_input(self):
         '''
-        Download input data from storage provider or 
+        Download input data from storage provider or
         save data from POST request
         '''
         if _is_batch_environment():
@@ -111,11 +113,11 @@ class Supervisor():
                 return
             # Manage batch extra steps
             self.supervisor.parse_input()
-        
+
         # event_type could be: 'APIGATEWAY'|'MINIO'|'ONEDATA'|'S3'|'UNKNOWN'
         event_type = self.event.get_event_type()
-        logger.get_logger().info("Downloading input file from event type '{}'".format(event_type))
         if event_type != 'APIGATEWAY' and event_type != 'UNKNOWN':
+            logger.get_logger().info("Downloading input file from event type '{}'".format(event_type))
             for data_provider in self.input_data_providers:
                 # data_provider.type could be: 'MINIO'|'ONEDATA'|'S3'
                 if data_provider.type == event_type:
@@ -124,17 +126,17 @@ class Supervisor():
                         utils.set_environment_variable("INPUT_FILE_PATH", input_file_path)
                         logger.get_logger().info("INPUT_FILE_PATH variable set to '{}'".format(input_file_path))
                     break
-    
-    @excp.exception(logger.get_logger())
+
+    @exception()
     def _parse_output(self):
         # Don't upload anything if not END step
         if _is_batch_environment() and utils.get_environment_variable("STEP") != "END":
             return
-        
+
         for data_provider in self.output_data_providers:
             data_provider.upload_output(self._get_output_dir())
-            
-    @excp.exception(logger.get_logger())
+
+    @exception()
     def run(self):
         try:
             self._create_storage_providers()
@@ -150,17 +152,20 @@ class Supervisor():
 
 
 def _is_batch_environment():
-    return _get_supervisor_type() == 'BATCH'    
-    
+    return _get_supervisor_type() == 'BATCH'
+
+
 def _get_supervisor_type():
     typ = utils.get_environment_variable("SUPERVISOR_TYPE")
     _is_allowed_environment(typ)
     return typ
 
-@excp.exception(logger.get_logger())
+
+@exception()
 def _is_allowed_environment(typ):
     if typ not in Supervisor.supervisor_type:
-        raise excp.InvalidSupervisorTypeError(sup_typ=typ)
+        raise InvalidSupervisorTypeError(sup_typ=typ)
+
 
 def _start_supervisor(**kwargs):
     logger.configure_logger()
@@ -168,11 +173,13 @@ def _start_supervisor(**kwargs):
     supervisor = Supervisor(typ, **kwargs)
     return supervisor.run()
 
+
 def python_main(**kwargs):
     ''' Called when running from a Python environment.
     Receives the input from the method arguments.
     '''
     return _start_supervisor(**kwargs)
+
 
 def main():
     ''' Called when running as binary.
@@ -180,6 +187,7 @@ def main():
     '''
     kwargs = {'event': utils.get_stdin()}
     return _start_supervisor(**kwargs)
-    
+
+
 if __name__ == "__main__":
     main()
