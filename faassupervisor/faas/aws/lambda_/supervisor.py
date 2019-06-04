@@ -11,83 +11,78 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module with all the classes and methods
+related with the AWS Lambda supervisor."""
 
+import subprocess
+import traceback
 from faassupervisor.faas.aws.batch.batch import Batch
 from faassupervisor.faas.aws.lambda_.function import LambdaInstance
 from faassupervisor.faas.aws.lambda_.udocker import Udocker
-from faassupervisor.supervisor import SupervisorInterface
-import faassupervisor.logger as logger
-import faassupervisor.utils as utils
-import json
-import subprocess
-import traceback
+from faassupervisor.faas.default import DefaultSupervisor
+from faassupervisor.logger import get_logger
+from faassupervisor.utils import SysUtils, StrUtils
 
 
-class LambdaSupervisor(SupervisorInterface):
+class LambdaSupervisor(DefaultSupervisor):
+    """Supervisor class used in the Lambda environment."""
 
-    @utils.lazy_property
-    def batch(self):
-        batch = Batch(self.lambda_instance)
-        return batch
-
-    @utils.lazy_property
-    def udocker(self):
-        udocker = Udocker(self.lambda_instance)
-        return udocker
+    _BATCH_EXECUTION = "batch"
+    _LAMBDA_BATCH_EXECUTION = "lambda-batch"
 
     def __init__(self, **kwargs):
-        logger.get_logger().info('SUPERVISOR: Initializing AWS Lambda supervisor')
+        get_logger().info('SUPERVISOR: Initializing AWS Lambda supervisor')
         self.lambda_instance = LambdaInstance(kwargs['event'], kwargs['context'])
         self.body = {}
 
     def _is_batch_execution(self):
-        return utils.get_environment_variable("EXECUTION_MODE") == "batch"
+        return SysUtils.get_env_var("EXECUTION_MODE") == self._BATCH_EXECUTION
+
+    def _is_lambda_batch_execution(self):
+        return SysUtils.get_env_var("EXECUTION_MODE") == self._LAMBDA_BATCH_EXECUTION
 
     def _execute_batch(self):
-        batch_ri = self.batch.invoke_batch_function()
-        batch_logs = "Check batch logs with: \n  scar log -n {0} -ri {1}".format(self.lambda_instance.function_name, batch_ri)
+        batch_ri = Batch(self.lambda_instance).invoke_batch_function()
+        batch_logs = "Check batch logs with:\n"
+        batch_logs += "  scar log -n {0} -ri {1}".format(self.lambda_instance.get_function_name(),
+                                                         batch_ri)
         self.body["udocker_output"] = "Job delegated to batch.\n{0}".format(batch_logs)
 
     def _execute_udocker(self):
         try:
-            udocker_output = self.udocker.launch_udocker_container()
-            self.body["udocker_output"] = udocker_output
-            logger.get_logger().debug("CONTAINER OUTPUT:\n {}".format(
-                utils.decode_from_base64(
-                    udocker_output.decode('latin-1'))))
+            udocker = Udocker(self.lambda_instance)
+            udocker.prepare_container()
+            self.body["udocker_output"] = udocker.launch_udocker_container()
+            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"])
         except subprocess.TimeoutExpired:
-            logger.get_logger().warning("Container execution timed out")
-            if(utils.get_environment_variable("EXECUTION_MODE") == "lambda-batch"):
+            get_logger().warning("Container execution timed out")
+            if self._is_lambda_batch_execution():
                 self._execute_batch()
-
-    ##################################################################
-    # # The methods below must be defined for the supervisor to work ##
-    ##################################################################
 
     def execute_function(self):
         if self._is_batch_execution():
             self._execute_batch()
         else:
-            self.udocker.prepare_container()
             self._execute_udocker()
 
     def create_error_response(self):
         exception_msg = traceback.format_exc()
-        logger.get_logger().error("Exception launched:\n {0}".format(exception_msg))
+        get_logger().error("Exception launched:\n %s", exception_msg)
         return {"statusCode" : 500,
                 "headers" : {
-                    "amz-lambda-request-id": self.lambda_instance.request_id,
-                    "amz-log-group-name": self.lambda_instance.log_group_name,
-                    "amz-log-stream-name": self.lambda_instance.log_stream_name },
-                "body" : json.dumps({"exception" : exception_msg}),
-                "isBase64Encoded" : False
+                    "amz-lambda-request-id": self.lambda_instance.get_request_id(),
+                    "amz-log-group-name": self.lambda_instance.get_log_group_name(),
+                    "amz-log-stream-name": self.lambda_instance.get_log_stream_name()},
+                "body" : StrUtils.dict_to_base64str({"exception" : exception_msg}),
+                "isBase64Encoded" : True,
                 }
 
     def create_response(self):
         return {"statusCode" : 200,
                 "headers" : {
-                    "amz-lambda-request-id": self.lambda_instance.request_id,
-                    "amz-log-group-name": self.lambda_instance.log_group_name,
-                    "amz-log-stream-name": self.lambda_instance.log_stream_name },
-                "body" : self.body["udocker_output"].decode('latin-1'),
-                "isBase64Encoded" : False }
+                    "amz-lambda-request-id": self.lambda_instance.get_request_id(),
+                    "amz-log-group-name": self.lambda_instance.get_log_group_name(),
+                    "amz-log-stream-name": self.lambda_instance.get_log_stream_name()},
+                "body" : StrUtils.str_to_base64str(self.body["udocker_output"]),
+                "isBase64Encoded" : True,
+                }

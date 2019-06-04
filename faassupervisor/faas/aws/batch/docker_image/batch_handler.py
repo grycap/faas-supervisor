@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module in charge of loading and executing the batch supervisor."""
 
-import faassupervisor.supervisor as supervisor
-import faassupervisor.utils as utils
 import json
+import faassupervisor.supervisor as supervisor
+from faassupervisor.utils import SysUtils
 
 if __name__ == "__main__":
-    kwargs = {"event" : json.loads(utils.get_environment_variable('AWS_LAMBDA_EVENT')),
-              "context" : json.loads(utils.get_environment_variable('AWS_LAMBDA_CONTEXT'))}
-    supervisor.python_main(**kwargs)
+
+    supervisor.python_main(event=json.loads(SysUtils.get_env_var('AWS_LAMBDA_EVENT')),
+                           context=json.loads(SysUtils.get_env_var('AWS_LAMBDA_CONTEXT')))

@@ -12,26 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
+"""
 Onedata event
+
 {"Key": "/my-onedata-space/files/file.txt",
  "Records": [{"objectKey": "file.txt",
               "objectId": "0000034500046EE9C6775...",
               "eventTime": "2019-02-07T09:51:04.347823",
               "eventSource": "OneTrigger"}]
-}              
-'''
-import faassupervisor.logger as logger
+}
+"""
 
-class OnedataEvent():
-    
-    def __init__(self, event_info):
-        self.event = event_info
-        self.event_records = event_info['Records'][0]
-        self.object_key = event_info['Key']
-        self._set_event_params()
-        logger.get_logger().info("Onedata event created")        
-        
+from faassupervisor.events.events import DefaultEvent
+
+
+class OnedataEvent(DefaultEvent):
+    """ Class to parse the Onedata event. """
+
+    # pylint: disable=too-few-public-methods
+
     def _set_event_params(self):
+        self.object_key = self.event['Key']
         self.file_name = self.event_records['objectKey']
-                

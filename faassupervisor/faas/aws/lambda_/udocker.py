@@ -11,164 +11,195 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""In this module are defined all the methods and classes used
+to manage a udocker container in the lambda environment."""
 
 import os
 import subprocess
-import socket
-import faassupervisor.utils as utils
-import faassupervisor.logger as logger
+from faassupervisor.exceptions import ContainerImageNotFoundError
+from faassupervisor.utils import SysUtils, FileUtils
+from faassupervisor.logger import get_logger
+from faassupervisor.exceptions import ContainerTimeoutExpiredWarning
+from faassupervisor.faas.aws.lambda_.function import get_function_ip
+
+
+def _parse_cont_env_var(key, value):
+    return ["--env", str(key) + '=' + str(value)] if key and value else []
+
+
+def _get_cont_env_vars():
+    result = []
+    for key, value in SysUtils.get_cont_env_vars().items():
+        result.extend(_parse_cont_env_var(key, value))
+    return result
+
+
+def _get_extra_payload_path():
+    ppath = []
+    if SysUtils.is_var_in_env('EXTRA_PAYLOAD'):
+        ppath += _parse_cont_env_var("EXTRA_PAYLOAD", SysUtils.get_env_var("EXTRA_PAYLOAD"))
+    return ppath
+
+
+def _get_iam_credentials():
+    credentials = []
+    iam_creds = {'CONT_VAR_AWS_ACCESS_KEY_ID':'AWS_ACCESS_KEY_ID',
+                 'CONT_VAR_AWS_SECRET_ACCESS_KEY':'AWS_SECRET_ACCESS_KEY',
+                 'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
+    # Add IAM credentials
+    for key, value in iam_creds.items():
+        if SysUtils.is_var_in_env(key):
+            credentials.extend(_parse_cont_env_var(value, SysUtils.get_env_var(key)))
+    return credentials
+
+
+def _get_input_file():
+    return _parse_cont_env_var("INPUT_FILE_PATH", SysUtils.get_env_var("INPUT_FILE_PATH"))
+
+
+def _get_output_dir():
+    return _parse_cont_env_var("TMP_OUTPUT_DIR", SysUtils.get_env_var("TMP_OUTPUT_DIR"))
+
 
 class Udocker():
+    """Class in charge of managing the udocker binary."""
 
-    container_name = "udocker_container"
-    script_exec = "/bin/sh"
+    _CONTAINER_OUTPUT_FILE = SysUtils.join_paths(SysUtils.get_env_var("TMP_OUTPUT_DIR"),
+                                                 "container-stdout")
+    _CONTAINER_NAME = "udocker_container"
+    _SCRIPT_EXEC = "/bin/sh"
 
     def __init__(self, lambda_instance):
         self.lambda_instance = lambda_instance
-        self.input_file_path = utils.get_environment_variable("INPUT_FILE_PATH") if utils.is_variable_in_environment("INPUT_FILE_PATH") else ""
-        
-        utils.create_folder(utils.get_environment_variable("UDOCKER_DIR"))
-        
-        self.udocker_exec = [utils.get_environment_variable("UDOCKER_EXEC")]
-        self.container_output_file = utils.join_paths(utils.get_environment_variable("TMP_OUTPUT_DIR"), "container-stdout.txt")
-        
-        if utils.is_variable_in_environment("IMAGE_ID"):
-            self.container_image_id = utils.get_environment_variable("IMAGE_ID")
-            self._set_udocker_commands()
-        else:
-            logger.get_logger().error("Container image id not specified")
-            raise Exception("Container image id not specified.")
-    
-    def _set_udocker_commands(self):
-        self.cmd_get_images = self.udocker_exec + ["images"]
-        self.cmd_load_image = self.udocker_exec + ["load", "-i", self.container_image_id]
-        self.cmd_download_image = self.udocker_exec + ["pull", self.container_image_id]
-        self.cmd_list_containers = self.udocker_exec + ["ps"]
-        self.cmd_create_container = self.udocker_exec + ["create", "--name={0}".format(self.container_name), self.container_image_id]
-        self.cmd_set_execution_mode = self.udocker_exec + ["setup", "--execmode=F1", self.container_name]
-        self.cmd_container_execution = self.udocker_exec + ["--quiet", "run"]
-        
-    def prepare_container(self):
-        self._create_image()
-        self._create_container()
-        self._create_command()        
+        # Create required udocker folder
+        FileUtils.create_folder(SysUtils.get_env_var("UDOCKER_DIR"))
+        # Init the udocker command that will be executed
+        self.udocker_exec = [SysUtils.get_env_var("UDOCKER_EXEC")]
+        self.cont_cmd = self.udocker_exec + ["--quiet", "run"]
+
+        self.container_image_id = SysUtils.get_env_var("IMAGE_ID")
+        if not self.container_image_id:
+            raise ContainerImageNotFoundError()
+
+    def _list_udocker_images_cmd(self):
+        return self.udocker_exec + ["images"]
+
+    def _load_udocker_image_cmd(self):
+        return self.udocker_exec + ["load", "-i", self.container_image_id]
+
+    def _download_udocker_image_cmd(self):
+        return self.udocker_exec + ["pull", self.container_image_id]
+
+    def _list_udocker_containers_cmd(self):
+        return self.udocker_exec + ["ps"]
+
+    def _create_udocker_container_cmd(self):
+        return self.udocker_exec + ["create",
+                                    "--name={0}".format(self._CONTAINER_NAME),
+                                    self.container_image_id]
+
+    def _set_udocker_container_execution_mode_cmd(self):
+        return self.udocker_exec + ["setup", "--execmode=F1", self._CONTAINER_NAME]
+
+    def _is_container_image_downloaded(self):
+        cmd_out = SysUtils.execute_command_and_return_output(self._list_udocker_images_cmd())
+        return self.container_image_id in cmd_out
+
+    def _load_local_container_image(self):
+        get_logger().info("Loading container image '%s'", self.container_image_id)
+        SysUtils.execute_cmd(self._load_udocker_image_cmd())
+
+    def _download_container_image(self):
+        get_logger().info("Pulling container '%s' from Docker Hub", self.container_image_id)
+        SysUtils.execute_cmd(self._download_udocker_image_cmd())
+
+    def _is_container_available(self):
+        cmd_out = SysUtils.execute_command_and_return_output(self._list_udocker_containers_cmd())
+        return self._CONTAINER_NAME in cmd_out
 
     def _create_image(self):
         if self._is_container_image_downloaded():
-            logger.get_logger().info("Container image '{0}' already available".format(self.container_image_id))
+            get_logger().info("Container image '%s' already available", self.container_image_id)
         else:
-            if utils.is_variable_in_environment("IMAGE_FILE"):
+            if SysUtils.is_var_in_env("IMAGE_FILE"):
                 self._load_local_container_image()
             else:
                 self._download_container_image()
-                
-    def _is_container_image_downloaded(self):
-        cmd_out = utils.execute_command_and_return_output(self.cmd_get_images)
-        return self.container_image_id in cmd_out                
-
-    def _load_local_container_image(self):
-        logger.get_logger().info("Loading container image '{0}'".format(self.container_image_id))
-        utils.execute_command(self.cmd_load_image)
-        
-    def _download_container_image(self):
-        logger.get_logger().info("Pulling container '{0}' from Docker Hub".format(self.container_image_id))
-        utils.execute_command(self.cmd_download_image)
 
     def _create_container(self):
         if self._is_container_available():
-            logger.get_logger().info("Container already available")
+            get_logger().info("Container already available")
         else:
-            logger.get_logger().info("Creating container based on image '{0}'.".format(self.container_image_id))
-            utils.execute_command(self.cmd_create_container)
-        utils.execute_command(self.cmd_set_execution_mode)
-
-    def _is_container_available(self):
-        cmd_out = utils.execute_command_and_return_output(self.cmd_list_containers)
-        return self.container_name in cmd_out
+            get_logger().info("Creating container based on image '%s'.", self.container_image_id)
+            SysUtils.execute_cmd(self._create_udocker_container_cmd())
+        SysUtils.execute_cmd(self._set_udocker_container_execution_mode_cmd())
 
     def _create_command(self):
         self._add_container_volumes()
         self._add_container_environment_variables()
         # Container running script
-        if hasattr(self.lambda_instance, 'script_path'): 
+        if hasattr(self.lambda_instance, 'script_path'):
             # Add script in memory as entrypoint
-            self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, self.lambda_instance.script_path), self.container_name]
+            self.cont_cmd += ["--entrypoint={0} {1}".format(self._SCRIPT_EXEC,
+                                                            self.lambda_instance.script_path),
+                              self._CONTAINER_NAME]
         # Container with args
         elif hasattr(self.lambda_instance, 'cmd_args'):
             # Add args
-            self.cmd_container_execution += [self.container_name]
-            self.cmd_container_execution += self.lambda_instance.cmd_args
+            self.cont_cmd += [self._CONTAINER_NAME]
+            self.cont_cmd += self.lambda_instance.cmd_args
         # Script to be executed every time (if defined)
         elif hasattr(self.lambda_instance, 'init_script_path'):
             # Add init script
-            self.cmd_container_execution += ["--entrypoint={0} {1}".format(self.script_exec, self.lambda_instance.init_script_path), self.container_name]
+            self.cont_cmd += ["--entrypoint={0} {1}".format(self._SCRIPT_EXEC,
+                                                            self.lambda_instance.init_script_path),
+                              self._CONTAINER_NAME]
         # Only container
         else:
-            self.cmd_container_execution += [self.container_name]
-    
+            self.cont_cmd += [self._CONTAINER_NAME]
+
     def _add_container_volumes(self):
-        self.cmd_container_execution.extend(["-v", self.lambda_instance.input_folder])
-        self.cmd_container_execution.extend(["-v", self.lambda_instance.output_folder])
-        self.cmd_container_execution.extend(["-v", "/dev", "-v", "/proc", "-v", "/etc/hosts", "--nosysdirs"])
-        if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
-            self.cmd_container_execution.extend(["-v", self.lambda_instance.permanent_folder])
+        self.cont_cmd.extend(["-v", SysUtils.get_env_var("TMP_INPUT_DIR")])
+        self.cont_cmd.extend(["-v", SysUtils.get_env_var("TMP_OUTPUT_DIR")])
+        self.cont_cmd.extend(["-v", "/dev", "-v", "/proc", "-v", "/etc/hosts", "--nosysdirs"])
+        if SysUtils.is_var_in_env('EXTRA_PAYLOAD'):
+            self.cont_cmd.extend(["-v", self.lambda_instance.PERMANENT_FOLDER])
 
     def _add_container_environment_variables(self):
-        self.cmd_container_execution += self._parse_container_environment_variable("REQUEST_ID", self.lambda_instance.request_id)
-        self.cmd_container_execution += self._parse_container_environment_variable("INSTANCE_IP", socket.gethostbyname(socket.gethostname()))        
-        self.cmd_container_execution += self._get_user_defined_variables()
-        self.cmd_container_execution += self._get_iam_credentials()        
-        self.cmd_container_execution += self._get_input_file()
-        self.cmd_container_execution += self._get_output_dir()
-        self.cmd_container_execution += self._get_extra_payload_path()
-       
-    def _parse_container_environment_variable(self, key, value):
-        return ["--env", str(key) + '=' + str(value)] if key and value else []
-        
-    def _get_user_defined_variables(self):
-        result = []
-        for key,value in utils._get_user_defined_variables().items():
-            result.extend(self._parse_container_environment_variable(key, value))
-        return result
+        self.cont_cmd += _parse_cont_env_var("REQUEST_ID", self.lambda_instance.get_request_id())
+        self.cont_cmd += _parse_cont_env_var("INSTANCE_IP", get_function_ip())
+        self.cont_cmd += _get_cont_env_vars()
+        self.cont_cmd += _get_iam_credentials()
+        self.cont_cmd += _get_input_file()
+        self.cont_cmd += _get_output_dir()
+        self.cont_cmd += _get_extra_payload_path()
 
-    def _get_iam_credentials(self):
-        credentials = []
-        iam_creds = {'CONT_VAR_AWS_ACCESS_KEY_ID':'AWS_ACCESS_KEY_ID',
-                     'CONT_VAR_AWS_SECRET_ACCESS_KEY':'AWS_SECRET_ACCESS_KEY',
-                     'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
-        # Add IAM credentials
-        for key,value in iam_creds.items():
-            if utils.is_variable_in_environment(key):
-                credentials.extend(self._parse_container_environment_variable(value, utils.get_environment_variable(key)))
-        return credentials
-
-    def _get_input_file(self):
-        return self._parse_container_environment_variable("INPUT_FILE_PATH", self.input_file_path)
-
-    def _get_output_dir(self):
-        return self._parse_container_environment_variable("TMP_OUTPUT_DIR", self.lambda_instance.output_folder)
-
-    def _get_extra_payload_path(self):
-        ppath = []
-        if utils.is_variable_in_environment('EXTRA_PAYLOAD'):
-            ppath += self._parse_container_environment_variable("EXTRA_PAYLOAD", utils.get_environment_variable("EXTRA_PAYLOAD"))
-        return ppath
+    def prepare_container(self):
+        """Prepares the environment to execute the udocker container."""
+        self._create_image()
+        self._create_container()
+        self._create_command()
 
     def launch_udocker_container(self):
-        remaining_seconds = self.lambda_instance.get_invocation_remaining_seconds()
-        logger.get_logger().info("Executing udocker container. Timeout set to {0} seconds".format(remaining_seconds))
-        logger.get_logger().debug("Udocker command: {0}".format(self.cmd_container_execution))
-        with open(self.container_output_file, "wb") as out:
-            with subprocess.Popen(self.cmd_container_execution, 
-                                  stderr=subprocess.STDOUT, 
-                                  stdout=out, 
-                                  preexec_fn=os.setsid) as process:
+        """Launches the udocker container.
+        If the execution time of the container exceeds the defined execution time,
+        the container is killed and a warning is raised."""
+        remaining_seconds = self.lambda_instance.get_remaining_time_in_seconds()
+        get_logger().info("Executing udocker container. Timeout set to '%d' seconds",
+                          remaining_seconds)
+        get_logger().debug("Udocker command: '%s'", self.cont_cmd)
+        with open(self._CONTAINER_OUTPUT_FILE, "wb") as out:
+            with subprocess.Popen(self.cont_cmd,
+                                  stderr=subprocess.STDOUT,
+                                  stdout=out,
+                                  start_new_session=True) as process:
                 try:
                     process.wait(timeout=remaining_seconds)
                 except subprocess.TimeoutExpired:
-                    logger.get_logger().info("Stopping process '{0}'".format(process))
+                    get_logger().info("Stopping process '%s'", process)
                     process.kill()
-                    logger.get_logger().warning("Container timeout")
-                    raise
-        if os.path.isfile(self.container_output_file):
-            return utils.encode_to_base64(utils.read_file(self.container_output_file, file_mode="rb"))
+                    raise ContainerTimeoutExpiredWarning()
+        udocker_output = ""
+        if os.path.isfile(self._CONTAINER_OUTPUT_FILE):
+            udocker_output = FileUtils.read_file(self._CONTAINER_OUTPUT_FILE, file_mode="rb")
+        return udocker_output

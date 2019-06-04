@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" Module to define classes and methods related
+with the API Gateway event.
 
-'''
 API Gateway event example:
+
 {'body': '/9j/4AAQSkZJRgAB5Wp//Z',
  'headers': {'Accept': '*/*',
              'Accept-Encoding': 'gzip, deflate',
@@ -66,14 +68,21 @@ API Gateway event example:
                     'stage': 'scar'},
  'resource': '/{proxy+}',
  'stageVariables': None}
- '''
+"""
+
 import base64
 import json
-import faassupervisor.utils as utils
-import faassupervisor.logger as logger
+from faassupervisor.utils import FileUtils, SysUtils
+from faassupervisor.logger import get_logger
 
 
 class ApiGatewayEvent():
+    """ Parse the API Gateway event and saves the body
+    (if exists) and the request parameters (if exists). """
+
+    # pylint: disable=too-few-public-methods
+
+    _JSON_BODY = 'application/json'
 
     def __init__(self, event_info, tmp_dir_path):
         self.event_info = event_info
@@ -88,16 +97,15 @@ class ApiGatewayEvent():
             self._save_request_parameters()
 
     def _is_post_request_with_body(self):
-        return self.event_info['httpMethod'] == 'POST' and \
-               'body' in self.event_info and self.event_info['body']
+        return self.event_info['httpMethod'] == 'POST' \
+               and 'body' in self.event_info \
+               and self.event_info['body']
 
     def _has_json_body(self):
-        return self.event_info['headers']['Content-Type'].strip() == 'application/json'
+        return self.event_info['headers']['Content-Type'].strip() == self._JSON_BODY
 
     def _process_request_body(self):
-        '''
-        The received body must be a json or a base64 encoded file
-        '''
+        """ The received body must be a json or a base64 encoded file. """
         if self._has_json_body():
             body = self.event_info['body']
             self.event_info = body if isinstance(body, dict) else json.loads(body)
@@ -105,16 +113,15 @@ class ApiGatewayEvent():
             self._save_body()
 
     def _save_body(self):
-        tmp_file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")
-        logger.get_logger().info("Received file from POST request")
-        logger.get_logger().info("File saved in path '{0}'".format(tmp_file_path))
-        utils.create_file_with_content(tmp_file_path,
-                                       base64.b64decode(self.event_info['body']),
-                                       mode='wb')
+        tmp_file_path = SysUtils.join_paths(self.tmp_dir_path, "api_event_file")
+        get_logger().info("Received file from POST request")
+        get_logger().info("File saved in path '%s'", tmp_file_path)
+        FileUtils.create_file_with_content(tmp_file_path,
+                                           base64.b64decode(self.event_info['body']),
+                                           mode='wb')
         self.file_path = tmp_file_path
-        utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
-        logger.get_logger().info("INPUT_FILE_PATH set to '{}'".format(self.file_path))
-
+        SysUtils.set_env_var("INPUT_FILE_PATH", self.file_path)
+        get_logger().info("INPUT_FILE_PATH set to '%s'", self.file_path)
 
     def _is_request_with_parameters(self):
         return "queryStringParameters" in self.event_info \
@@ -123,4 +130,4 @@ class ApiGatewayEvent():
     def _save_request_parameters(self):
         # Add passed HTTP parameters to container variables
         for key, value in self.event_info["queryStringParameters"].items():
-            utils.set_environment_variable("CONT_VAR_{}".format(key), value)
+            SysUtils.set_env_var("CONT_VAR_{}".format(key), value)

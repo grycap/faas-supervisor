@@ -11,32 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" Module used to define classes and
+methods related with unknown events. """
 
-import faassupervisor.logger as logger
-import faassupervisor.utils as utils
-import json
+from faassupervisor.logger import get_logger
+from faassupervisor.utils import SysUtils, FileUtils
+
 
 class UnknownEvent():
-    '''
-    Class to manage unknown events
-    '''    
-    def __init__(self, event, tmp_dir_path, is_json=False):
+    """ Class to manage unknown events. """
+
+    # pylint: disable=too-few-public-methods
+
+    _UNKNOWN_FILE_NAME = "event_file"
+
+    def __init__(self, event, tmp_dir_path):
         self.event = event
-        self.is_json = is_json
-        if is_json:
-            self.file_path = self._save_unknown_json_event(event, tmp_dir_path)
-        else:
-            self.file_path = self._save_unknown_event(event, tmp_dir_path)
-        utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
-        
-    def _save_unknown_json_event(self, event, tmp_dir_path):
-        file_path = utils.join_paths(tmp_dir_path, "event.json")
-        utils.create_file_with_content(file_path, json.dumps(event))
-        logger.get_logger().info("Received unknown JSON event and saved it in path '{0}'".format(file_path))    
-        return file_path
-    
-    def _save_unknown_event(self, event, tmp_dir_path):
-        file_path = utils.join_paths(tmp_dir_path, "event_file")
-        utils.create_file_with_content(file_path, event)
-        logger.get_logger().info("Received unknown event and saved it in path '{0}'".format(file_path))    
+        self.tmp_dir_path = tmp_dir_path
+        self.file_path = self._save_unknown_event()
+        SysUtils.set_env_var("INPUT_FILE_PATH", self.file_path)
+        get_logger().info("INPUT_FILE_PATH set to '%s'", self.file_path)
+
+    def _save_unknown_event(self):
+        """ Stores the unknown event and return the file path where the file is stored. """
+        file_path = SysUtils.join_paths(self.tmp_dir_path, self._UNKNOWN_FILE_NAME)
+        FileUtils.create_file_with_content(file_path, self.event)
+        get_logger().info("Received unknown event and saved it in path '%s'", file_path)
         return file_path

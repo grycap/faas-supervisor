@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-'''
+"""
 S3 event exaple:
+
 {'Records': [{'awsRegion': 'us-east-1',
               'eventName': 'ObjectCreated:Put',
               'eventSource': 'aws:s3',
@@ -33,23 +33,18 @@ S3 event exaple:
                      's3SchemaVersion': '1.0'},
               'userIdentity': {'principalId': 'AWS:XXXXX'}}]}
 
-'''
+"""
 from urllib.parse import unquote_plus
-import faassupervisor.logger as logger
+from faassupervisor.events.events import DefaultEvent
 
-class S3Event():
-    
-    def __init__(self, event_info):
-        self.event = event_info
-        self.event_records = event_info['Records'][0]
-        self._set_event_params()
-        logger.get_logger().info("S3 event created")
-        
+
+class S3Event(DefaultEvent):
+    """ Class to parse the S3 event. """
+
+    # pylint: disable=too-few-public-methods
+
     def _set_event_params(self):
         self.bucket_arn = self.event_records['s3']['bucket']['arn']
         self.bucket_name = self.event_records['s3']['bucket']['name']
         self.object_key = unquote_plus(self.event_records['s3']['object']['key'])
         self.file_name = self.object_key.split('/')[-1]
-        
-        
-        

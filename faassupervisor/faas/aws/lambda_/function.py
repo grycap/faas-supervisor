@@ -11,45 +11,78 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module in charge of managing the dynamic
+data created when a Lambda function is invoked."""
 
-import faassupervisor.utils as utils
 import json
-from shutil import copyfile
+import socket
+from faassupervisor.utils import SysUtils, FileUtils, StrUtils
+
+def get_function_ip():
+    """Returns the IP of the invoked function."""
+    return socket.gethostbyname(socket.gethostname())
 
 class LambdaInstance():
+    """Stores and manages the Lambda invocation information."""
+
+    PERMANENT_FOLDER = "/var/task"
 
     def __init__(self, event, context):
         self.raw_event = event
         self.context = context
-        self.request_id = context.aws_request_id
-        utils.set_environment_variable('AWS_LAMBDA_REQUEST_ID', context.aws_request_id)
-        self.memory = int(context.memory_limit_in_mb)
-        self.arn = context.invoked_function_arn
-        self.function_name = context.function_name
-        self.log_group_name = self.context.log_group_name
-        self.log_stream_name = self.context.log_stream_name  
-        self.permanent_folder = "/var/task"
         self._set_tmp_folders()
-        
+        self._parse_exec_script_and_commands()
+        self._set_lambda_env_vars()
+
+    def _set_tmp_folders(self):
+        self.input_folder = SysUtils.get_env_var("TMP_INPUT_DIR")
+        self.output_folder = SysUtils.get_env_var("TMP_OUTPUT_DIR")
+
+    def _parse_exec_script_and_commands(self):
         # Check for script in function event
-        if utils.is_value_in_dict('script', self.raw_event): 
+        if 'script' in self.raw_event:
             self.script_path = "{0}/script.sh".format(self.input_folder)
-            script_content = utils.base64_to_utf8_string(self.raw_event['script'])
-            utils.create_file_with_content(self.script_path, script_content)
-        # Container with args
-        elif utils.is_value_in_dict('cmd_args', self.raw_event):
+            script_content = StrUtils.base64_to_str(self.raw_event['script'])
+            FileUtils.create_file_with_content(self.script_path, script_content)
+        # Container invoked with arguments
+        elif 'cmd_args' in self.raw_event:
             # Add args
             self.cmd_args = json.loads(self.raw_event['cmd_args'])
         # Script to be executed every time (if defined)
-        elif utils.is_variable_in_environment('INIT_SCRIPT_PATH'):
+        elif SysUtils.is_var_in_env('INIT_SCRIPT_PATH'):
             # Add init script
             self.init_script_path = "{0}/init_script.sh".format(self.input_folder)
-            copyfile(utils.get_environment_variable("INIT_SCRIPT_PATH"), self.init_script_path)    
+            FileUtils.cp_file(SysUtils.get_env_var("INIT_SCRIPT_PATH"), self.init_script_path)
 
-    def _set_tmp_folders(self):
-        self.input_folder = utils.get_environment_variable("TMP_INPUT_DIR")
-        self.output_folder = utils.get_environment_variable("TMP_OUTPUT_DIR")
+    def _set_lambda_env_vars(self):
+        SysUtils.set_env_var('AWS_LAMBDA_REQUEST_ID', self.get_request_id())
 
-    def get_invocation_remaining_seconds(self):
-        return int(self.context.get_remaining_time_in_millis() / 1000) - int(utils.get_environment_variable('TIMEOUT_THRESHOLD'))
-    
+    def get_memory(self):
+        """Returns the amount of memory available to the function in MB."""
+        return int(self.context.memory_limit_in_mb)
+
+    def get_request_id(self):
+        """Returns the request id of the function invocation."""
+        return self.context.aws_request_id
+
+    def get_function_name(self):
+        """Returns the name of the function."""
+        return self.context.function_name
+
+    def get_log_group_name(self):
+        """Returns the name of the Amazon CloudWatch Logs group for the function."""
+        return self.context.log_group_name
+
+    def get_log_stream_name(self):
+        """Returns the name of the Amazon CloudWatch Logs stream for the function."""
+        return self.context.log_stream_name
+
+    def get_function_arn(self):
+        """Returns the invoked function ARN."""
+        return self.context.invoked_function_arn
+
+    def get_remaining_time_in_seconds(self):
+        """Returns the amount of time remaining for the invocation in seconds."""
+        remaining_time = int(self.context.get_remaining_time_in_millis() / 1000)
+        timeout_threshold = int(SysUtils.get_env_var('TIMEOUT_THRESHOLD'))
+        return remaining_time - timeout_threshold
