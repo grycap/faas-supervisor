@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""
-Minio event example:
+"""Minio event example:
 
 {"Key": "images/nature-wallpaper-229.jpg",
  "Records": [{"s3": {"object": {"key": "nature-wallpaper-229.jpg",
@@ -42,8 +40,9 @@ Minio event example:
               "userIdentity": {"principalId": "minio"}}],
  "EventName": "s3:ObjectCreated:Put"}
 """
+
 from urllib.parse import unquote_plus
-from faassupervisor.events.events import DefaultEvent
+from faassupervisor.events.default import DefaultEvent
 
 
 class MinioEvent(DefaultEvent):

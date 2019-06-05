@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-S3 event exaple:
+"""S3 event exaple:
 
 {'Records': [{'awsRegion': 'us-east-1',
               'eventName': 'ObjectCreated:Put',
@@ -35,7 +34,7 @@ S3 event exaple:
 
 """
 from urllib.parse import unquote_plus
-from faassupervisor.events.events import DefaultEvent
+from faassupervisor.events.default import DefaultEvent
 
 
 class S3Event(DefaultEvent):

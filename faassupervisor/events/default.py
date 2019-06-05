@@ -11,24 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Onedata event
+""" This module provides a generic
+class used to define events."""
 
-{"Key": "/my-onedata-space/files/file.txt",
- "Records": [{"objectKey": "file.txt",
-              "objectId": "0000034500046EE9C6775...",
-              "eventTime": "2019-02-07T09:51:04.347823",
-              "eventSource": "OneTrigger"}]
-}
-"""
-
-from faassupervisor.events.default import DefaultEvent
+import abc
 
 
-class OnedataEvent(DefaultEvent):
-    """ Class to parse the Onedata event. """
+class DefaultEvent(metaclass=abc.ABCMeta):
+    """ All the different event parsers must inherit from this class
+    to ensure that the commands are defined consistently. """
 
     # pylint: disable=too-few-public-methods
 
+    def __init__(self, event_info):
+        self.event = event_info
+        self.event_records = event_info['Records'][0]
+        self._set_event_params()
+
+    @abc.abstractmethod
     def _set_event_params(self):
-        self.object_key = self.event['Key']
-        self.file_name = self.event_records['objectKey']
+        """ Generic method to be implemented by all the event parsers. """

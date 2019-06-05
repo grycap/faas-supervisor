@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""
-Module used to parse the event received by the supervisor.
+""" Module used to parse the event received by the supervisor.
 
 Event identification flow:
 
@@ -38,7 +36,6 @@ Event identification flow:
     info as file
 """
 
-import abc
 import json
 from faassupervisor.events.apigateway import ApiGatewayEvent
 from faassupervisor.events.minio import MinioEvent
@@ -56,22 +53,6 @@ def _has_storage_info(event_info):
     return 'Records' in event_info \
            and event_info['Records'] \
            and 'eventSource' in event_info['Records'][0]
-
-
-class DefaultEvent(metaclass=abc.ABCMeta):
-    """ All the different event parsers must inherit from this class
-    to ensure that the commands are defined consistently. """
-
-    # pylint: disable=too-few-public-methods
-
-    def __init__(self, event_info):
-        self.event = event_info
-        self.event_records = event_info['Records'][0]
-        self._set_event_params()
-
-    @abc.abstractmethod
-    def _set_event_params(self):
-        """ Generic method to be implemented by all the event parsers. """
 
 
 class EventProvider():
