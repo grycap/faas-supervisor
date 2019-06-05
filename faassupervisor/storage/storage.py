@@ -44,22 +44,25 @@ class StorageProvider():
         self.provider = _get_storage_provider(storage_auth, storage_path)
 
     def download_input(self, event, input_dir_path):
-        """
-        Receives the event where the file information is and
+        """Receives the event where the file information is and
         the tmp_dir_path where to store the downloaded file.
 
-        Returns the file path where the file is downloaded.
-        """
+        Returns the file path where the file is downloaded."""
+
         return self.provider.download_file(event, input_dir_path)
 
     def upload_output(self, output_dir_path):
-        """
-        Receives the tmp_dir_path where the files to upload are stored and
-        uploads all the files found there.
-        """
+        """Receives the tmp_dir_path where the files to upload are stored and
+        uploads all the files found there."""
+
         get_logger().info("Searching for files to upload in folder '%s'", output_dir_path)
         output_files = FileUtils.get_all_files_in_dir(output_dir_path)
         get_logger().info("Found the following files to upload: '%s'", output_files)
         for file_path in output_files:
             file_name = file_path.replace("{0}/".format(output_dir_path), "")
             self.provider.upload_file(file_path, file_name)
+
+    def get_type(self):
+        """Returns the name of the class of the created provider."""
+        
+        return self.provider.__class__.__name__

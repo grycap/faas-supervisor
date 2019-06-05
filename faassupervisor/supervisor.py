@@ -81,12 +81,12 @@ class Supervisor():
         for storage_id, storage_path in storage_paths.get_input_data():
             self.input_data_providers.append(
                 StorageProvider(storage_auths.get_auth_data(storage_id), storage_path))
-            get_logger().info("Found '%s' input provider", self.input_data_providers[-1].type)
+            get_logger().info("Found '%s' input provider", self.input_data_providers[-1].get_type())
         # Create output data providers
         for storage_id, storage_path in storage_paths.get_output_data():
             self.output_data_providers.append(
                 StorageProvider(storage_auths.get_auth_data(storage_id), storage_path))
-            get_logger().info("Found '%s' output provider", self.output_data_providers[-1].type)
+            get_logger().info("Found '%s' output provider", self.output_data_providers[-1].get_type())
 
     @exception()
     def _parse_input(self):
@@ -105,9 +105,9 @@ class Supervisor():
         if event_type not in ('APIGATEWAY', 'UNKNOWN'):
             get_logger().info("Downloading input file from event type '%s'", event_type)
             for data_provider in self.input_data_providers:
-                # data_provider.type could be: 'MINIO'|'ONEDATA'|'S3'
+                # data_provider.get_type() could be: 'MINIO'|'ONEDATA'|'S3'
                 # Match the received event with the data provider
-                if data_provider.type == event_type:
+                if data_provider.get_type() == event_type:
                     input_file_path = data_provider.download_input(self.event,
                                                                    self._get_input_dir())
                     if input_file_path:
