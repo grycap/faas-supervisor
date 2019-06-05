@@ -81,12 +81,14 @@ class Supervisor():
         for storage_id, storage_path in storage_paths.get_input_data():
             self.input_data_providers.append(
                 StorageProvider(storage_auths.get_auth_data(storage_id), storage_path))
-            get_logger().info("Found '%s' input provider", self.input_data_providers[-1].get_type())
+            get_logger().info("Found '%s' input provider",
+                              self.input_data_providers[-1].get_type())
         # Create output data providers
         for storage_id, storage_path in storage_paths.get_output_data():
             self.output_data_providers.append(
                 StorageProvider(storage_auths.get_auth_data(storage_id), storage_path))
-            get_logger().info("Found '%s' output provider", self.output_data_providers[-1].get_type())
+            get_logger().info("Found '%s' output provider",
+                              self.output_data_providers[-1].get_type())
 
     @exception()
     def _parse_input(self):

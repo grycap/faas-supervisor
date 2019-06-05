@@ -64,5 +64,5 @@ class StorageProvider():
 
     def get_type(self):
         """Returns the name of the class of the created provider."""
-        
+
         return self.provider.__class__.__name__

@@ -47,14 +47,13 @@ class Batch():
     def _set_container_variables(self, step):
         self._add_batch_job_env_var("STEP", step)
         self._add_batch_job_env_var("SCRIPT", self.script)
-        self._add_batch_job_env_var("AWS_LAMBDA_FUNCTION_NAME",
-                                    self.lambda_instance.get_function_name())
+        self._add_batch_job_env_var("AWS_LAMBDA_FUNCTION_NAME", self.context.get("function_name"))
         self._add_batch_job_env_var("AWS_LAMBDA_EVENT", json.dumps(self.lambda_instance.raw_event))
         self._add_batch_job_env_var("AWS_LAMBDA_CONTEXT", json.dumps(self.context))
-        self._add_batch_job_env_var("AWS_LAMBDA_REQUEST_ID", self.lambda_instance.get_request_id())
+        self._add_batch_job_env_var("AWS_LAMBDA_REQUEST_ID", self.context.get("aws_request_id"))
         self._add_batch_job_env_var("TMP_INPUT_DIR", SysUtils.get_env_var("TMP_INPUT_DIR"))
         self._add_batch_job_env_var("TMP_OUTPUT_DIR", SysUtils.get_env_var("TMP_OUTPUT_DIR"))
-        self._add_batch_job_env_var("INPUT_FILE_PATH", self.input_file_path)
+        self._add_batch_job_env_var("INPUT_FILE_PATH", SysUtils.get_env_var("INPUT_FILE_PATH"))
 
         self._add_storage_variables()
         self._add_container_variables()
@@ -80,20 +79,20 @@ class Batch():
             "containerProperties": {
                 "image": self.scar_batch_io_image_id,
                 "vcpus": 1,
-                "memory": self.lambda_instance.get_memory(),
+                "memory": self.context.get("memory_limit_in_mb"),
                 "command": ["scar-batch-io"],
                 "volumes": [
-                    {"host": {"sourcePath": self.lambda_instance.input_folder},
+                    {"host": {"sourcePath": SysUtils.get_env_var("TMP_INPUT_DIR")},
                      "name": "TMP_INPUT_DIR"},
-                    {"host":{"sourcePath": self.lambda_instance.output_folder},
+                    {"host":{"sourcePath": SysUtils.get_env_var("TMP_OUTPUT_DIR")},
                      "name": "TMP_OUTPUT_DIR"},
                 ],
                 "environment" : self.batch_job_env_vars,
                 'mountPoints': [
                     {"sourceVolume": "TMP_INPUT_DIR",
-                     "containerPath": self.lambda_instance.input_folder},
+                     "containerPath": SysUtils.get_env_var("TMP_INPUT_DIR")},
                     {"sourceVolume": "TMP_OUTPUT_DIR",
-                     "containerPath": self.lambda_instance.output_folder},
+                     "containerPath": SysUtils.get_env_var("TMP_OUTPUT_DIR")},
                 ],
             },
         }
@@ -102,7 +101,7 @@ class Batch():
             job_def_args["containerProperties"]["image"] = SysUtils.get_env_var("IMAGE_ID")
             if self.script:
                 job_def_args["containerProperties"]["command"] = \
-                    ["{0}/script.sh".format(self.lambda_instance.input_folder)]
+                    ["{0}/script.sh".format(SysUtils.get_env_var("TMP_INPUT_DIR"))]
 
         return job_def_args
 
@@ -125,11 +124,11 @@ class Batch():
         variables = []
         self._add_batch_job_env_var("STEP", step)
         self._add_batch_job_env_var("SCRIPT", self._get_user_script())
-        self._add_batch_job_env_var("AWS_LAMBDA_FUNCTION_NAME", self.lambda_instance.function_name)
-        self._add_batch_job_env_var("INPUT_FILE_PATH", self.input_file_path)
-        self._add_batch_job_env_var("TMP_INPUT_DIR", self.lambda_instance.input_folder)
-        self._add_batch_job_env_var("TMP_OUTPUT_DIR", self.lambda_instance.output_folder)
-        self._add_batch_job_env_var("AWS_LAMBDA_REQUEST_ID", self.lambda_instance.get_request_id())
+        self._add_batch_job_env_var("AWS_LAMBDA_FUNCTION_NAME", self.context.get("function_name"))
+        self._add_batch_job_env_var("INPUT_FILE_PATH", SysUtils.get_env_var("INPUT_FILE_PATH"))
+        self._add_batch_job_env_var("TMP_INPUT_DIR", SysUtils.get_env_var("TMP_INPUT_DIR"))
+        self._add_batch_job_env_var("TMP_OUTPUT_DIR", SysUtils.get_env_var("TMP_OUTPUT_DIR"))
+        self._add_batch_job_env_var("AWS_LAMBDA_REQUEST_ID", self.context.get("aws_request_id"))
 
         for key, val in SysUtils.get_all_env_vars().items():
             if key.startswith('STORAGE_'):
@@ -140,14 +139,14 @@ class Batch():
         return variables
 
     def _get_job_args(self, step, job_id=None):
-        job_name = self.lambda_instance.function_name
+        job_name = self.context.get("function_name")
         if step == 'INIT':
             job_name = "{}-in".format(job_name)
         elif step == 'END':
             job_name = "{}-out".format(job_name)
         job_def = {"jobDefinition" : job_name,
                    "jobName" : job_name,
-                   "jobQueue" : self.lambda_instance.function_name,
+                   "jobQueue" : self.context.get("function_name"),
                    "containerOverrides" : {
                        "environment" : self._get_job_env_vars(step)}
                   }
@@ -170,9 +169,9 @@ class Batch():
     def invoke_batch_function(self):
         """Method that creates batch jobs and invokes them from a lambda instance."""
         # Register batch Jobs
-        self._register_job_definition("{}-in".format(self.lambda_instance.function_name), "INIT")
-        self._register_job_definition(self.lambda_instance.function_name, "MED")
-        self._register_job_definition("{}-out".format(self.lambda_instance.function_name), "END")
+        self._register_job_definition("{}-in".format(self.context.get("function_name")), "INIT")
+        self._register_job_definition(self.context.get("function_name"), "MED")
+        self._register_job_definition("{}-out".format(self.context.get("function_name")), "END")
         # Submit batch jobs
         job_id = self._submit_init_job()
         lambda_job_id = self._submit_lambda_job(job_id)
