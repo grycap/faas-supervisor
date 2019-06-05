@@ -115,7 +115,7 @@ class Batch():
         if SysUtils.is_var_in_env('INIT_SCRIPT_PATH'):
             file_content = FileUtils.read_file(SysUtils.get_env_var('INIT_SCRIPT_PATH'),
                                                file_mode='rb')
-            script = StrUtils.str_to_base64str(file_content)
+            script = StrUtils.bytes_to_base64str(file_content)
         if 'script' in self.lambda_instance.raw_event:
             script = self.lambda_instance.raw_event['script']
         return script

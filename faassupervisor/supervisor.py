@@ -109,7 +109,7 @@ class Supervisor():
             for data_provider in self.input_data_providers:
                 # data_provider.get_type() could be: 'MINIO'|'ONEDATA'|'S3'
                 # Match the received event with the data provider
-                if data_provider.get_type() == event_type:
+                if data_provider.get_type().upper() == event_type.upper():
                     input_file_path = data_provider.download_input(self.event,
                                                                    self._get_input_dir())
                     if input_file_path:

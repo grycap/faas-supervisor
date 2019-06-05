@@ -46,7 +46,7 @@ class LambdaSupervisor(DefaultSupervisor):
         batch_logs = "Check batch logs with:\n"
         batch_logs += "  scar log -n {0} -ri {1}".format(self.lambda_instance.get_function_name(),
                                                          batch_ri)
-        self.body["udocker_output"] = "Job delegated to batch.\n{0}".format(batch_logs)
+        self.body["udocker_output"] = b'"Job delegated to batch.\n{0}".format(batch_logs)'
 
     def _execute_udocker(self):
         try:
@@ -83,6 +83,6 @@ class LambdaSupervisor(DefaultSupervisor):
                     "amz-lambda-request-id": self.lambda_instance.get_request_id(),
                     "amz-log-group-name": self.lambda_instance.get_log_group_name(),
                     "amz-log-stream-name": self.lambda_instance.get_log_stream_name()},
-                "body" : StrUtils.str_to_base64str(self.body["udocker_output"]),
+                "body" : StrUtils.bytes_to_base64str(self.body["udocker_output"]),
                 "isBase64Encoded" : True,
                 }

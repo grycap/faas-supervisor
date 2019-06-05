@@ -196,7 +196,7 @@ class Udocker():
                     get_logger().info("Stopping process '%s'", process)
                     process.kill()
                     raise ContainerTimeoutExpiredWarning()
-        udocker_output = ""
+        udocker_output = b''
         if os.path.isfile(self._CONTAINER_OUTPUT_FILE):
             udocker_output = FileUtils.read_file(self._CONTAINER_OUTPUT_FILE, file_mode="rb")
         return udocker_output

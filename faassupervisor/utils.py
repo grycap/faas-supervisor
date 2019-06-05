@@ -159,14 +159,14 @@ class StrUtils():
     """Common methods for string management."""
 
     @staticmethod
-    def str_to_base64str(value, encoding='utf-8'):
+    def bytes_to_base64str(value, encoding='utf-8'):
         """Encodes string to base64 and returns another string."""
         return base64.b64encode(value).decode(encoding)
-
+    
     @staticmethod
     def dict_to_base64str(value, encoding='utf-8'):
         """Encodes a dictionary to base64 and returns a string."""
-        return base64.b64encode(json.dumps(value)).decode(encoding)
+        return base64.b64encode(json.dumps(value).encode('latin-1')).decode(encoding)
 
     @staticmethod
     def base64_to_str(value, encoding='utf-8'):
