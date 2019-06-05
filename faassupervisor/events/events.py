@@ -86,7 +86,7 @@ class EventProvider():
                 event_info = self.event.event_info
             if _has_storage_info(event_info):
                 self.event = self._get_storage_event(event_info)
-            if not self.event:
+            if not hasattr(self, 'event'):
                 self.event = UnknownEvent(event_info, self.tmp_dir_path)
 
         except ValueError as err:

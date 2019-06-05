@@ -75,7 +75,7 @@ class SysUtils():
     def get_cont_env_vars():
         """Returns the defined container environment variables."""
         user_vars = {}
-        for key in SysUtils.get_all_env_vars.keys():
+        for key in SysUtils.get_all_env_vars().keys():
             # Find global variables with the specified prefix
             if re.match("CONT_VAR_.*", key):
                 user_vars[key.replace("CONT_VAR_", "")] = SysUtils.get_env_var(key)
