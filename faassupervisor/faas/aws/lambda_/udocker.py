@@ -27,45 +27,10 @@ def _parse_cont_env_var(key, value):
     return ["--env", str(key) + '=' + str(value)] if key and value else []
 
 
-def _get_cont_env_vars():
-    result = []
-    for key, value in SysUtils.get_cont_env_vars().items():
-        result.extend(_parse_cont_env_var(key, value))
-    return result
-
-
-def _get_extra_payload_path():
-    ppath = []
-    if SysUtils.is_var_in_env('EXTRA_PAYLOAD'):
-        ppath += _parse_cont_env_var("EXTRA_PAYLOAD", SysUtils.get_env_var("EXTRA_PAYLOAD"))
-    return ppath
-
-
-def _get_iam_credentials():
-    credentials = []
-    iam_creds = {'CONT_VAR_AWS_ACCESS_KEY_ID':'AWS_ACCESS_KEY_ID',
-                 'CONT_VAR_AWS_SECRET_ACCESS_KEY':'AWS_SECRET_ACCESS_KEY',
-                 'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
-    # Add IAM credentials
-    for key, value in iam_creds.items():
-        if SysUtils.is_var_in_env(key):
-            credentials.extend(_parse_cont_env_var(value, SysUtils.get_env_var(key)))
-    return credentials
-
-
-def _get_input_file():
-    return _parse_cont_env_var("INPUT_FILE_PATH", SysUtils.get_env_var("INPUT_FILE_PATH"))
-
-
-def _get_output_dir():
-    return _parse_cont_env_var("TMP_OUTPUT_DIR", SysUtils.get_env_var("TMP_OUTPUT_DIR"))
-
-
 class Udocker():
     """Class in charge of managing the udocker binary."""
 
-    _CONTAINER_OUTPUT_FILE = SysUtils.join_paths(SysUtils.get_env_var("TMP_OUTPUT_DIR"),
-                                                 "container-stdout")
+    _CONTAINER_OUTPUT_FILE = SysUtils.join_paths(FileUtils.get_tmp_dir(), "container-stdout")
     _CONTAINER_NAME = "udocker_container"
     _SCRIPT_EXEC = "/bin/sh"
 
@@ -165,14 +130,46 @@ class Udocker():
         if SysUtils.is_var_in_env('EXTRA_PAYLOAD'):
             self.cont_cmd.extend(["-v", self.lambda_instance.PERMANENT_FOLDER])
 
+    def _add_cont_env_vars(self):
+        for key, value in SysUtils.get_cont_env_vars().items():
+            self.cont_cmd.extend(_parse_cont_env_var(key, value))
+
+    def _add_iam_credentials(self):
+        iam_creds = {'CONT_VAR_AWS_ACCESS_KEY_ID':'AWS_ACCESS_KEY_ID',
+                     'CONT_VAR_AWS_SECRET_ACCESS_KEY':'AWS_SECRET_ACCESS_KEY',
+                     'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
+        # Add IAM credentials
+        for key, value in iam_creds.items():
+            if SysUtils.is_var_in_env(key):
+                self.cont_cmd.extend(_parse_cont_env_var(value, SysUtils.get_env_var(key)))
+
+    def _add_input_file(self):
+        self.cont_cmd.extend(_parse_cont_env_var("INPUT_FILE_PATH",
+                                                 SysUtils.get_env_var("INPUT_FILE_PATH")))
+
+    def _add_output_dir(self):
+        self.cont_cmd.extend(_parse_cont_env_var("TMP_OUTPUT_DIR",
+                                                 SysUtils.get_env_var("TMP_OUTPUT_DIR")))
+
+    def _add_extra_payload_path(self):
+        self.cont_cmd.extend(_parse_cont_env_var("EXTRA_PAYLOAD",
+                                                 SysUtils.get_env_var("EXTRA_PAYLOAD")))
+
+    def _add_function_request_id(self):
+        self.cont_cmd.extend(_parse_cont_env_var("REQUEST_ID",
+                                                 self.lambda_instance.get_request_id()))
+
+    def _add_function_ip(self):
+        self.cont_cmd.extend(_parse_cont_env_var("INSTANCE_IP", get_function_ip()))
+
     def _add_container_environment_variables(self):
-        self.cont_cmd += _parse_cont_env_var("REQUEST_ID", self.lambda_instance.get_request_id())
-        self.cont_cmd += _parse_cont_env_var("INSTANCE_IP", get_function_ip())
-        self.cont_cmd += _get_cont_env_vars()
-        self.cont_cmd += _get_iam_credentials()
-        self.cont_cmd += _get_input_file()
-        self.cont_cmd += _get_output_dir()
-        self.cont_cmd += _get_extra_payload_path()
+        self._add_function_request_id()
+        self._add_function_ip()
+        self._add_cont_env_vars()
+        self._add_iam_credentials()
+        self._add_input_file()
+        self._add_output_dir()
+        self._add_extra_payload_path()
 
     def prepare_container(self):
         """Prepares the environment to execute the udocker container."""

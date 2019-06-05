@@ -139,6 +139,12 @@ class FileUtils():
         return tempfile.TemporaryDirectory()
 
     @staticmethod
+    def get_tmp_dir():
+        """Gets the directory where the temporal
+        folder of the system is located."""
+        return tempfile.gettempdir()
+
+    @staticmethod
     def get_all_files_in_dir(dir_path):
         """Returns a list with all the file paths in
         the specified directory and subdirectories."""
