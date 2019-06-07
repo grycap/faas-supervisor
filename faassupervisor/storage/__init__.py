@@ -32,16 +32,12 @@ def create_provider(storage_auth, storage_path=None):
     If not storage auth provided, use local storage."""
     if not storage_auth:
         provider = Local(storage_auth, storage_path)
-        get_logger().info("LOCAL storage provider created.")
     elif storage_auth.type == 'MINIO':
         provider = Minio(storage_auth, storage_path)
-        get_logger().info("MINIO storage provider created.")
     elif storage_auth.type == 'ONEDATA':
         provider = Onedata(storage_auth, storage_path)
-        get_logger().info("ONEDATA storage provider created.")
     elif storage_auth.type == 'S3':
         provider = S3(storage_auth, storage_path)
-        get_logger().info("S3 storage provider created.")
     else:
         raise InvalidStorageProviderError(storage_type=storage_auth.type)
     return provider
