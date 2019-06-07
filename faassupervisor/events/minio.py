@@ -42,13 +42,15 @@
 """
 
 from urllib.parse import unquote_plus
-from faassupervisor.events.default import DefaultEvent
+from faassupervisor.events.unknown import UnknownEvent
 
 
-class MinioEvent(DefaultEvent):
-    """ Class to parse the Minio event. """
+class MinioEvent(UnknownEvent):
+    """Class to parse the Minio event."""
 
     # pylint: disable=too-few-public-methods
+
+    _TYPE = 'MINIO'
 
     def _set_event_params(self):
         self.object_key = self.event['Key']

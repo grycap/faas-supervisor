@@ -14,7 +14,6 @@
 """In this module are defined all the methods and classes used
 to manage a udocker container in the lambda environment."""
 
-import os
 import subprocess
 from faassupervisor.exceptions import ContainerImageNotFoundError
 from faassupervisor.utils import SysUtils, FileUtils
@@ -197,6 +196,6 @@ class Udocker():
                     process.kill()
                     raise ContainerTimeoutExpiredWarning()
         udocker_output = b''
-        if os.path.isfile(self._CONTAINER_OUTPUT_FILE):
+        if FileUtils.is_file(self._CONTAINER_OUTPUT_FILE):
             udocker_output = FileUtils.read_file(self._CONTAINER_OUTPUT_FILE, file_mode="rb")
         return udocker_output

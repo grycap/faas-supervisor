@@ -16,7 +16,6 @@
 import base64
 import json
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -74,12 +73,20 @@ class SysUtils():
     @staticmethod
     def get_cont_env_vars():
         """Returns the defined container environment variables."""
-        user_vars = {}
-        for key in SysUtils.get_all_env_vars().keys():
+        return SysUtils.get_filtered_env_vars("CONT_VAR_")
+
+    @staticmethod
+    def get_filtered_env_vars(key_filter):
+        """Returns the global variables that start with the
+        key_filter provided and removes the filter used."""
+
+        size = len(key_filter)
+        env_vars = {}
+        for key, val in SysUtils.get_all_env_vars().items():
             # Find global variables with the specified prefix
-            if re.match("CONT_VAR_.*", key):
-                user_vars[key.replace("CONT_VAR_", "")] = SysUtils.get_env_var(key)
-        return user_vars
+            if key.startswith(key_filter):
+                env_vars[key[size:]] = val
+        return env_vars
 
     @staticmethod
     def execute_cmd(command):
@@ -154,6 +161,11 @@ class FileUtils():
                 files.append(SysUtils.join_paths(dirname, filename))
         return files
 
+    @staticmethod
+    def is_file(file_path):
+        """Test whether a path is a regular file."""
+        return os.path.isfile(file_path)
+
 
 class StrUtils():
     """Common methods for string management."""
@@ -162,7 +174,7 @@ class StrUtils():
     def bytes_to_base64str(value, encoding='utf-8'):
         """Encodes string to base64 and returns another string."""
         return base64.b64encode(value).decode(encoding)
-    
+
     @staticmethod
     def dict_to_base64str(value, encoding='utf-8'):
         """Encodes a dictionary to base64 and returns a string."""

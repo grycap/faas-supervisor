@@ -18,17 +18,24 @@ import abc
 
 
 class DefaultStorageProvider(metaclass=abc.ABCMeta):
-    """ All the different data providers must inherit from this class
-    to ensure that the commands are defined consistently. """
+    """All the different data providers must inherit from this class
+    to ensure that the commands are defined consistently."""
 
-    def __init__(self, storage_auth, storage_path):
-        self.storage_auth = storage_auth
-        self.storage_path = storage_path
+    _TYPE = 'DEFAULT'
+
+    def __init__(self, stg_auth, stg_path=None):
+        self.stg_auth = stg_auth
+        self.stg_path = stg_path
 
     @abc.abstractmethod
-    def download_file(self, event, input_dir_path):
-        """ Generic method to be implemented by all the storage providers. """
+    def download_file(self, parsed_event, input_dir_path):
+        """Generic method to be implemented by all the storage providers."""
 
     @abc.abstractmethod
     def upload_file(self, file_path, file_name):
-        """ Generic method to be implemented by all the storage providers. """
+        """Generic method to be implemented by all the storage providers."""
+
+    def get_type(self):
+        """Returns the storage type.
+        Can be LOCAL, MINIO, ONEDATA, S3."""
+        return self._TYPE

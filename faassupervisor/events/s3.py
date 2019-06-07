@@ -34,13 +34,15 @@
 
 """
 from urllib.parse import unquote_plus
-from faassupervisor.events.default import DefaultEvent
+from faassupervisor.events.unknown import UnknownEvent
 
 
-class S3Event(DefaultEvent):
+class S3Event(UnknownEvent):
     """ Class to parse the S3 event. """
 
     # pylint: disable=too-few-public-methods
+
+    _TYPE = 'S3'
 
     def _set_event_params(self):
         self.bucket_arn = self.event_records['s3']['bucket']['arn']

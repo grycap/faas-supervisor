@@ -71,63 +71,45 @@ API Gateway event example:
 """
 
 import base64
-import json
 from faassupervisor.utils import FileUtils, SysUtils
-from faassupervisor.logger import get_logger
+from faassupervisor.events.unknown import UnknownEvent
+
+_JSON_TYPE = 'application/json'
 
 
-class ApiGatewayEvent():
+class ApiGatewayEvent(UnknownEvent):
     """ Parse the API Gateway event and saves the body
     (if exists) and the request parameters (if exists). """
 
-    # pylint: disable=too-few-public-methods
+    _TYPE = 'APIGATEWAY'
+    _FILE_NAME = 'api_event_file'
 
-    _JSON_BODY = 'application/json'
+    def _set_event_params(self):
+        """If has a JSON body, it can contain
+        storage provider information so we save
+        it for further parsing.
 
-    def __init__(self, event_info, tmp_dir_path):
-        self.event_info = event_info
-        self.tmp_dir_path = tmp_dir_path
-        self.file_path = ''
-        self._process_api_event()
-
-    def _process_api_event(self):
-        if self._is_post_request_with_body():
-            self._process_request_body()
+        Also check for request parameters."""
+        self.body = self.event.get('body')
         if self._is_request_with_parameters():
             self._save_request_parameters()
 
-    def _is_post_request_with_body(self):
-        return self.event_info['httpMethod'] == 'POST' \
-               and 'body' in self.event_info \
-               and self.event_info['body']
-
-    def _has_json_body(self):
-        return self.event_info['headers']['Content-Type'].strip() == self._JSON_BODY
-
-    def _process_request_body(self):
-        """ The received body must be a json or a base64 encoded file. """
-        if self._has_json_body():
-            body = self.event_info['body']
-            self.event_info = body if isinstance(body, dict) else json.loads(body)
-        else:
-            self._save_body()
-
-    def _save_body(self):
-        tmp_file_path = SysUtils.join_paths(self.tmp_dir_path, "api_event_file")
-        get_logger().info("Received file from POST request")
-        get_logger().info("File saved in path '%s'", tmp_file_path)
-        FileUtils.create_file_with_content(tmp_file_path,
-                                           base64.b64decode(self.event_info['body']),
-                                           mode='wb')
-        self.file_path = tmp_file_path
-        SysUtils.set_env_var("INPUT_FILE_PATH", self.file_path)
-        get_logger().info("INPUT_FILE_PATH set to '%s'", self.file_path)
+    def has_json_body(self):
+        """Returns true if the type of the request is JSON"""
+        return self.event['headers']['Content-Type'].strip() == _JSON_TYPE
 
     def _is_request_with_parameters(self):
-        return "queryStringParameters" in self.event_info \
-                and self.event_info["queryStringParameters"]
+        return "queryStringParameters" in self.event \
+                and self.event["queryStringParameters"]
 
     def _save_request_parameters(self):
         # Add passed HTTP parameters to container variables
-        for key, value in self.event_info["queryStringParameters"].items():
+        for key, value in self.event["queryStringParameters"].items():
             SysUtils.set_env_var("CONT_VAR_{}".format(key), value)
+
+    def save_event(self, input_dir_path):
+        file_path = SysUtils.join_paths(input_dir_path, self._FILE_NAME)
+        FileUtils.create_file_with_content(file_path,
+                                           base64.b64decode(self.body),
+                                           mode='wb')
+        return file_path

@@ -21,13 +21,15 @@
 }
 """
 
-from faassupervisor.events.default import DefaultEvent
+from faassupervisor.events.unknown import UnknownEvent
 
 
-class OnedataEvent(DefaultEvent):
+class OnedataEvent(UnknownEvent):
     """ Class to parse the Onedata event. """
 
     # pylint: disable=too-few-public-methods
+
+    _TYPE = 'ONEDATA'
 
     def _set_event_params(self):
         self.object_key = self.event['Key']

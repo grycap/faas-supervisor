@@ -27,8 +27,8 @@ class LambdaInstance():
 
     PERMANENT_FOLDER = "/var/task"
 
-    def __init__(self, event, context):
-        self.raw_event = event
+    def __init__(self, event_info, context):
+        self.raw_event = event_info
         self.context = context
         self._set_tmp_folders()
         self._parse_exec_script_and_commands()

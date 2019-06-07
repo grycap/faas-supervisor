@@ -16,7 +16,7 @@ related with the S3 storage provider. """
 
 import boto3
 from faassupervisor.logger import get_logger
-from faassupervisor.storage.providers.default import DefaultStorageProvider
+from faassupervisor.storage.providers import DefaultStorageProvider
 from faassupervisor.utils import SysUtils
 
 
@@ -28,16 +28,17 @@ def s3_client():
 class S3(DefaultStorageProvider):
     """ Class that manages downloads and uploads from S3. """
 
+    _TYPE = 'S3'
+
     def _get_file_key(self, file_name):
-        # The storage_path contains at least BUCKET_NAME/FUNCTION_NAME
-        storage_path = self.storage_path.path.split('/')
-        # Path format => storage_path.path: bucket/<folder-path>
+        # The stg_path contains at least BUCKET_NAME/FUNCTION_NAME
+        stg_path = self.stg_path.path.split('/', 1)
+        # Path format => stg_path.path: bucket/<folder-path>
         # Last part is optional
-        if len(storage_path) > 1:
+        if len(stg_path) > 1:
             # There is a folder defined
             # Set the folder in the file path
-            folder = "{0}".format("/".join(storage_path[1:]))
-            file_key = "{0}/{1}".format(folder, file_name)
+            file_key = "{0}/{1}".format(stg_path[1], file_name)
         else:
             # Set the default file path
             file_key = "{0}/{1}/{2}/{3}".format(SysUtils.get_env_var("AWS_LAMBDA_FUNCTION_NAME"),
@@ -47,20 +48,22 @@ class S3(DefaultStorageProvider):
         return file_key
 
     def _get_bucket_name(self):
-        return self.storage_path.path.split("/")[0]
+        return self.stg_path.path.split("/")[0]
 
-    def download_file(self, event, input_dir_path):
+    def download_file(self, parsed_event, input_dir_path):
         """ Downloads the file from the S3 bucket and
         returns the path were the download is placed. """
-        file_download_path = SysUtils.join_paths(input_dir_path, event.event.file_name)
+        file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
         get_logger().info("Downloading item from bucket '%s' with key '%s'",
-                          event.event.bucket_name,
-                          event.event.object_key)
+                          parsed_event.bucket_name,
+                          parsed_event.object_key)
         with open(file_download_path, 'wb') as data:
-            s3_client().download_fileobj(event.event.bucket_name, event.event.object_key, data)
+            s3_client().download_fileobj(parsed_event.bucket_name,
+                                         parsed_event.object_key,
+                                         data)
         get_logger().info("Successful download of file '%s' from bucket '%s' in path '%s'",
-                          event.event.object_key,
-                          event.event.bucket_name,
+                          parsed_event.object_key,
+                          parsed_event.bucket_name,
                           file_download_path)
         return file_download_path
 

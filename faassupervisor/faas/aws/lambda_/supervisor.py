@@ -22,6 +22,7 @@ from faassupervisor.faas.aws.lambda_.udocker import Udocker
 from faassupervisor.faas.default import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, StrUtils
+from faassupervisor.exceptions import InvalidLambdaContextError
 
 
 class LambdaSupervisor(DefaultSupervisor):
@@ -30,10 +31,13 @@ class LambdaSupervisor(DefaultSupervisor):
     _BATCH_EXECUTION = "batch"
     _LAMBDA_BATCH_EXECUTION = "lambda-batch"
 
-    def __init__(self, **kwargs):
-        get_logger().info('SUPERVISOR: Initializing AWS Lambda supervisor')
-        self.lambda_instance = LambdaInstance(kwargs['event'], kwargs['context'])
-        self.body = {}
+    def __init__(self, event, context):
+        if context:
+            get_logger().info('SUPERVISOR: Initializing AWS Lambda supervisor')
+            self.lambda_instance = LambdaInstance(event, context)
+            self.body = {}
+        else:
+            raise InvalidLambdaContextError()
 
     def _is_batch_execution(self):
         return SysUtils.get_env_var("EXECUTION_MODE") == self._BATCH_EXECUTION

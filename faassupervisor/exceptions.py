@@ -105,6 +105,20 @@ class ContainerTimeoutExpiredWarning(FaasSupervisorError):
     """
     fmt = "Container timeout expired.\nContainer execution stopped."
 
+class InvalidLambdaContextError(FaasSupervisorError):
+    """
+    The context provided for the lambda instance is invalid.
+
+    """
+    fmt = "Invalid Lambda context provided."
+
+class UnknowStorageEventWarning(FaasSupervisorError):
+    """
+    Unknown storage event detected
+
+    """
+    fmt = "Unknown storage event analyzed."
+
 ################################################
 # #        STORAGE PROVIDER EXCEPTIONS         ##
 ################################################
