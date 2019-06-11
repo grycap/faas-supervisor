@@ -56,6 +56,7 @@ def _is_storage_event(event_info):
            and event_info['Records'] \
            and 'eventSource' in event_info['Records'][0]
 
+
 @exception()
 def _parse_storage_event(event):
     record = event['Records'][0]['eventSource']
@@ -77,7 +78,7 @@ def parse_event(event):
     """Parses the received event and
     returns the appropriate event class."""
     # Make sure the event is always stored
-    parsed_event = UnknownEvent(event)
+    parsed_event = None
     if not isinstance(event, dict):
         event = json.loads(event)
     # Applies the event identification flow
@@ -91,4 +92,4 @@ def parse_event(event):
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
         parsed_event = _parse_storage_event(event)
-    return parsed_event
+    return parsed_event if parsed_event else UnknownEvent(event)

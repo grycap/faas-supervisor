@@ -154,6 +154,11 @@ class FileUtilsTest(unittest.TestCase):
         FileUtils.is_file('/tmp/invented_file')
         mock_os.assert_called_with('/tmp/invented_file')
 
+    @mock.patch('os.path.basename')
+    def test_get_file_name(self, mock_os):
+        FileUtils.get_file_name('/tmp/invented_file.jpg')
+        mock_os.assert_called_with('/tmp/invented_file.jpg')
+
 
 class StrUtilsTest(unittest.TestCase):
 

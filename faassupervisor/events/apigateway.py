@@ -109,7 +109,10 @@ class ApiGatewayEvent(UnknownEvent):
 
     def save_event(self, input_dir_path):
         file_path = SysUtils.join_paths(input_dir_path, self._FILE_NAME)
-        FileUtils.create_file_with_content(file_path,
-                                           base64.b64decode(self.body),
-                                           mode='wb')
+        if self.has_json_body():
+            FileUtils.create_file_with_content(file_path, self.body)
+        else:
+            FileUtils.create_file_with_content(file_path,
+                                               base64.b64decode(self.body),
+                                               mode='wb')
         return file_path

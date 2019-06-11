@@ -24,9 +24,10 @@ class UnknownEvent():
 
     def __init__(self, event):
         self.event = event
-        records = event.get('Records')
-        if records:
-            self.event_records = records[0]
+        if isinstance(event, dict):
+            records = event.get('Records')
+            if records:
+                self.event_records = records[0]
         self._set_event_params()
 
     def _set_event_params(self):

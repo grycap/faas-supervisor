@@ -35,6 +35,7 @@
 """
 from urllib.parse import unquote_plus
 from faassupervisor.events.unknown import UnknownEvent
+from faassupervisor.utils import FileUtils
 
 
 class S3Event(UnknownEvent):
@@ -48,4 +49,4 @@ class S3Event(UnknownEvent):
         self.bucket_arn = self.event_records['s3']['bucket']['arn']
         self.bucket_name = self.event_records['s3']['bucket']['name']
         self.object_key = unquote_plus(self.event_records['s3']['object']['key'])
-        self.file_name = self.object_key.split('/')[-1]
+        self.file_name = FileUtils.get_file_name(self.object_key)

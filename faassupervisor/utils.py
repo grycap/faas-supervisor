@@ -153,6 +153,11 @@ class FileUtils():
         """Test whether a path is a regular file."""
         return os.path.isfile(file_path)
 
+    @staticmethod
+    def get_file_name(file_path):
+        """Returns the filename."""
+        return os.path.basename(file_path)
+
 
 class StrUtils():
     """Common methods for string management."""

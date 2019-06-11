@@ -117,7 +117,7 @@ class UnknowStorageEventWarning(FaasSupervisorError):
     Unknown storage event detected
 
     """
-    fmt = "Unknown storage event analyzed."
+    fmt = "Unknown storage event detected."
 
 ################################################
 # #        STORAGE PROVIDER EXCEPTIONS         ##
