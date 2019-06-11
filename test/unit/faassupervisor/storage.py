@@ -11,20 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from unittest.mock import call
-"""Unit tests for the faassupervisor.events module and classes."""
+"""Unit tests for the faassupervisor.storage module and classes."""
 
-import sys
-import io
-import os
 import unittest
 from unittest import mock
+from unittest.mock import call
 from collections import namedtuple
 import faassupervisor.storage as storage
-from faassupervisor.storage.providers.s3 import S3
-from faassupervisor.storage.providers.minio import Minio
-from faassupervisor.storage.providers.onedata import Onedata
-from faassupervisor.storage.providers.local import Local
 from faassupervisor.exceptions import InvalidStorageProviderError
 from faassupervisor.storage.auth import AuthData, StorageAuth
 
@@ -108,18 +101,18 @@ class AuthDataTest(unittest.TestCase):
 class StorageAuthTest(unittest.TestCase):
 
     def test_create_storage_auth(self):
-        sa = StorageAuth()
-        self.assertEqual(sa.auth_id, {})
-        self.assertEqual(sa.auth_type, {})
+        stga = StorageAuth()
+        self.assertEqual(stga.auth_id, {})
+        self.assertEqual(stga.auth_type, {})
 
     @mock.patch('faassupervisor.storage.auth.AuthData')
     def test_read_storage_providers(self, mock_auth):
         with mock.patch.dict('os.environ',
                              {"STORAGE_AUTH_S3_USER_1" : "u1", "STORAGE_AUTH_S3_PASS_1" : "p1"},
                              clear=True):
-            sa = StorageAuth()
-            sa.read_storage_providers()
-            self.assertEqual(sa.auth_id, {'1' : 'S3'})
+            stga = StorageAuth()
+            stga.read_storage_providers()
+            self.assertEqual(stga.auth_id, {'1' : 'S3'})
             mock_auth.assert_called_once()
             mock_auth.mock_call()[0] = call('1', 'S3')
             mock_auth.mock_call()[1] = call().set_credential('USER', 'u1')
@@ -129,16 +122,16 @@ class StorageAuthTest(unittest.TestCase):
         with mock.patch.dict('os.environ',
                              {"STORAGE_AUTH_S3_USER_1" : "u1", "STORAGE_AUTH_S3_PASS_1" : "p1"},
                              clear=True):
-            sa = StorageAuth()
-            sa.read_storage_providers()
-            self.assertEqual(sa.get_auth_data_by_stg_type('S3').get_credential('USER'), 'u1')
-            self.assertEqual(sa.get_auth_data_by_stg_type('S3').get_credential('PASS'), 'p1')
+            stga = StorageAuth()
+            stga.read_storage_providers()
+            self.assertEqual(stga.get_auth_data_by_stg_type('S3').get_credential('USER'), 'u1')
+            self.assertEqual(stga.get_auth_data_by_stg_type('S3').get_credential('PASS'), 'p1')
 
     def test_get_data_by_stg_id(self):
         with mock.patch.dict('os.environ',
                              {"STORAGE_AUTH_S3_USER_1" : "u1", "STORAGE_AUTH_S3_PASS_1" : "p1"},
                              clear=True):
-            sa = StorageAuth()
-            sa.read_storage_providers()
-            self.assertEqual(sa.get_data_by_stg_id('1').get_credential('USER'), 'u1')
-            self.assertEqual(sa.get_data_by_stg_id('1').get_credential('PASS'), 'p1')
+            stga = StorageAuth()
+            stga.read_storage_providers()
+            self.assertEqual(stga.get_data_by_stg_id('1').get_credential('USER'), 'u1')
+            self.assertEqual(stga.get_data_by_stg_id('1').get_credential('PASS'), 'p1')
