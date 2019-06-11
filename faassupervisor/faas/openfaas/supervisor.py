@@ -16,7 +16,7 @@ related with the openfaas supervisor."""
 
 import subprocess
 import sys
-from faassupervisor.faas.default import DefaultSupervisor
+from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils
 

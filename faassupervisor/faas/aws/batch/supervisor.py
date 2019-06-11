@@ -14,7 +14,7 @@
 """Module with all the classes and methods
 related with the AWS Batch supervisor."""
 
-from faassupervisor.faas.default import DefaultSupervisor
+from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, FileUtils, StrUtils
 

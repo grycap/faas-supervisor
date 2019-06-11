@@ -19,7 +19,7 @@ import traceback
 from faassupervisor.faas.aws.batch.batch import Batch
 from faassupervisor.faas.aws.lambda_.function import LambdaInstance
 from faassupervisor.faas.aws.lambda_.udocker import Udocker
-from faassupervisor.faas.default import DefaultSupervisor
+from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, StrUtils
 from faassupervisor.exceptions import InvalidLambdaContextError

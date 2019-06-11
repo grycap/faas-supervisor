@@ -59,7 +59,7 @@ def upload_output(storage_provider, output_dir_path):
     output_files = FileUtils.get_all_files_in_dir(output_dir_path)
     get_logger().info("Found the following files to upload: '%s'", output_files)
     for file_path in output_files:
-        file_name = file_path.replace("{0}/".format(output_dir_path), "")
+        file_name = file_path.replace(f"{output_dir_path}/", "")
         storage_provider.upload_file(file_path, file_name)
 
 

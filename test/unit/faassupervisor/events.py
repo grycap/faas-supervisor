@@ -13,8 +13,6 @@
 # limitations under the License.
 """Unit tests for the faassupervisor.events module and classes."""
 
-import sys
-import io
 import os
 import unittest
 from unittest import mock
@@ -60,7 +58,7 @@ api_gateway_event_w_json = {'body': s3_event,
                             'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
 
 
-class ModuleTest(unittest.TestCase):
+class EventModuleTest(unittest.TestCase):
 
     def test_is_api_gateway_event_true(self):
         self.assertTrue(events._is_api_gateway_event({'httpMethod': 'POST'}))
