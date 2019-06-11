@@ -41,18 +41,18 @@ class Udocker():
         self.udocker_exec = [SysUtils.get_env_var("UDOCKER_EXEC")]
         self.cont_cmd = self.udocker_exec + ["--quiet", "run"]
 
-        self.container_image_id = SysUtils.get_env_var("IMAGE_ID")
-        if not self.container_image_id:
+        self.cont_img_id = SysUtils.get_env_var("IMAGE_ID")
+        if not self.cont_img_id:
             raise ContainerImageNotFoundError()
 
     def _list_udocker_images_cmd(self):
         return self.udocker_exec + ["images"]
 
     def _load_udocker_image_cmd(self):
-        return self.udocker_exec + ["load", "-i", self.container_image_id]
+        return self.udocker_exec + ["load", "-i", self.cont_img_id]
 
     def _download_udocker_image_cmd(self):
-        return self.udocker_exec + ["pull", self.container_image_id]
+        return self.udocker_exec + ["pull", self.cont_img_id]
 
     def _list_udocker_containers_cmd(self):
         return self.udocker_exec + ["ps"]
@@ -60,30 +60,30 @@ class Udocker():
     def _create_udocker_container_cmd(self):
         return self.udocker_exec + ["create",
                                     "--name={0}".format(self._CONTAINER_NAME),
-                                    self.container_image_id]
+                                    self.cont_img_id]
 
     def _set_udocker_container_execution_mode_cmd(self):
         return self.udocker_exec + ["setup", "--execmode=F1", self._CONTAINER_NAME]
 
     def _is_container_image_downloaded(self):
-        cmd_out = SysUtils.execute_command_and_return_output(self._list_udocker_images_cmd())
-        return self.container_image_id in cmd_out
+        cmd_out = SysUtils.execute_cmd_and_return_output(self._list_udocker_images_cmd())
+        return self.cont_img_id in cmd_out
 
     def _load_local_container_image(self):
-        get_logger().info("Loading container image '%s'", self.container_image_id)
+        get_logger().info("Loading container image '%s'", self.cont_img_id)
         SysUtils.execute_cmd(self._load_udocker_image_cmd())
 
     def _download_container_image(self):
-        get_logger().info("Pulling container '%s' from Docker Hub", self.container_image_id)
+        get_logger().info("Pulling container '%s' from Docker Hub", self.cont_img_id)
         SysUtils.execute_cmd(self._download_udocker_image_cmd())
 
     def _is_container_available(self):
-        cmd_out = SysUtils.execute_command_and_return_output(self._list_udocker_containers_cmd())
+        cmd_out = SysUtils.execute_cmd_and_return_output(self._list_udocker_containers_cmd())
         return self._CONTAINER_NAME in cmd_out
 
     def _create_image(self):
         if self._is_container_image_downloaded():
-            get_logger().info("Container image '%s' already available", self.container_image_id)
+            get_logger().info("Container image '%s' already available", self.cont_img_id)
         else:
             if SysUtils.is_var_in_env("IMAGE_FILE"):
                 self._load_local_container_image()
@@ -94,7 +94,7 @@ class Udocker():
         if self._is_container_available():
             get_logger().info("Container already available")
         else:
-            get_logger().info("Creating container based on image '%s'.", self.container_image_id)
+            get_logger().info("Creating container based on image '%s'.", self.cont_img_id)
             SysUtils.execute_cmd(self._create_udocker_container_cmd())
         SysUtils.execute_cmd(self._set_udocker_container_execution_mode_cmd())
 

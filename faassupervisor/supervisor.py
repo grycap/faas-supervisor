@@ -87,7 +87,6 @@ class Supervisor():
         but one event always represents only one file (so far), so only
         one provider is going to be used for each event received.
         """
-
         if _is_batch_environment():
             # Only download if INIT step
             if SysUtils.get_env_var("STEP") != "INIT":
@@ -95,12 +94,12 @@ class Supervisor():
             # Manage batch extra steps
             self.supervisor.parse_input()
 
-        input_stg_prov = self._get_input_provider()
-        get_logger().info("Found '%s' input provider", input_stg_prov.get_type())
-        if input_stg_prov:
+        stg_prov = self._get_input_provider()
+        get_logger().info("Found '%s' input provider", stg_prov.get_type())
+        if stg_prov:
             get_logger().info("Downloading input file using '%s' event",
                               self.parsed_event.get_type())
-            input_file_path = storage.download_input(input_stg_prov,
+            input_file_path = storage.download_input(stg_prov,
                                                      self.parsed_event,
                                                      SysUtils.get_env_var("TMP_INPUT_DIR"))
             if input_file_path and FileUtils.is_file(input_file_path):
@@ -109,12 +108,13 @@ class Supervisor():
 
     @exception()
     def _parse_output(self):
-        # Don't upload anything if not END step
+        # In Batch, don't upload anything if not END step
         if _is_batch_environment() and SysUtils.get_env_var("STEP") != "END":
             return
 
-        for stg_provider in self._get_output_providers():
-            storage.upload_output(stg_provider, SysUtils.get_env_var("TMP_OUTPUT_DIR"))
+        for stg_prov in self._get_output_providers():
+            get_logger().info("Found '%s' output provider", stg_prov.get_type())
+            storage.upload_output(stg_prov, SysUtils.get_env_var("TMP_OUTPUT_DIR"))
 
     @exception()
     def run(self):

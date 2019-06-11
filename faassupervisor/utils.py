@@ -22,19 +22,6 @@ import tempfile
 import shutil
 
 
-def lazy_property(func):
-    """A decorator that makes a property lazy-evaluated."""
-    attr_name = '_lazy_' + func.__name__
-
-    @property
-    def _lazy_property(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, func(self))
-        return getattr(self, attr_name)
-
-    return _lazy_property
-
-
 class SysUtils():
     """Common methods for system management."""
 
@@ -94,7 +81,7 @@ class SysUtils():
         subprocess.call(command)
 
     @staticmethod
-    def execute_command_and_return_output(command):
+    def execute_cmd_and_return_output(command):
         """Executes a bash command and returns the console output."""
         return subprocess.check_output(command).decode("utf-8")
 
@@ -156,9 +143,9 @@ class FileUtils():
         """Returns a list with all the file paths in
         the specified directory and subdirectories."""
         files = []
-        for dirname, _, filenames in os.walk(dir_path):
+        for dirpath, _, filenames in os.walk(dir_path):
             for filename in filenames:
-                files.append(SysUtils.join_paths(dirname, filename))
+                files.append(SysUtils.join_paths(dirpath, filename))
         return files
 
     @staticmethod
@@ -178,7 +165,7 @@ class StrUtils():
     @staticmethod
     def dict_to_base64str(value, encoding='utf-8'):
         """Encodes a dictionary to base64 and returns a string."""
-        return base64.b64encode(json.dumps(value).encode('latin-1')).decode(encoding)
+        return base64.b64encode(json.dumps(value).encode(encoding)).decode(encoding)
 
     @staticmethod
     def base64_to_str(value, encoding='utf-8'):

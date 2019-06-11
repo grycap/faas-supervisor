@@ -17,7 +17,7 @@ related with the Minio storage provider. """
 import boto3
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
-from faassupervisor.utils import lazy_property, SysUtils
+from faassupervisor.utils import SysUtils
 
 
 class Minio(DefaultStorageProvider):
@@ -26,23 +26,23 @@ class Minio(DefaultStorageProvider):
     _DEFAULT_MINIO_ENDPOINT = 'http://minio-service.minio:9000'
     _TYPE = 'MINIO'
 
-    @lazy_property
-    def client(self):
-        """ Return Minio client with user configuration. """
-        client = boto3.client('s3', endpoint_url=self._DEFAULT_MINIO_ENDPOINT,
-                              aws_access_key_id=self.stg_auth.get_credential('USER'),
-                              aws_secret_access_key=self.stg_auth.get_credential('PASS'))
-        return client
+    def _get_client(self):
+        """Return Minio client with user configuration."""
+        return boto3.client('s3', endpoint_url=self._DEFAULT_MINIO_ENDPOINT,
+                            aws_access_key_id=self.stg_auth.get_credential('USER'),
+                            aws_secret_access_key=self.stg_auth.get_credential('PASS'))
 
     def download_file(self, parsed_event, input_dir_path):
-        """ Downloads a file from a minio bucket. """
+        """Downloads a file from a minio bucket."""
         file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
         get_logger().info("Downloading item from bucket '%s' with key '%s'",
                           parsed_event.bucket_name,
                           parsed_event.file_name)
 
         with open(file_download_path, 'wb') as data:
-            self.client.download_fileobj(parsed_event.bucket_name, parsed_event.file_name, data)
+            self._get_client().download_fileobj(parsed_event.bucket_name,
+                                                parsed_event.file_name,
+                                                data)
         get_logger().info("Successful download of file '%s' from bucket '%s' in path '%s'",
                           parsed_event.file_name,
                           parsed_event.bucket_name,
@@ -50,6 +50,7 @@ class Minio(DefaultStorageProvider):
         return file_download_path
 
     def upload_file(self, file_path, file_name):
+        """Uploads a file to a minio bucket."""
         get_logger().info("Uploading file '%s' to bucket '%s'", file_name, self.stg_path.path)
         with open(file_path, 'rb') as data:
-            self.client.upload_fileobj(data, self.stg_path.path, file_name)
+            self._get_client().upload_fileobj(data, self.stg_path.path, file_name)
