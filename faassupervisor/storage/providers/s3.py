@@ -31,9 +31,8 @@ class S3(DefaultStorageProvider):
     _TYPE = 'S3'
 
     def _get_file_key(self, file_name):
-        # The stg_path contains at least BUCKET_NAME/FUNCTION_NAME
-        stg_path = self.stg_path.path.split('/', 1)
-        # Path format => stg_path.path: bucket/<folder-path>
+        stg_path = self.stg_path.split('/', 1)
+        # Path format => stg_path: bucket/<folder-path>
         # Last part is optional
         if len(stg_path) > 1:
             # There is a folder defined
@@ -48,7 +47,7 @@ class S3(DefaultStorageProvider):
         return file_key
 
     def _get_bucket_name(self):
-        return self.stg_path.path.split("/")[0]
+        return self.stg_path.split("/")[0]
 
     def download_file(self, parsed_event, input_dir_path):
         """ Downloads the file from the S3 bucket and

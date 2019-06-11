@@ -64,12 +64,12 @@ class Onedata(DefaultStorageProvider):
         url = 'https://{0}/{1}/{2}/{3}/{4}'.format(self.oneprovider_host,
                                                    self._CDMI_PATH,
                                                    self.oneprovider_space,
-                                                   self.stg_path.path,
+                                                   self.stg_path,
                                                    file_name)
         get_logger().info("Uploading file '%s' to '%s/%s'",
                           file_name,
                           self.oneprovider_space,
-                          self.stg_path.path)
+                          self.stg_path)
         with open(file_path, 'rb') as data:
             response = requests.put(url, data=data, headers=self.headers)
             if response.status_code not in [201, 202, 204]:

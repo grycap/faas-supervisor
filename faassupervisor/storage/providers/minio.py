@@ -51,6 +51,6 @@ class Minio(DefaultStorageProvider):
 
     def upload_file(self, file_path, file_name):
         """Uploads a file to a minio bucket."""
-        get_logger().info("Uploading file '%s' to bucket '%s'", file_name, self.stg_path.path)
+        get_logger().info("Uploading file '%s' to bucket '%s'", file_name, self.stg_path)
         with open(file_path, 'rb') as data:
-            self._get_client().upload_fileobj(data, self.stg_path.path, file_name)
+            self._get_client().upload_fileobj(data, self.stg_path, file_name)
