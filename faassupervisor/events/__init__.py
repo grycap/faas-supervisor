@@ -88,7 +88,7 @@ def parse_event(event):
         # Update event info with API request event body
         # to be further processed (if needed)
         if parsed_event.has_json_body():
-            event = parsed_event.body
+            event = parsed_event.body if isinstance(parsed_event.body, dict) else json.loads(parsed_event.body)
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
         parsed_event = _parse_storage_event(event)
