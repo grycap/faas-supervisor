@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Module with all the classes and methods
-related with the openfaas supervisor."""
+related with the binary supervisor."""
 
 import subprocess
 import sys
@@ -21,13 +21,13 @@ from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, FileUtils, StrUtils
 
 
-class OpenfaasSupervisor(DefaultSupervisor):
-    """Supervisor class used in the OpenFaaS environment."""
+class BinarySupervisor(DefaultSupervisor):
+    """Supervisor class used in the Binary environment."""
 
     _SCRIPT_FILE_NAME = 'script.sh'
 
     def __init__(self):
-        get_logger().info('SUPERVISOR: Initializing Openfaas supervisor')
+        get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
     def execute_function(self):
         if SysUtils.is_var_in_env('SCRIPT'):

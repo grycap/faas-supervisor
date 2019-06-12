@@ -18,4 +18,4 @@ import faassupervisor.supervisor as supervisor
 
 def lambda_handler(event, context):
     """Launches the supervisor and returns its output."""
-    return supervisor.python_main(event=event, context=context)
+    return supervisor.main(event=event, context=context)

@@ -23,9 +23,8 @@ from faassupervisor.storage.auth import StorageAuth
 import faassupervisor.storage as storage
 from faassupervisor.utils import SysUtils, FileUtils
 from faassupervisor.logger import configure_logger, get_logger
-from faassupervisor.faas.aws.lambda_.supervisor import LambdaSupervisor
-from faassupervisor.faas.aws.batch.supervisor import BatchSupervisor
-from faassupervisor.faas.openfaas.supervisor import OpenfaasSupervisor
+from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor
+from faassupervisor.faas.binary.supervisor import BinarySupervisor
 
 
 class Supervisor():
@@ -48,19 +47,11 @@ class Supervisor():
 
         The folders are deleted automatically
         when the execution finishes.
-
-        In Batch mode the folders have to be created
-        only at the INIT step.
         """
-        if _is_batch_environment():
-            if SysUtils.get_env_var("STEP") == "INIT":
-                FileUtils.create_folder(SysUtils.get_env_var("TMP_INPUT_DIR"))
-                FileUtils.create_folder(SysUtils.get_env_var("TMP_OUTPUT_DIR"))
-        else:
-            self.input_tmp_dir = FileUtils.create_tmp_dir()
-            self.output_tmp_dir = FileUtils.create_tmp_dir()
-            SysUtils.set_env_var("TMP_INPUT_DIR", self.input_tmp_dir.name)
-            SysUtils.set_env_var("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
+        self.input_tmp_dir = FileUtils.create_tmp_dir()
+        self.output_tmp_dir = FileUtils.create_tmp_dir()
+        SysUtils.set_env_var("TMP_INPUT_DIR", self.input_tmp_dir.name)
+        SysUtils.set_env_var("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
 
     def _read_storage_variables(self):
         get_logger().info("Reading storage authentication variables")
@@ -87,13 +78,6 @@ class Supervisor():
         but one event always represents only one file (so far), so only
         one provider is going to be used for each event received.
         """
-        if _is_batch_environment():
-            # Only download if INIT step
-            if SysUtils.get_env_var("STEP") != "INIT":
-                return
-            # Manage batch extra steps
-            self.supervisor.parse_input()
-
         stg_prov = self._get_input_provider()
         get_logger().info("Found '%s' input provider", stg_prov.get_type())
         if stg_prov:
@@ -108,10 +92,6 @@ class Supervisor():
 
     @exception()
     def _parse_output(self):
-        # In Batch, don't upload anything if not END step
-        if _is_batch_environment() and SysUtils.get_env_var("STEP") != "END":
-            return
-
         for stg_prov in self._get_output_providers():
             get_logger().info("Found '%s' output provider", stg_prov.get_type())
             storage.upload_output(stg_prov, SysUtils.get_env_var("TMP_OUTPUT_DIR"))
@@ -131,28 +111,20 @@ class Supervisor():
             return self.supervisor.create_error_response()
 
 
-def _is_batch_environment():
-    return SysUtils.get_env_var("SUPERVISOR_TYPE") == 'BATCH'
-
-
 @exception()
 def _create_supervisor(event, context=None):
     """Returns a new supervisor based on the
-    environment variable SUPERVISOR_TYPE."""
-    supervisor = ""
-    _type = SysUtils.get_env_var("SUPERVISOR_TYPE")
-    if _type == 'LAMBDA':
+    environment.
+    Binary mode by default"""
+    supervisor = None
+    if SysUtils.is_var_in_env('AWS_LAMBDA_FUNCTION_NAME'):
         supervisor = LambdaSupervisor(event, context)
-    elif _type == 'BATCH':
-        supervisor = BatchSupervisor()
-    elif _type == 'OPENFAAS':
-        supervisor = OpenfaasSupervisor()
     else:
-        raise InvalidSupervisorTypeError(sup_typ=_type)
+        supervisor = BinarySupervisor()
     return supervisor
 
 
-def _start_supervisor(event, context=None):
+def main(event, context=None):
     configure_logger()
     get_logger().debug("EVENT received: %s", event)
     if context:
@@ -161,17 +133,7 @@ def _start_supervisor(event, context=None):
     return supervisor.run()
 
 
-def python_main(event, context=None):
-    """Called when running from a Python environment.
-    Receives the input from the method arguments."""
-    return _start_supervisor(event, context)
-
-
-def main():
-    """Called when running as binary.
-    Receives the input from stdin."""
-    return _start_supervisor(SysUtils.get_stdin())
-
-
 if __name__ == "__main__":
-    main()
+    """If supervisor is running as a binary
+    receive the input from stdin."""
+    main(SysUtils.get_stdin())

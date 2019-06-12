@@ -17,8 +17,8 @@ related with the AWS Lambda supervisor."""
 import subprocess
 import traceback
 from faassupervisor.faas.aws.batch.batch import Batch
-from faassupervisor.faas.aws.lambda_.function import LambdaInstance
-from faassupervisor.faas.aws.lambda_.udocker import Udocker
+from faassupervisor.faas.aws_lambda.function import LambdaInstance
+from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas.default import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, StrUtils

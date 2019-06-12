@@ -14,19 +14,7 @@ install:
 jobs:
   include:
     - stage: Build binary and deploy to github on new releases
-      script: >
-        pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
-        --hidden-import faassupervisor.faas.openfaas.supervisor
-        --hidden-import faassupervisor.faas.aws.lambda_.supervisor
-        --hidden-import faassupervisor.faas.aws.batch.supervisor
-        --hidden-import faassupervisor.events.apigateway
-        --hidden-import faassupervisor.events.minio
-        --hidden-import faassupervisor.events.onedata
-        --hidden-import faassupervisor.events.s3
-        --hidden-import faassupervisor.events.unknown
-        --hidden-import faassupervisor.storage.providers.minio
-        --hidden-import faassupervisor.storage.providers.onedata
-        --hidden-import faassupervisor.storage.providers.s3
+      script: pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
       deploy:
         - provider: releases
           api_key: $GITHUB_OAUTH_TOKEN
