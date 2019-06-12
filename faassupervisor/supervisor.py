@@ -17,8 +17,7 @@ Also entry point of the faassupervisor package."""
 
 from faassupervisor.storage import create_provider
 from faassupervisor.events import parse_event
-from faassupervisor.exceptions import exception, InvalidSupervisorTypeError, \
-    FaasSupervisorError
+from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.auth import StorageAuth
 import faassupervisor.storage as storage
 from faassupervisor.utils import SysUtils, FileUtils
@@ -125,6 +124,8 @@ def _create_supervisor(event, context=None):
 
 
 def main(event, context=None):
+    """Initializes the generic supervisor
+    and launches its execution."""
     configure_logger()
     get_logger().debug("EVENT received: %s", event)
     if context:
@@ -134,6 +135,6 @@ def main(event, context=None):
 
 
 if __name__ == "__main__":
-    """If supervisor is running as a binary
-    receive the input from stdin."""
+    # If supervisor is running as a binary
+    # receive the input from stdin.
     main(SysUtils.get_stdin())
