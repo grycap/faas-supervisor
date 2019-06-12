@@ -12,27 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Module with all the classes and methods
-related with the openfaas supervisor."""
+related with the binary supervisor."""
 
 import subprocess
 import sys
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
-from faassupervisor.utils import SysUtils
+from faassupervisor.utils import SysUtils, FileUtils, StrUtils
 
 
-class OpenfaasSupervisor(DefaultSupervisor):
-    """Supervisor class used in the OpenFaaS environment."""
+class BinarySupervisor(DefaultSupervisor):
+    """Supervisor class used in the Binary environment."""
+
+    _SCRIPT_FILE_NAME = 'script.sh'
 
     def __init__(self):
-        get_logger().info('SUPERVISOR: Initializing Openfaas supervisor')
+        get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
     def execute_function(self):
-        script = SysUtils.get_env_var('sprocess')
-        if script:
-            get_logger().info("Executing user defined script: '%s'", script)
+        if SysUtils.is_var_in_env('SCRIPT'):
+            script_path = SysUtils.join_paths(SysUtils.get_env_var("TMP_INPUT_DIR"),
+                                              self._SCRIPT_FILE_NAME)
+            script_content = StrUtils.base64_to_str(SysUtils.get_env_var('SCRIPT'))
+            FileUtils.create_file_with_content(script_path, script_content)
+            get_logger().info("Script file created in '%s'", script_path)
+            FileUtils.set_file_execution_rights(script_path)
+            get_logger().info("Executing user defined script: '%s'", script_path)
             try:
-                script_output = subprocess.check_output(['/bin/sh', script],
+                script_output = subprocess.check_output(['/bin/sh', script_path],
                                                         stderr=subprocess.STDOUT).decode("latin-1")
                 get_logger().info(script_output)
             except subprocess.CalledProcessError as cpe:

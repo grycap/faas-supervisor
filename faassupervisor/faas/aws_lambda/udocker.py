@@ -19,7 +19,7 @@ from faassupervisor.exceptions import ContainerImageNotFoundError
 from faassupervisor.utils import SysUtils, FileUtils
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import ContainerTimeoutExpiredWarning
-from faassupervisor.faas.aws.lambda_.function import get_function_ip
+from faassupervisor.faas.aws_lambda.function import get_function_ip
 
 
 def _parse_cont_env_var(key, value):
