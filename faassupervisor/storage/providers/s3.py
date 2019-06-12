@@ -20,13 +20,13 @@ from faassupervisor.storage.providers import DefaultStorageProvider
 from faassupervisor.utils import SysUtils
 
 
-def s3_client():
-    """ Return S3 client with default configuration. """
+def get_client():
+    """Returns S3 client with default configuration."""
     return boto3.client('s3')
 
 
 class S3(DefaultStorageProvider):
-    """ Class that manages downloads and uploads from S3. """
+    """Class that manages downloads and uploads from S3."""
 
     _TYPE = 'S3'
 
@@ -57,7 +57,7 @@ class S3(DefaultStorageProvider):
                           parsed_event.bucket_name,
                           parsed_event.object_key)
         with open(file_download_path, 'wb') as data:
-            s3_client().download_fileobj(parsed_event.bucket_name,
+            get_client().download_fileobj(parsed_event.bucket_name,
                                          parsed_event.object_key,
                                          data)
         get_logger().info("Successful download of file '%s' from bucket '%s' in path '%s'",
@@ -71,10 +71,13 @@ class S3(DefaultStorageProvider):
         bucket_name = self._get_bucket_name()
         get_logger().info("Uploading file '%s' to bucket '%s'", file_key, bucket_name)
         with open(file_path, 'rb') as data:
-            s3_client().upload_fileobj(data, bucket_name, file_key)
+            get_client().upload_fileobj(data, bucket_name, file_key)
 
         get_logger().info("Changing ACLs for public-read for object in bucket '%s' with key '%s'",
                           bucket_name,
                           file_key)
+        self._set_file_acl(bucket_name, file_key)
+        
+    def _set_file_acl(self, bucket_name, file_key):
         obj = boto3.resource('s3').Object(bucket_name, file_key)
         obj.Acl().put(ACL='public-read')
