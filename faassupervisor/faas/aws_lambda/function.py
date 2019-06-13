@@ -41,7 +41,7 @@ class LambdaInstance():
     def _parse_exec_script_and_commands(self):
         # Check for script in function event
         if 'script' in self.raw_event:
-            self.script_path = "{0}/script.sh".format(self.input_folder)
+            self.script_path = f"{self.input_folder}/script.sh"
             script_content = StrUtils.base64_to_str(self.raw_event['script'])
             FileUtils.create_file_with_content(self.script_path, script_content)
         # Container invoked with arguments
@@ -51,7 +51,7 @@ class LambdaInstance():
         # Script to be executed every time (if defined)
         elif SysUtils.is_var_in_env('INIT_SCRIPT_PATH'):
             # Add init script
-            self.init_script_path = "{0}/init_script.sh".format(self.input_folder)
+            self.init_script_path = f"{self.input_folder}/init_script.sh"
             FileUtils.cp_file(SysUtils.get_env_var("INIT_SCRIPT_PATH"), self.init_script_path)
 
     def _set_lambda_env_vars(self):

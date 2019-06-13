@@ -42,13 +42,11 @@ class S3(DefaultStorageProvider):
         if len(stg_path) > 1:
             # There is a folder defined
             # Set the folder in the file path
-            file_key = "{0}/{1}".format(stg_path[1], file_name)
+            file_key = f"{stg_path[1]}/{file_name}"
         else:
             # Set the default file path
-            file_key = "{0}/{1}/{2}/{3}".format(SysUtils.get_env_var("AWS_LAMBDA_FUNCTION_NAME"),
-                                                'output',
-                                                SysUtils.get_env_var("AWS_LAMBDA_REQUEST_ID"),
-                                                file_name)
+            file_key = (f"{SysUtils.get_env_var('AWS_LAMBDA_FUNCTION_NAME')}/output/"
+                        f"{SysUtils.get_env_var('AWS_LAMBDA_REQUEST_ID')}/{file_name}")
         return file_key
 
     def _get_bucket_name(self):

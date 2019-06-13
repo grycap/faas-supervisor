@@ -58,9 +58,7 @@ class Udocker():
         return self.udocker_exec + ["ps"]
 
     def _create_udocker_container_cmd(self):
-        return self.udocker_exec + ["create",
-                                    "--name={0}".format(self._CONTAINER_NAME),
-                                    self.cont_img_id]
+        return self.udocker_exec + ["create", f"--name={self._CONTAINER_NAME}", self.cont_img_id]
 
     def _set_udocker_container_execution_mode_cmd(self):
         return self.udocker_exec + ["setup", "--execmode=F1", self._CONTAINER_NAME]
@@ -104,8 +102,8 @@ class Udocker():
         # Container running script
         if hasattr(self.lambda_instance, 'script_path'):
             # Add script in memory as entrypoint
-            self.cont_cmd += ["--entrypoint={0} {1}".format(self._SCRIPT_EXEC,
-                                                            self.lambda_instance.script_path),
+            self.cont_cmd += [(f"--entrypoint={self._SCRIPT_EXEC} "
+                               f"{self.lambda_instance.script_path}"),
                               self._CONTAINER_NAME]
         # Container with args
         elif hasattr(self.lambda_instance, 'cmd_args'):
@@ -115,8 +113,8 @@ class Udocker():
         # Script to be executed every time (if defined)
         elif hasattr(self.lambda_instance, 'init_script_path'):
             # Add init script
-            self.cont_cmd += ["--entrypoint={0} {1}".format(self._SCRIPT_EXEC,
-                                                            self.lambda_instance.init_script_path),
+            self.cont_cmd += [(f"--entrypoint={self._SCRIPT_EXEC} "
+                               f"{self.lambda_instance.init_script_path}"),
                               self._CONTAINER_NAME]
         # Only container
         else:

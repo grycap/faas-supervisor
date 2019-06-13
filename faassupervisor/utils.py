@@ -81,9 +81,9 @@ class SysUtils():
         subprocess.call(command)
 
     @staticmethod
-    def execute_cmd_and_return_output(command):
+    def execute_cmd_and_return_output(command, encoding='utf-8'):
         """Executes a bash command and returns the console output."""
-        return subprocess.check_output(command).decode("utf-8")
+        return subprocess.check_output(command).decode(encoding)
 
 
 class FileUtils():

@@ -39,9 +39,7 @@ class Onedata(DefaultStorageProvider):
         """ Downloads the file from the space of Onedata and
         returns the path were the download is placed. """
         file_download_path = ""
-        url = 'https://{0}/{1}{2}'.format(self.oneprovider_host,
-                                          self._CDMI_PATH,
-                                          parsed_event.object_key)
+        url = f"https://{self.oneprovider_host}/{self._CDMI_PATH}{parsed_event.object_key}"
         get_logger().info("Downloading item from host '%s' with key '%s'",
                           self.oneprovider_host,
                           parsed_event.object_key)
@@ -61,11 +59,8 @@ class Onedata(DefaultStorageProvider):
         return file_download_path
 
     def upload_file(self, file_path, file_name):
-        url = 'https://{0}/{1}/{2}/{3}/{4}'.format(self.oneprovider_host,
-                                                   self._CDMI_PATH,
-                                                   self.oneprovider_space,
-                                                   self.stg_path,
-                                                   file_name)
+        url = (f'https://{self.oneprovider_host}/{self._CDMI_PATH}/'
+               f'{self.oneprovider_space}/{self.stg_path}/{file_name}')
         get_logger().info("Uploading file '%s' to '%s/%s'",
                           file_name,
                           self.oneprovider_space,

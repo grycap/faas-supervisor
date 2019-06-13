@@ -105,7 +105,7 @@ class ApiGatewayEvent(UnknownEvent):
     def _save_request_parameters(self):
         # Add passed HTTP parameters to container variables
         for key, value in self.event["queryStringParameters"].items():
-            SysUtils.set_env_var("CONT_VAR_{}".format(key), value)
+            SysUtils.set_env_var(f"CONT_VAR_{key}", value)
 
     def save_event(self, input_dir_path):
         file_path = SysUtils.join_paths(input_dir_path, self._FILE_NAME)

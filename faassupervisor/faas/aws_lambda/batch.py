@@ -101,7 +101,7 @@ class Batch():
             job_def_args["containerProperties"]["image"] = SysUtils.get_env_var("IMAGE_ID")
             if self.script:
                 job_def_args["containerProperties"]["command"] = \
-                    ["{0}/script.sh".format(SysUtils.get_env_var("TMP_INPUT_DIR"))]
+                    [f"{SysUtils.get_env_var('TMP_INPUT_DIR')}/script.sh"]
 
         return job_def_args
 
@@ -141,9 +141,9 @@ class Batch():
     def _get_job_args(self, step, job_id=None):
         job_name = self.context.get("function_name")
         if step == 'INIT':
-            job_name = "{}-in".format(job_name)
+            job_name = f"{job_name}-in"
         elif step == 'END':
-            job_name = "{}-out".format(job_name)
+            job_name = f"{job_name}-out"
         job_def = {"jobDefinition" : job_name,
                    "jobName" : job_name,
                    "jobQueue" : self.context.get("function_name"),
@@ -169,9 +169,9 @@ class Batch():
     def invoke_batch_function(self):
         """Method that creates batch jobs and invokes them from a lambda instance."""
         # Register batch Jobs
-        self._register_job_definition("{}-in".format(self.context.get("function_name")), "INIT")
+        self._register_job_definition(f"{self.context.get('function_name')}-in", "INIT")
         self._register_job_definition(self.context.get("function_name"), "MED")
-        self._register_job_definition("{}-out".format(self.context.get("function_name")), "END")
+        self._register_job_definition(f"{self.context.get('function_name')}-out", "END")
         # Submit batch jobs
         job_id = self._submit_init_job()
         lambda_job_id = self._submit_lambda_job(job_id)

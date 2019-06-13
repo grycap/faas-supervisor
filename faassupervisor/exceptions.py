@@ -30,7 +30,7 @@ def exception():
                 return func(*args, **kwargs)
 
             except ClientError as cerr:
-                print("There was an exception in {0}".format(func.__name__))
+                print(f"There was an exception in {func.__name__}")
                 print(cerr.response['Error']['Message'])
                 get_logger().error(cerr)
                 sys.exit(1)
@@ -105,12 +105,12 @@ class ContainerTimeoutExpiredWarning(FaasSupervisorError):
     """
     fmt = "Container timeout expired.\nContainer execution stopped."
 
-class InvalidLambdaContextError(FaasSupervisorError):
+class NoLambdaContextError(FaasSupervisorError):
     """
-    The context provided for the lambda instance is invalid.
+    No context was provided for the lambda instance.
 
     """
-    fmt = "Invalid Lambda context provided."
+    fmt = "No context found in the Lambda environment."
 
 class UnknowStorageEventWarning(FaasSupervisorError):
     """

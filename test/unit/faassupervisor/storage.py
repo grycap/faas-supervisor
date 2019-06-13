@@ -205,14 +205,19 @@ class MinioStorageTest(unittest.TestCase):
     @mock.patch('boto3.client')
     def test_download_file(self, mock_boto):
         stg, _ = self._get_minio_class_and_auth()
+        # Mock file management
         mopen = mock.mock_open()
         with mock.patch('builtins.open', mopen, create=True):
+            # Create mock event and event properties
             event = mock.Mock(spec=MinioEvent)
             type(event).bucket_name = mock.PropertyMock(return_value='minio_bucket')
             type(event).file_name = mock.PropertyMock(return_value='minio_file')
             file_path = stg.download_file(event, '/tmp/input')
+            # Check returned file path
             self.assertEqual(file_path, '/tmp/input/minio_file')
+            # Check file writing call
             mopen.assert_called_once_with('/tmp/input/minio_file', 'wb')
+            # Check boto client download call
             self.assertEqual(mock_boto.mock_calls[1],
                              call().download_fileobj('minio_bucket',
                                                      'minio_file',
@@ -221,10 +226,13 @@ class MinioStorageTest(unittest.TestCase):
     @mock.patch('boto3.client')
     def test_upload_file(self, mock_boto):
         stg, _ = self._get_minio_class_and_auth()
+        # Mock file management
         mopen = mock.mock_open()
         with mock.patch('builtins.open', mopen, create=True):
             stg.upload_file('/tmp/output/processed.jpg', 'processed.jpg')
+            # Check file reading call
             mopen.assert_called_once_with('/tmp/output/processed.jpg', 'rb')
+            # Check boto client upload call
             self.assertEqual(mock_boto.mock_calls[1],
                              call().upload_fileobj(mopen.return_value,
                                                    'minio_path',

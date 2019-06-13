@@ -16,20 +16,25 @@ related with the AWS Lambda supervisor."""
 
 import subprocess
 import traceback
-from faassupervisor.faas.aws.batch.batch import Batch
+from faassupervisor.faas.aws_lambda.batch import Batch
 from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, StrUtils
-from faassupervisor.exceptions import InvalidLambdaContextError
+from faassupervisor.exceptions import NoLambdaContextError
+
+
+def _is_batch_execution():
+    return SysUtils.get_env_var("EXECUTION_MODE") == "batch"
+
+
+def _is_lambda_batch_execution():
+    return SysUtils.get_env_var("EXECUTION_MODE") == "lambda-batch"
 
 
 class LambdaSupervisor(DefaultSupervisor):
     """Supervisor class used in the Lambda environment."""
-
-    _BATCH_EXECUTION = "batch"
-    _LAMBDA_BATCH_EXECUTION = "lambda-batch"
 
     def __init__(self, event, context):
         if context:
@@ -37,20 +42,14 @@ class LambdaSupervisor(DefaultSupervisor):
             self.lambda_instance = LambdaInstance(event, context)
             self.body = {}
         else:
-            raise InvalidLambdaContextError()
-
-    def _is_batch_execution(self):
-        return SysUtils.get_env_var("EXECUTION_MODE") == self._BATCH_EXECUTION
-
-    def _is_lambda_batch_execution(self):
-        return SysUtils.get_env_var("EXECUTION_MODE") == self._LAMBDA_BATCH_EXECUTION
+            raise NoLambdaContextError()
 
     def _execute_batch(self):
         batch_ri = Batch(self.lambda_instance).invoke_batch_function()
-        batch_logs = "Check batch logs with:\n"
-        batch_logs += "  scar log -n {0} -ri {1}".format(self.lambda_instance.get_function_name(),
-                                                         batch_ri)
-        self.body["udocker_output"] = b'"Job delegated to batch.\n{0}".format(batch_logs)'
+        batch_logs = (f"Job delegated to batch.\n"
+                      f"Check batch logs with:\n"
+                      f"  scar log -n {self.lambda_instance.get_function_name()} -ri {batch_ri}")
+        self.body["udocker_output"] = batch_logs.encode('utf-8')
 
     def _execute_udocker(self):
         try:
@@ -60,11 +59,11 @@ class LambdaSupervisor(DefaultSupervisor):
             get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"])
         except subprocess.TimeoutExpired:
             get_logger().warning("Container execution timed out")
-            if self._is_lambda_batch_execution():
+            if _is_lambda_batch_execution():
                 self._execute_batch()
 
     def execute_function(self):
-        if self._is_batch_execution():
+        if _is_batch_execution():
             self._execute_batch()
         else:
             self._execute_udocker()
