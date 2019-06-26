@@ -116,7 +116,7 @@ def _create_supervisor(event, context=None):
     environment.
     Binary mode by default"""
     supervisor = None
-    if SysUtils.is_var_in_env('AWS_LAMBDA_FUNCTION_NAME'):
+    if SysUtils.is_var_in_env('AWS_EXECUTION_ENV'):
         supervisor = LambdaSupervisor(event, context)
     else:
         supervisor = BinarySupervisor()
