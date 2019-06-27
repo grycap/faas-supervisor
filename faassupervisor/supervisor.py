@@ -110,13 +110,17 @@ class Supervisor():
             return self.supervisor.create_error_response()
 
 
+def _is_lambda_environment():
+    return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
+            SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
+
 @exception()
 def _create_supervisor(event, context=None):
     """Returns a new supervisor based on the
     environment.
     Binary mode by default"""
     supervisor = None
-    if SysUtils.is_var_in_env('AWS_LAMBDA_RUNTIME_API'):
+    if _is_lambda_environment():
         supervisor = LambdaSupervisor(event, context)
     else:
         supervisor = BinarySupervisor()
