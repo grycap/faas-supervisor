@@ -49,6 +49,7 @@ class LambdaSupervisor(DefaultSupervisor):
         batch_logs = (f"Job delegated to batch.\n"
                       f"Check batch logs with:\n"
                       f"  scar log -n {self.lambda_instance.get_function_name()} -ri {batch_ri}")
+        get_logger().info(batch_logs)
         self.body["udocker_output"] = batch_logs.encode('utf-8')
 
     def _execute_udocker(self):
@@ -71,21 +72,25 @@ class LambdaSupervisor(DefaultSupervisor):
     def create_error_response(self):
         exception_msg = traceback.format_exc()
         get_logger().error("Exception launched:\n %s", exception_msg)
-        return {"statusCode" : 500,
-                "headers" : {
-                    "amz-lambda-request-id": self.lambda_instance.get_request_id(),
-                    "amz-log-group-name": self.lambda_instance.get_log_group_name(),
-                    "amz-log-stream-name": self.lambda_instance.get_log_stream_name()},
-                "body" : StrUtils.dict_to_base64str({"exception" : exception_msg}),
-                "isBase64Encoded" : True,
-                }
+        return {
+            "statusCode": 500,
+            "headers": {
+                "amz-lambda-request-id": self.lambda_instance.get_request_id(),
+                "amz-log-group-name": self.lambda_instance.get_log_group_name(),
+                "amz-log-stream-name": self.lambda_instance.get_log_stream_name()
+            },
+            "body": StrUtils.dict_to_base64str({"exception" : exception_msg}),
+            "isBase64Encoded": True,
+        }
 
     def create_response(self):
-        return {"statusCode" : 200,
-                "headers" : {
-                    "amz-lambda-request-id": self.lambda_instance.get_request_id(),
-                    "amz-log-group-name": self.lambda_instance.get_log_group_name(),
-                    "amz-log-stream-name": self.lambda_instance.get_log_stream_name()},
-                "body" : StrUtils.bytes_to_base64str(self.body["udocker_output"]),
-                "isBase64Encoded" : True,
-                }
+        return {
+            "statusCode": 200,
+            "headers": {
+                "amz-lambda-request-id": self.lambda_instance.get_request_id(),
+                "amz-log-group-name": self.lambda_instance.get_log_group_name(),
+                "amz-log-stream-name": self.lambda_instance.get_log_stream_name()
+            },
+            "body": StrUtils.bytes_to_base64str(self.body["udocker_output"]),
+            "isBase64Encoded": True,
+        }
