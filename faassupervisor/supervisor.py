@@ -116,7 +116,7 @@ def _create_supervisor(event, context=None):
     environment.
     Binary mode by default"""
     supervisor = None
-    if SysUtils.is_var_in_env('AWS_EXECUTION_ENV'):
+    if SysUtils.is_var_in_env('AWS_LAMBDA_RUNTIME_API'):
         supervisor = LambdaSupervisor(event, context)
     else:
         supervisor = BinarySupervisor()
