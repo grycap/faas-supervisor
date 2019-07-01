@@ -39,8 +39,13 @@ class BinarySupervisor(DefaultSupervisor):
             FileUtils.set_file_execution_rights(script_path)
             get_logger().info("Executing user defined script: '%s'", script_path)
             try:
+                pyinstaller_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH')
+                orig_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH_ORIG')
+                if orig_library_path:
+                    SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
                 script_output = subprocess.check_output(['/bin/sh', script_path],
                                                         stderr=subprocess.STDOUT).decode("latin-1")
+                SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)
                 get_logger().info(script_output)
             except subprocess.CalledProcessError as cpe:
                 # Exit with user script return code if an
