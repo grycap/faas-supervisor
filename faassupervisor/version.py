@@ -13,4 +13,4 @@
 # limitations under the License.
 """Stores the package version."""
 
-__version__ = '1.1.1-beta4'
+__version__ = '1.1.1'
