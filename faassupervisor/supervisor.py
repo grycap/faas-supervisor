@@ -12,182 +12,133 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from faassupervisor.events.events import EventProvider
-from faassupervisor.storage.auth import StorageAuthData
-from faassupervisor.storage.path import StoragePathData
-from faassupervisor.storage.storage import StorageProvider
-import abc
-from faassupervisor.exceptions import exception, InvalidSupervisorTypeError
-import faassupervisor.logger as logger
-import faassupervisor.utils as utils
-import importlib
+""" Module with all the generic supervisor classes and methods.
+Also entry point of the faassupervisor package."""
 
-
-class SupervisorInterface(metaclass=abc.ABCMeta):
-    ''' All the different supervisors must inherit from this class
-    to ensure that the commands are defined consistently'''
-
-    @abc.abstractmethod
-    def execute_function(self):
-        pass
-
-    @abc.abstractmethod
-    def create_response(self):
-        pass
-
-    @abc.abstractmethod
-    def create_error_response(self, message, status_code):
-        pass
+from faassupervisor.storage import create_provider
+from faassupervisor.events import parse_event
+from faassupervisor.exceptions import exception, FaasSupervisorError
+from faassupervisor.storage.auth import StorageAuth
+import faassupervisor.storage as storage
+from faassupervisor.utils import SysUtils, FileUtils
+from faassupervisor.logger import configure_logger, get_logger
+from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor
+from faassupervisor.faas.binary.supervisor import BinarySupervisor
 
 
 class Supervisor():
+    """Generic supervisor used to create the required supervisors
+    based on the environment variable 'SUPERVISOR_TYPE'."""
 
-    supervisor_type = { 'LAMBDA': {'module' : 'faassupervisor.faas.aws.lambda_.supervisor',
-                                   'class_name' : 'LambdaSupervisor'},
-                        'BATCH': {'module' : 'faassupervisor.faas.aws.batch.supervisor',
-                                  'class_name' : 'BatchSupervisor'},
-                        'OPENFAAS': {'module' : 'faassupervisor.faas.openfaas.supervisor',
-                                     'class_name' : 'OpenfaasSupervisor'},
-                        }
+    # pylint: disable=too-few-public-methods
 
-    def __init__(self, typ, **kwargs):
-        # Temporal directories where the input/output data will be stored
-        # and deleted when the execution finishes
+    def __init__(self, event, context=None):
         self._create_tmp_dirs()
-        # Parse the event data
-        self.event = EventProvider(kwargs['event'], self._get_input_dir())
-        self.input_data_providers = []
-        self.output_data_providers = []
+        # Parse the event_info data
+        self.parsed_event = parse_event(event)
+        self._read_storage_variables()
         # Create the supervisor
-        # Dynamically loads the module and the supervisor class needed
-        module = importlib.import_module(self.supervisor_type[typ]['module'])
-        class_ = getattr(module, self.supervisor_type[typ]['class_name'])
-        self.supervisor = class_(**kwargs)
+        self.supervisor = _create_supervisor(event, context)
 
     def _create_tmp_dirs(self):
-        if _is_batch_environment():
-            if utils.get_environment_variable("STEP") == "INIT":
-                utils.create_folder(utils.get_environment_variable("TMP_INPUT_DIR"))
-                utils.create_folder(utils.get_environment_variable("TMP_OUTPUT_DIR"))
-        else:
-            # Temporal directory where the data will be stored
-            # and deleted when the execution finishes
-            self.input_tmp_dir = utils.create_tmp_dir()
-            self.output_tmp_dir = utils.create_tmp_dir()
-            utils.set_environment_variable("TMP_INPUT_DIR", self.input_tmp_dir.name)
-            utils.set_environment_variable("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
+        """Creates the temporal directories where the
+        input/output data is going to be stored.
 
-    def _get_input_dir(self):
-        if _is_batch_environment():
-            return utils.get_environment_variable("TMP_INPUT_DIR")
-        return self.input_tmp_dir.name
+        The folders are deleted automatically
+        when the execution finishes.
+        """
+        self.input_tmp_dir = FileUtils.create_tmp_dir()
+        self.output_tmp_dir = FileUtils.create_tmp_dir()
+        SysUtils.set_env_var("TMP_INPUT_DIR", self.input_tmp_dir.name)
+        SysUtils.set_env_var("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
 
-    def _get_output_dir(self):
-        if _is_batch_environment():
-            return utils.get_environment_variable("TMP_OUTPUT_DIR")
-        return self.output_tmp_dir.name
+    def _read_storage_variables(self):
+        get_logger().info("Reading storage authentication variables")
+        self.stg_auth = StorageAuth()
+        self.stg_auth.read_storage_providers()
 
-    def _create_storage_providers(self):
-        logger.get_logger().info("Reading STORAGE_AUTH variables")
-        storage_auths = StorageAuthData()
-        logger.get_logger().info("Reading STORAGE_PATH variables")
-        storage_paths = StoragePathData()
-        # Create input data providers
-        for storage_id, storage_path in storage_paths.input.items():
-            self.input_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
-            logger.get_logger().info("Found '{}' input provider".format(self.input_data_providers[-1].type))
-        # Create output data providers
-        for storage_id, storage_path in storage_paths.output.items():
-            self.output_data_providers.append(StorageProvider(storage_auths.auth_data[storage_id], storage_path))
-            logger.get_logger().info("Found '{}' output provider".format(self.output_data_providers[-1].type))
+    def _get_input_provider(self):
+        """Create an input provider based on the event received."""
+        event_type = self.parsed_event.get_type()
+        auth_data = self.stg_auth.get_auth_data_by_stg_type(event_type)
+        return create_provider(auth_data)
+
+    def _get_output_providers(self):
+        """Create output providers based on the environment credentials."""
+        return [storage.create_provider(self.stg_auth.get_data_by_stg_id(storage_id), output_path)
+                for storage_id, output_path in storage.get_output_paths()]
 
     @exception()
     def _parse_input(self):
-        '''
-        Download input data from storage provider or
-        save data from POST request
-        '''
-        if _is_batch_environment():
-            # Don't download anything if not INIT step
-            if utils.get_environment_variable("STEP") != "INIT":
-                return
-            # Manage batch extra steps
-            self.supervisor.parse_input()
+        """Download input data from storage provider
+        or save data from POST request.
 
-        # event_type could be: 'APIGATEWAY'|'MINIO'|'ONEDATA'|'S3'|'UNKNOWN'
-        event_type = self.event.get_event_type()
-        if event_type != 'APIGATEWAY' and event_type != 'UNKNOWN':
-            logger.get_logger().info("Downloading input file from event type '{}'".format(event_type))
-            for data_provider in self.input_data_providers:
-                # data_provider.type could be: 'MINIO'|'ONEDATA'|'S3'
-                if data_provider.type == event_type:
-                    input_file_path = data_provider.download_input(self.event, self._get_input_dir())
-                    if input_file_path:
-                        utils.set_environment_variable("INPUT_FILE_PATH", input_file_path)
-                        logger.get_logger().info("INPUT_FILE_PATH variable set to '{}'".format(input_file_path))
-                    break
+        A function can have information from several storage providers
+        but one event always represents only one file (so far), so only
+        one provider is going to be used for each event received.
+        """
+        stg_prov = self._get_input_provider()
+        get_logger().info("Found '%s' input provider", stg_prov.get_type())
+        if stg_prov:
+            get_logger().info("Downloading input file using '%s' event",
+                              self.parsed_event.get_type())
+            input_file_path = storage.download_input(stg_prov,
+                                                     self.parsed_event,
+                                                     SysUtils.get_env_var("TMP_INPUT_DIR"))
+            if input_file_path and FileUtils.is_file(input_file_path):
+                SysUtils.set_env_var("INPUT_FILE_PATH", input_file_path)
+                get_logger().info("INPUT_FILE_PATH variable set to '%s'", input_file_path)
 
     @exception()
     def _parse_output(self):
-        # Don't upload anything if not END step
-        if _is_batch_environment() and utils.get_environment_variable("STEP") != "END":
-            return
-
-        for data_provider in self.output_data_providers:
-            data_provider.upload_output(self._get_output_dir())
+        for stg_prov in self._get_output_providers():
+            get_logger().info("Found '%s' output provider", stg_prov.get_type())
+            storage.upload_output(stg_prov, SysUtils.get_env_var("TMP_OUTPUT_DIR"))
 
     @exception()
     def run(self):
+        """Generic method to launch the supervisor execution."""
         try:
-            self._create_storage_providers()
             self._parse_input()
             self.supervisor.execute_function()
             self._parse_output()
-            logger.get_logger().info('Creating response')
+            get_logger().info('Creating response')
             return self.supervisor.create_response()
-        except Exception as ex:
-            logger.get_logger().exception(ex)
-            logger.get_logger().error('Creating error response')
+        except FaasSupervisorError as fse:
+            get_logger().exception(fse)
+            get_logger().error('Creating error response')
             return self.supervisor.create_error_response()
 
 
-def _is_batch_environment():
-    return _get_supervisor_type() == 'BATCH'
-
-
-def _get_supervisor_type():
-    typ = utils.get_environment_variable("SUPERVISOR_TYPE")
-    _is_allowed_environment(typ)
-    return typ
-
+def _is_lambda_environment():
+    return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
+            SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
 
 @exception()
-def _is_allowed_environment(typ):
-    if typ not in Supervisor.supervisor_type:
-        raise InvalidSupervisorTypeError(sup_typ=typ)
+def _create_supervisor(event, context=None):
+    """Returns a new supervisor based on the
+    environment.
+    Binary mode by default"""
+    supervisor = None
+    if _is_lambda_environment():
+        supervisor = LambdaSupervisor(event, context)
+    else:
+        supervisor = BinarySupervisor()
+    return supervisor
 
 
-def _start_supervisor(**kwargs):
-    logger.configure_logger()
-    typ = _get_supervisor_type()
-    supervisor = Supervisor(typ, **kwargs)
+def main(event, context=None):
+    """Initializes the generic supervisor
+    and launches its execution."""
+    configure_logger()
+    get_logger().debug("EVENT received: %s", event)
+    if context:
+        get_logger().debug("CONTEXT received: %s", context)
+    supervisor = Supervisor(event, context)
     return supervisor.run()
 
 
-def python_main(**kwargs):
-    ''' Called when running from a Python environment.
-    Receives the input from the method arguments.
-    '''
-    return _start_supervisor(**kwargs)
-
-
-def main():
-    ''' Called when running as binary.
-    Receives the input from stdin.
-    '''
-    kwargs = {'event': utils.get_stdin()}
-    return _start_supervisor(**kwargs)
-
-
 if __name__ == "__main__":
-    main()
+    # If supervisor is running as a binary
+    # receive the input from stdin.
+    main(SysUtils.get_stdin())

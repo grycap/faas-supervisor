@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" Module to define classes and methods related
+with the API Gateway event.
 
-'''
 API Gateway event example:
+
 {'body': '/9j/4AAQSkZJRgAB5Wp//Z',
  'headers': {'Accept': '*/*',
              'Accept-Encoding': 'gzip, deflate',
@@ -66,61 +68,51 @@ API Gateway event example:
                     'stage': 'scar'},
  'resource': '/{proxy+}',
  'stageVariables': None}
- '''
+"""
+
 import base64
-import json
-import faassupervisor.utils as utils
-import faassupervisor.logger as logger
+from faassupervisor.utils import FileUtils, SysUtils
+from faassupervisor.events.unknown import UnknownEvent
+
+_JSON_TYPE = 'application/json'
 
 
-class ApiGatewayEvent():
+class ApiGatewayEvent(UnknownEvent):
+    """ Parse the API Gateway event and saves the body
+    (if exists) and the request parameters (if exists). """
 
-    def __init__(self, event_info, tmp_dir_path):
-        self.event_info = event_info
-        self.tmp_dir_path = tmp_dir_path
-        self.file_path = ''
-        self._process_api_event()
+    _TYPE = 'APIGATEWAY'
+    _FILE_NAME = 'api_event_file'
 
-    def _process_api_event(self):
-        if self._is_post_request_with_body():
-            self._process_request_body()
+    def _set_event_params(self):
+        """If has a JSON body, it can contain
+        storage provider information so we save
+        it for further parsing.
+
+        Also check for request parameters."""
+        self.body = self.event.get('body')
         if self._is_request_with_parameters():
             self._save_request_parameters()
 
-    def _is_post_request_with_body(self):
-        return self.event_info['httpMethod'] == 'POST' and \
-               'body' in self.event_info and self.event_info['body']
-
-    def _has_json_body(self):
-        return self.event_info['headers']['Content-Type'].strip() == 'application/json'
-
-    def _process_request_body(self):
-        '''
-        The received body must be a json or a base64 encoded file
-        '''
-        if self._has_json_body():
-            body = self.event_info['body']
-            self.event_info = body if isinstance(body, dict) else json.loads(body)
-        else:
-            self._save_body()
-
-    def _save_body(self):
-        tmp_file_path = utils.join_paths(self.tmp_dir_path, "api_event_file")
-        logger.get_logger().info("Received file from POST request")
-        logger.get_logger().info("File saved in path '{0}'".format(tmp_file_path))
-        utils.create_file_with_content(tmp_file_path,
-                                       base64.b64decode(self.event_info['body']),
-                                       mode='wb')
-        self.file_path = tmp_file_path
-        utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
-        logger.get_logger().info("INPUT_FILE_PATH set to '{}'".format(self.file_path))
-
+    def has_json_body(self):
+        """Returns true if the type of the request is JSON"""
+        return self.event['headers']['Content-Type'].strip() == _JSON_TYPE
 
     def _is_request_with_parameters(self):
-        return "queryStringParameters" in self.event_info \
-                and self.event_info["queryStringParameters"]
+        return "queryStringParameters" in self.event \
+                and self.event["queryStringParameters"]
 
     def _save_request_parameters(self):
         # Add passed HTTP parameters to container variables
-        for key, value in self.event_info["queryStringParameters"].items():
-            utils.set_environment_variable("CONT_VAR_{}".format(key), value)
+        for key, value in self.event["queryStringParameters"].items():
+            SysUtils.set_env_var(f"CONT_VAR_{key}", value)
+
+    def save_event(self, input_dir_path):
+        file_path = SysUtils.join_paths(input_dir_path, self._FILE_NAME)
+        if self.has_json_body():
+            FileUtils.create_file_with_content(file_path, self.body)
+        else:
+            FileUtils.create_file_with_content(file_path,
+                                               base64.b64decode(self.body),
+                                               mode='wb')
+        return file_path

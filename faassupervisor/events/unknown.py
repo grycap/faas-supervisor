@@ -11,32 +11,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module used to define a generic unknown event."""
 
-import faassupervisor.logger as logger
-import faassupervisor.utils as utils
-import json
+from faassupervisor.utils import SysUtils, FileUtils
+
 
 class UnknownEvent():
-    '''
-    Class to manage unknown events
-    '''    
-    def __init__(self, event, tmp_dir_path, is_json=False):
+    """Class to manage unknown events."""
+
+    _FILE_NAME = "event_file"
+    _TYPE = 'UNKNOWN'
+
+    def __init__(self, event):
         self.event = event
-        self.is_json = is_json
-        if is_json:
-            self.file_path = self._save_unknown_json_event(event, tmp_dir_path)
-        else:
-            self.file_path = self._save_unknown_event(event, tmp_dir_path)
-        utils.set_environment_variable("INPUT_FILE_PATH", self.file_path)
-        
-    def _save_unknown_json_event(self, event, tmp_dir_path):
-        file_path = utils.join_paths(tmp_dir_path, "event.json")
-        utils.create_file_with_content(file_path, json.dumps(event))
-        logger.get_logger().info("Received unknown JSON event and saved it in path '{0}'".format(file_path))    
-        return file_path
-    
-    def _save_unknown_event(self, event, tmp_dir_path):
-        file_path = utils.join_paths(tmp_dir_path, "event_file")
-        utils.create_file_with_content(file_path, event)
-        logger.get_logger().info("Received unknown event and saved it in path '{0}'".format(file_path))    
+        if isinstance(event, dict):
+            records = event.get('Records')
+            if records:
+                self.event_records = records[0]
+        self._set_event_params()
+
+    def _set_event_params(self):
+        """ Generic method to be implemented by all the event parsers. """
+
+    def get_type(self):
+        """Returns the event type.
+        Default event is UNKNOWN, but it can also
+        be APIGATEWAY, MINIO, ONEDATA, and S3.
+
+        Each class inheriting from UnkownEvent
+        must override the _TYPE."""
+        return self._TYPE
+
+    def save_event(self, input_dir_path):
+        """Stores the unknown event and returns
+        the file path where the file is stored."""
+        file_path = SysUtils.join_paths(input_dir_path, self._FILE_NAME)
+        FileUtils.create_file_with_content(file_path, self.event)
         return file_path

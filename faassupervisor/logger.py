@@ -11,25 +11,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Module to define log configuration and management."""
 
 import logging
-from faassupervisor.utils import is_variable_in_environment, get_environment_variable
+from faassupervisor.utils import SysUtils
+
+
+def _get_log_level():
+    loglevel = logging.INFO
+    if SysUtils.is_var_in_env("LOG_LEVEL"):
+        loglevel = logging.getLevelName(SysUtils.get_env_var("LOG_LEVEL"))
+    return loglevel
+
+
+def _get_stream_handler():
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    str_hdl = logging.StreamHandler()
+    str_hdl.setFormatter(formatter)
+    return str_hdl
+
 
 def configure_logger():
+    """Configure the global logger used by all the classes."""
     logger = logging.getLogger('supervisor')
     # Avoid initializing the logger several times
     if not logger.handlers:
         # Set logger configuration
-        loglevel = logging.INFO
-        if is_variable_in_environment("LOG_LEVEL"):
-            loglevel = logging.getLevelName(get_environment_variable("LOG_LEVEL"))
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        ch = logging.StreamHandler()
-        ch.setFormatter(formatter)
-        
-        logger.setLevel(loglevel)
         logger.propagate = 0
-        logger.addHandler(ch)
-    
+        logger.setLevel(_get_log_level())
+        logger.addHandler(_get_stream_handler())
+
+
 def get_logger():
+    """Returns the configured logger."""
     return logging.getLogger('supervisor')

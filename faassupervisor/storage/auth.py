@@ -11,72 +11,68 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from faassupervisor.exceptions import StorageTypeError
-import faassupervisor.utils as utils
+"""Classes to parse, store and manage storage authentication information."""
+from collections import namedtuple
+from faassupervisor.utils import SysUtils
+
+
+class AuthData():
+    """Stores provider authentication values."""
+
+    def __init__(self, storage_id, storage_type):
+        self.storage_id = storage_id
+        self.type = storage_type
+        self.creds = {}
+
+    def set_credential(self, key, val):
+        """Store authentication credentials like USER|PASS|TOKEN|SPACE|HOST."""
+        self.creds[key] = val
+
+    def get_credential(self, key):
+        """Return authentication credentials previously stored."""
+        return self.creds.get(key, "")
+
 
 class StorageAuth():
-    '''
-    Different storage types (to date):
-        - Minio
-        - OneData
-        - S3
-    '''
-    _storage_type = {'S3', 'MINIO', 'ONEDATA'}   
-    
-    def __init__(self, storage_id):
-        self.id = storage_id
-        self.type = ''
-        self.data = {}
-        
-    def set_type(self, typ):
-        if typ in self._storage_type:
-            self.type = typ
-        else:
-            raise StorageTypeError(typ=typ)
-        
-    def set_auth_var(self, auth_var, val):
-        '''
-        Common auth keys: USER|PASS|TOKEN|SPACE|HOST
-        '''
-        if auth_var and val:
-            self.data[auth_var] = val
-    
-    def get(self, val):
-        return self.data[val]
-
-class StorageAuthData():
+    """Parses all the provider authentication variables."""
 
     def __init__(self):
-        self.auth_data = {}
-        self._read_storage_providers_envs()
-    
-    def _read_storage_providers_envs(self):
-        '''
-        Reads the global variables to create the providers needed.
+        self.auth_id = {}
+        self.auth_type = {}
+
+    def read_storage_providers(self):
+        """Reads the global variables to create the providers needed.
+
         Variable schema:  STORAGE_AUTH_$1_$2_$3
         $1: MINIO | S3 | ONEDATA
-        $2: STORAGE_ID (Specified in the function definition file, is unique for each storage defined)
-        $3: USER | PASS | TOKEN | SPACE | HOST
-        
-        e.g.: STORAGE_AUTH_MINIO_12345_USER
-        '''
-        env_vars = utils.get_environment_variables()
+        $2: USER | PASS | TOKEN | SPACE | HOST
+        $3: STORAGE_ID (Specified in the function definition file,
+                        is unique for each storage defined)
+
+        e.g.: STORAGE_AUTH_MINIO_USER_12345
+        """
+        # Remove the prefix 'STORAGE_AUTH_'
+        env_vars = SysUtils.get_filtered_env_vars("STORAGE_AUTH_")
+        # type = MINIO | S3 | ONEDATA ...
+        # cred = USER | PASS | TOKEN ...
+        provider_info = namedtuple('provider_info', ['type', 'cred', 'id'])
         for env_key, env_val in env_vars.items():
-            if env_key.startswith("STORAGE_AUTH_"):
-                self._read_storage_auth(env_key.split("_"), env_val)
-    
-    def _read_storage_auth(self, prov_key, val):
-        '''
-        Creates the classes needed to initialize the storage providers.
-        The provider_id can be composed by several fields:
-        Two different cases:
-          - key1 = "STORAGE_AUTH_MINIO_123_456_USER"
-            ['STORAGE', 'AUTH', 'MINIO', '123', '456', 'USER']
-          - key2 = "STORAGE_AUTH_MINIO_123-456_USER"
-            ['STORAGE', 'AUTH', 'MINIO', '123-456', 'USER']
-        '''
-        storage_prov_id = "_".join(prov_key[3:-1])
-        if storage_prov_id not in self.auth_data:
-            self.auth_data[storage_prov_id] =  StorageAuth(storage_prov_id)
-            self.auth_data[storage_prov_id].set_type(prov_key[2])
-        self.auth_data[storage_prov_id].set_auth_var(prov_key[-1], val)
+            # Don't split past the id
+            # MINIO_USER_123_45 -> *[MINIO, USER, 123_45]
+            prov_info = provider_info(*env_key.split("_", 2))
+            # Link ID with TYPE
+            if prov_info.id not in self.auth_id:
+                self.auth_id[prov_info.id] = prov_info.type
+            if prov_info.type not in self.auth_type:
+                # Link TYPE with AUTH data
+                self.auth_type[prov_info.type] = AuthData(prov_info.id, prov_info.type)
+            self.auth_type[prov_info.type].set_credential(prov_info.cred, env_val)
+
+    def get_auth_data_by_stg_type(self, storage_type):
+        """Returns the authentication credentials previously stored."""
+        return self.auth_type.get(storage_type)
+
+    def get_data_by_stg_id(self, storage_id):
+        """Returns the authentication credentials previously stored."""
+        prov_type = self.auth_id.get(storage_id)
+        return self.get_auth_data_by_stg_type(prov_type)

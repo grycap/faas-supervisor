@@ -11,12 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" Module containing all the classes and methods
+related with the local storage provider. """
 
-import faassupervisor.supervisor as supervisor
-import faassupervisor.utils as utils
-import json
+from faassupervisor.storage.providers import DefaultStorageProvider
 
-if __name__ == "__main__":
-    kwargs = {"event" : json.loads(utils.get_environment_variable('AWS_LAMBDA_EVENT')),
-              "context" : json.loads(utils.get_environment_variable('AWS_LAMBDA_CONTEXT'))}
-    supervisor.python_main(**kwargs)
+
+class Local(DefaultStorageProvider):
+    """Class to manage saving files in local storage."""
+
+    _TYPE = 'LOCAL'
+
+    def download_file(self, parsed_event, input_dir_path):
+        """Delegates the 'download' and local storage to the event."""
+        return parsed_event.save_event(input_dir_path)
+
+    def upload_file(self, file_path, file_name):
+        pass

@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Stores the package version."""
+"""Module with handler used in the lambda function."""
 
-__version__ = '1.1.1-beta4'
+import faassupervisor.supervisor as supervisor
+
+
+def lambda_handler(event, context):
+    """Launches the supervisor and returns its output."""
+    return supervisor.main(event=event, context=context)
