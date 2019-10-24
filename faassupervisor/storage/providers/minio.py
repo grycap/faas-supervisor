@@ -31,7 +31,7 @@ class Minio(DefaultStorageProvider):
         endpoint = SysUtils.get_env_var('MINIO_ENDPOINT')
         if not endpoint:
             endpoint = self._DEFAULT_MINIO_ENDPOINT
-        return boto3.client('s3', endpoint_url=endpoint,
+        return boto3.client('s3', endpoint_url=endpoint, verify=False,
                             aws_access_key_id=self.stg_auth.get_credential('USER'),
                             aws_secret_access_key=self.stg_auth.get_credential('PASS'))
 
