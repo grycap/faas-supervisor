@@ -20,20 +20,30 @@ from faassupervisor.storage.providers import DefaultStorageProvider
 from faassupervisor.utils import SysUtils, FileUtils
 
 
+# TODO: modify class to not use stg_path
+# TODO: raise exceptions in order to be readed by the main supervisor (define new exception -> error or warning)
 class Onedata(DefaultStorageProvider):
     """ Class that manages downloads and uploads from Onedata. """
 
     _CDMI_PATH = 'cdmi'
     _TYPE = 'ONEDATA'
 
-    def __init__(self, stg_auth, stg_path):
-        super().__init__(stg_auth, stg_path)
+    def __init__(self, stg_auth):
+        super().__init__(stg_auth)
         self._set_onedata_environment()
 
     def _set_onedata_environment(self):
-        self.oneprovider_space = self.stg_auth.get_credential('SPACE')
-        self.oneprovider_host = self.stg_auth.get_credential('HOST')
-        self.headers = {'X-Auth-Token': self.stg_auth.get_credential('TOKEN')}
+        self.oneprovider_space = self.stg_auth.get_credential('space')
+        self.oneprovider_host = self.stg_auth.get_credential('oneprovider_host')
+        self.headers = {'X-Auth-Token': self.stg_auth.get_credential('token')}
+
+    # TODO: implement
+    def _create_folder(self, folder_name):
+        pass
+
+    # TODO: implement
+    def _folder_exists(self, folder_name):
+        pass
 
     def download_file(self, parsed_event, input_dir_path):
         """ Downloads the file from the space of Onedata and
@@ -58,13 +68,15 @@ class Onedata(DefaultStorageProvider):
                                self.oneprovider_host)
         return file_download_path
 
-    def upload_file(self, file_path, file_name):
+    # TODO: create subfolders from 'output_path' if they don't exist
+    def upload_file(self, file_path, output_path):
+        file_name = FileUtils.get_file_name(file_path)
         url = (f'https://{self.oneprovider_host}/{self._CDMI_PATH}/'
-               f'{self.oneprovider_space}/{self.stg_path}/{file_name}')
-        get_logger().info("Uploading file '%s' to '%s/%s'",
+               f'{self.oneprovider_space}/{output_path}/{file_name}')
+        get_logger().info('Uploading file \'%s/%s\' to space \'%s\'',
+                          output_path,
                           file_name,
-                          self.oneprovider_space,
-                          self.stg_path)
+                          self.oneprovider_space)
         with open(file_path, 'rb') as data:
             response = requests.put(url, data=data, headers=self.headers)
             if response.status_code not in [201, 202, 204]:

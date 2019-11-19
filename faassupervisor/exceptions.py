@@ -65,7 +65,7 @@ class FaasSupervisorError(Exception):
 
 
 ################################################
-# #             GENERAL EXCEPTIONS             ##
+##             GENERAL EXCEPTIONS             ##
 ################################################
 class InvalidPlatformError(FaasSupervisorError):
     """
@@ -120,7 +120,7 @@ class UnknowStorageEventWarning(FaasSupervisorError):
     fmt = "Unknown storage event detected."
 
 ################################################
-# #        STORAGE PROVIDER EXCEPTIONS         ##
+##        STORAGE PROVIDER EXCEPTIONS         ##
 ################################################
 class InvalidStorageProviderError(FaasSupervisorError):
     """
@@ -160,3 +160,17 @@ class StorageTypeError(FaasSupervisorError):
 
     """
     fmt = "The storage type '{auth_type}' is not allowed."
+
+class StorageAuthError(FaasSupervisorError):
+    """
+    The storage authentication is not well-defined.
+
+    """
+    fmt = "The storage authentication of '{auth_type}' is not well-defined."
+
+# TODO: define a new exception for Onedata
+class OnedataProviderError(FaasSupervisorError):
+    """
+
+    """
+    fmt = ""

@@ -29,6 +29,8 @@ class BinarySupervisor(DefaultSupervisor):
     def __init__(self):
         get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
+    # TODO: support user requests (not only storage events)
+    # TODO: support to return files in body (return file bytes)
     def execute_function(self):
         if SysUtils.is_var_in_env('SCRIPT'):
             script_path = SysUtils.join_paths(SysUtils.get_env_var("TMP_INPUT_DIR"),
@@ -55,8 +57,10 @@ class BinarySupervisor(DefaultSupervisor):
         else:
             get_logger().error('No user script found!')
 
+    # TODO: implement to work with user requests
     def create_response(self):
         pass
 
+    # TODO: implement to work with user requests
     def create_error_response(self):
         pass

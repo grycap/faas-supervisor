@@ -20,6 +20,8 @@ import subprocess
 import sys
 import tempfile
 import shutil
+import yaml
+from faassupervisor.logger import get_logger
 
 
 class SysUtils():
@@ -84,6 +86,11 @@ class SysUtils():
     def execute_cmd_and_return_output(command, encoding='utf-8'):
         """Executes a bash command and returns the console output."""
         return subprocess.check_output(command).decode(encoding)
+
+    @staticmethod
+    def is_lambda_environment():
+        return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
+                SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
 
 
 class FileUtils():
@@ -176,3 +183,45 @@ class StrUtils():
     def base64_to_str(value, encoding='utf-8'):
         """Decodes from base64 and returns a string."""
         return base64.b64decode(value).decode(encoding)
+
+
+class ConfigUtils():
+    """Common methods for configuration file management."""
+
+    _LAMBDA_STORAGE_CONFIG_PATH = '/var/task/function_config.yaml'
+    _BINARY_STORAGE_CONFIG_ENV = 'FUNCTION_CONFIG'
+    _CUSTOM_VARIABLES = [
+        'timeout_threshold',
+        'log_level',
+        'execution_mode',
+        'extra_payload',
+        'udocker_exec',
+        'udocker_dir',
+        'udocker_bin',
+        'udocker_lib'
+    ]
+
+    @classmethod
+    def read_cfg_var(cls, variable):
+        """Returns the value of a config variable or an empty
+        string if not found."""
+        try:
+            if SysUtils.is_lambda_environment():
+                # Read config file
+                with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
+                    config = yaml.safe_load(file)
+            else:
+                # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
+                encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
+                decoded = StrUtils.base64_to_str(encoded)
+                config = yaml.safe_load(decoded)
+        except Exception as exc:
+            get_logger().warning('Error reading config definition: %s', exc)
+            return ''
+        else:
+            # Manage variables that could be defined in environment
+            if variable in cls._CUSTOM_VARIABLES:
+                value = SysUtils.get_env_var(variable.upper())
+                if value is not '':
+                    return value
+            return config.get(variable, '')

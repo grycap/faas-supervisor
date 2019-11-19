@@ -21,16 +21,16 @@ from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
-from faassupervisor.utils import SysUtils, StrUtils
+from faassupervisor.utils import ConfigUtils, StrUtils, SysUtils
 from faassupervisor.exceptions import NoLambdaContextError
 
 
 def _is_batch_execution():
-    return SysUtils.get_env_var("EXECUTION_MODE") == "batch"
+    return ConfigUtils.read_cfg_var("execution_mode") == "batch"
 
 
 def _is_lambda_batch_execution():
-    return SysUtils.get_env_var("EXECUTION_MODE") == "lambda-batch"
+    return ConfigUtils.read_cfg_var("execution_mode") == "lambda-batch"
 
 
 class LambdaSupervisor(DefaultSupervisor):

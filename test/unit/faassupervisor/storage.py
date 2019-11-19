@@ -34,6 +34,7 @@ from faassupervisor.events.onedata import OnedataEvent
 # pylint: disable=protected-access
 
 
+# TODO: modify to work with new storage configuration!!
 class StorageModuleTest(unittest.TestCase):
 
     auth = namedtuple("auth", ["type"])
@@ -88,6 +89,7 @@ class StorageModuleTest(unittest.TestCase):
                               storage_path(id='2', path='tmp1')])
 
 
+# TODO: modify to work with new storage configuration!!
 class AuthDataTest(unittest.TestCase):
 
     def test_create_auth_data(self):
@@ -108,6 +110,7 @@ class AuthDataTest(unittest.TestCase):
         self.assertEqual(auth.get_credential('K11'), '')
 
 
+# TODO: modify to work with new storage configuration!!
 class StorageAuthTest(unittest.TestCase):
 
     def test_create_storage_auth(self):
@@ -150,6 +153,7 @@ class StorageAuthTest(unittest.TestCase):
             self.assertEqual(stga.get_data_by_stg_id('1').get_credential('PASS'), 'p1')
 
 
+# TODO: modify to work with new storage configuration!!
 class LocalStorageTest(unittest.TestCase):
 
     def test_create_local_storage(self):
@@ -165,6 +169,7 @@ class LocalStorageTest(unittest.TestCase):
         parsed_event.save_event.assert_called_once_with('/tmp/local')
 
 
+# TODO: modify to work with new storage configuration!!
 class MinioStorageTest(unittest.TestCase):
 
     def _get_minio_class_and_auth(self):
@@ -239,6 +244,7 @@ class MinioStorageTest(unittest.TestCase):
                                                    'processed.jpg'))
 
 
+# TODO: modify to work with new storage configuration!!
 class S3StorageTest(unittest.TestCase):
 
     def _get_s3_class_and_auth(self, path=None):
@@ -337,6 +343,7 @@ class S3StorageTest(unittest.TestCase):
                                  call().Object().Acl().put(ACL='public-read'))
 
 
+# TODO: modify to work with new storage configuration!!
 class OnedataStorageTest(unittest.TestCase):
 
     def _get_onedata_class_and_auth(self, path=None):

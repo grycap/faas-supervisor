@@ -1,0 +1,171 @@
+# Copyright (C) GRyCAP - I3M - UPV
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Class to parse, store and manage storage information."""
+from faassupervisor.utils import ConfigUtils, FileUtils
+from faassupervisor.exceptions import NoOutputStorageProviderDefinedWarning, \
+    NoStorageProviderDefinedWarning, StorageAuthError
+from faassupervisor.logger import get_logger
+from faassupervisor.storage.providers import create_provider
+
+
+class AuthData():
+    """Stores provider authentication values."""
+
+    def __init__(self, storage_type, credentials):
+        self.type = storage_type
+        self.creds = credentials
+
+    def set_credential(self, key, val):
+        """Store authentication credentials like USER|PASS|TOKEN|SPACE|HOST."""
+        self.creds[key] = val
+
+    def get_credential(self, key):
+        """Return authentication credentials previously stored."""
+        return self.creds.get(key, "")
+
+
+class StorageConfig():
+    """Parses providers authentication variables and defined outputs."""
+
+    def __init__(self):
+        self.s3_auth = None
+        self.minio_auth = None
+        self.onedata_auth = None
+        self.output = []
+        self._parse_config()
+
+    def _parse_config(self):
+        output = ConfigUtils.read_cfg_var('output')
+        # Output list
+        if output is not '':
+            self.output = output
+        else:
+            raise NoOutputStorageProviderDefinedWarning()
+        storage_providers = ConfigUtils.read_cfg_var('storage_providers')
+        if storage_providers is not '':
+            # s3 storage provider auth
+            if ('s3' in storage_providers
+                    and storage_providers['s3']):
+                # Do not validate s3 config (can contain 'user' in lambda env)
+                self.s3_auth = AuthData('S3', storage_providers['s3'])
+            # minio storage provider auth
+            if ('minio' in storage_providers
+                    and storage_providers['minio']):
+                self._validate_minio_creds(storage_providers['minio'])
+            # onedata storage provider auth
+            if ('onedata' in storage_providers
+                    and storage_providers['onedata']):
+                self._validate_onedata_creds(storage_providers['onedata'])
+        else:
+            raise NoStorageProviderDefinedWarning()
+
+    def _validate_minio_creds(self, minio_creds):
+        if (minio_creds is not []
+                and 'access_key' in minio_creds
+                and minio_creds['access_key'] is not None
+                and minio_creds['access_key'] is not ''
+                and 'secret_key' in minio_creds
+                and minio_creds['secret_key'] is not None
+                and minio_creds['secret_key'] is not ''
+                and 'endpoint' in minio_creds
+                and minio_creds['endpoint'] is not None
+                and minio_creds['endpoint'] is not ''):
+            self.minio_auth = AuthData('MINIO', minio_creds)
+        else:
+            raise StorageAuthError(auth_type='MINIO')
+
+    def _validate_onedata_creds(self, onedata_creds):
+        if (onedata_creds is not []
+                and 'oneprovider_host' in onedata_creds
+                and onedata_creds['oneprovider_host'] is not None
+                and onedata_creds['oneprovider_host'] is not ''
+                and 'token' in onedata_creds
+                and onedata_creds['token'] is not None
+                and onedata_creds['token'] is not ''
+                and 'space' in onedata_creds
+                and onedata_creds['space'] is not None
+                and onedata_creds['space'] is not ''):
+            self.onedata_auth = AuthData('ONEDATA', onedata_creds)
+        else:
+            raise StorageAuthError(auth_type='ONEDATA')
+
+    def get_auth_data_by_stg_type(self, storage_type):
+        """Returns the authentication credentials by its type."""
+        if storage_type == 'S3':
+            return self.s3_auth
+        elif storage_type == 'MINIO':
+            return self.minio_auth
+        elif storage_type == 'ONEDATA':
+            return self.onedata_auth
+        return None
+
+    def download_input(self, parsed_event, input_dir_path):
+        """Receives the event where the file information is and
+        the tmp_dir_path where to store the downloaded file.
+
+        Returns the file path where the file is downloaded."""
+        event_type = parsed_event.get_type()
+        auth_data = self.get_auth_data_by_stg_type(event_type)
+        stg_provider = create_provider(auth_data)
+        return stg_provider.download_file(parsed_event, input_dir_path)
+
+    # TODO: logging...
+    def upload_input(self, output_dir_path):
+        """Receives the tmp_dir_path where the files to upload are stored and
+        uploads files whose name matches the prefixes and suffixes specified
+        in 'output'."""
+        get_logger().info('Searching for files to upload in folder \'%s\'', output_dir_path)
+        output_files = FileUtils.get_all_files_in_dir(output_dir_path)
+        stg_providers = {}
+        # Filter files by prefix and suffix
+        for output in self.output:
+            for file_path in output_files:
+                prefix_ok = False
+                suffix_ok = False
+                # Check prefixes
+                if ('prefix' not in output
+                        or len(output['prefix']) == 0):
+                    prefix_ok = True
+                else:
+                    for pref in output['prefix']:
+                        if file_path.startswith(pref):
+                            prefix_ok = True
+                            break
+                if prefix_ok:
+                    # Check suffixes
+                    if ('suffix' not in output
+                            or len(output['suffix']) == 0):
+                        suffix_ok = True
+                    else:
+                        for suff in output['suffix']:
+                            if file_path.endswith(suff):
+                                suffix_ok = True
+                                break
+                    # Only upload file if name matches the prefixes and suffixes
+                    if suffix_ok:
+                        out_type = output['storage_provider'].upper()
+                        if out_type not in stg_providers:
+                            auth_data = self.get_auth_data_by_stg_type(out_type)
+                            stg_providers[out_type] = create_provider(auth_data)
+                        stg_providers[out_type].upload_file(file_path, output['path'])
+
+
+
+
+
+
+        # get_logger().info("Found the following files to upload: '%s'", output_files)
+        # for file_path in output_files:
+        #     file_name = file_path.replace(f"{output_dir_path}/", "")
+        #     stg_provider.upload_file(file_path, file_name)

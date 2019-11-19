@@ -32,6 +32,7 @@ class Supervisor():
 
     # pylint: disable=too-few-public-methods
 
+    # TODO: update to read new storage config and manage exceptions...
     def __init__(self, event, context=None):
         self._create_tmp_dirs()
         # Parse the event_info data
@@ -52,6 +53,8 @@ class Supervisor():
         SysUtils.set_env_var("TMP_INPUT_DIR", self.input_tmp_dir.name)
         SysUtils.set_env_var("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
 
+    # TODO: read config HERE! manage exceptions here! -> add @exception()
+    @exception()
     def _read_storage_variables(self):
         get_logger().info("Reading storage authentication variables")
         self.stg_auth = StorageAuth()
@@ -68,6 +71,7 @@ class Supervisor():
         return [storage.create_provider(self.stg_auth.get_data_by_stg_id(storage_id), output_path)
                 for storage_id, output_path in storage.get_output_paths()]
 
+    # TODO: modify to work with new StorageConfig
     @exception()
     def _parse_input(self):
         """Download input data from storage provider
@@ -89,6 +93,7 @@ class Supervisor():
                 SysUtils.set_env_var("INPUT_FILE_PATH", input_file_path)
                 get_logger().info("INPUT_FILE_PATH variable set to '%s'", input_file_path)
 
+    # TODO: modify to work with new StorageConfig
     @exception()
     def _parse_output(self):
         for stg_prov in self._get_output_providers():
@@ -110,17 +115,13 @@ class Supervisor():
             return self.supervisor.create_error_response()
 
 
-def _is_lambda_environment():
-    return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
-            SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
-
 @exception()
 def _create_supervisor(event, context=None):
     """Returns a new supervisor based on the
     environment.
     Binary mode by default"""
     supervisor = None
-    if _is_lambda_environment():
+    if SysUtils.is_lambda_environment():
         supervisor = LambdaSupervisor(event, context)
     else:
         supervisor = BinarySupervisor()

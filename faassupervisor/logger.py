@@ -14,13 +14,14 @@
 """Module to define log configuration and management."""
 
 import logging
-from faassupervisor.utils import SysUtils
+from faassupervisor.utils import ConfigUtils
 
 
 def _get_log_level():
     loglevel = logging.INFO
-    if SysUtils.is_var_in_env("LOG_LEVEL"):
-        loglevel = logging.getLevelName(SysUtils.get_env_var("LOG_LEVEL"))
+    config_level = ConfigUtils.read_cfg_var('log_level')
+    if config_level is not '':
+        loglevel = logging.getLevelName(config_level)
     return loglevel
 
 
