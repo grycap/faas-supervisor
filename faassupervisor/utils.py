@@ -89,6 +89,7 @@ class SysUtils():
 
     @staticmethod
     def is_lambda_environment():
+        """Checks if supervisor is running in AWS Lambda."""
         return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
                 SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
 

@@ -118,9 +118,9 @@ class StorageConfig():
         event_type = parsed_event.get_type()
         auth_data = self.get_auth_data_by_stg_type(event_type)
         stg_provider = create_provider(auth_data)
+        get_logger().info('Found \'%s\' input provider', stg_provider.get_type())
         return stg_provider.download_file(parsed_event, input_dir_path)
 
-    # TODO: logging...
     def upload_input(self, output_dir_path):
         """Receives the tmp_dir_path where the files to upload are stored and
         uploads files whose name matches the prefixes and suffixes specified
@@ -130,6 +130,9 @@ class StorageConfig():
         stg_providers = {}
         # Filter files by prefix and suffix
         for output in self.output:
+            get_logger().info('Checking files for uploading to \'%s\' on path: \'%s\'',
+                              output['storage_provider'].upper(),
+                              output['path'])
             for file_path in output_files:
                 prefix_ok = False
                 suffix_ok = False
@@ -159,13 +162,4 @@ class StorageConfig():
                             auth_data = self.get_auth_data_by_stg_type(out_type)
                             stg_providers[out_type] = create_provider(auth_data)
                         stg_providers[out_type].upload_file(file_path, output['path'])
-
-
-
-
-
-
-        # get_logger().info("Found the following files to upload: '%s'", output_files)
-        # for file_path in output_files:
-        #     file_name = file_path.replace(f"{output_dir_path}/", "")
-        #     stg_provider.upload_file(file_path, file_name)
+                        

@@ -18,7 +18,7 @@ Also entry point of the faassupervisor package."""
 from faassupervisor.storage import create_provider
 from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
-from faassupervisor.storage.auth import StorageAuth
+from faassupervisor.storage.config import StorageConfig
 import faassupervisor.storage as storage
 from faassupervisor.utils import SysUtils, FileUtils
 from faassupervisor.logger import configure_logger, get_logger
@@ -32,12 +32,12 @@ class Supervisor():
 
     # pylint: disable=too-few-public-methods
 
-    # TODO: update to read new storage config and manage exceptions...
     def __init__(self, event, context=None):
         self._create_tmp_dirs()
         # Parse the event_info data
         self.parsed_event = parse_event(event)
-        self._read_storage_variables()
+        # Read storage config
+        self._read_storage_config()
         # Create the supervisor
         self.supervisor = _create_supervisor(event, context)
 
@@ -53,25 +53,11 @@ class Supervisor():
         SysUtils.set_env_var("TMP_INPUT_DIR", self.input_tmp_dir.name)
         SysUtils.set_env_var("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
 
-    # TODO: read config HERE! manage exceptions here! -> add @exception()
     @exception()
-    def _read_storage_variables(self):
-        get_logger().info("Reading storage authentication variables")
-        self.stg_auth = StorageAuth()
-        self.stg_auth.read_storage_providers()
+    def _read_storage_config(self):
+        get_logger().info("Reading storage configuration")
+        self.stg_config = StorageConfig()
 
-    def _get_input_provider(self):
-        """Create an input provider based on the event received."""
-        event_type = self.parsed_event.get_type()
-        auth_data = self.stg_auth.get_auth_data_by_stg_type(event_type)
-        return create_provider(auth_data)
-
-    def _get_output_providers(self):
-        """Create output providers based on the environment credentials."""
-        return [storage.create_provider(self.stg_auth.get_data_by_stg_id(storage_id), output_path)
-                for storage_id, output_path in storage.get_output_paths()]
-
-    # TODO: modify to work with new StorageConfig
     @exception()
     def _parse_input(self):
         """Download input data from storage provider
@@ -81,24 +67,15 @@ class Supervisor():
         but one event always represents only one file (so far), so only
         one provider is going to be used for each event received.
         """
-        stg_prov = self._get_input_provider()
-        get_logger().info("Found '%s' input provider", stg_prov.get_type())
-        if stg_prov:
-            get_logger().info("Downloading input file using '%s' event",
-                              self.parsed_event.get_type())
-            input_file_path = storage.download_input(stg_prov,
-                                                     self.parsed_event,
-                                                     SysUtils.get_env_var("TMP_INPUT_DIR"))
-            if input_file_path and FileUtils.is_file(input_file_path):
-                SysUtils.set_env_var("INPUT_FILE_PATH", input_file_path)
-                get_logger().info("INPUT_FILE_PATH variable set to '%s'", input_file_path)
+        input_file_path = self.stg_config.download_input(self.parsed_event,
+                                                         self.input_tmp_dir.name)
+        if input_file_path and FileUtils.is_file(input_file_path):
+            SysUtils.set_env_var('INPUT_FILE_PATH', input_file_path)
+            get_logger().info('INPUT_FILE_PATH variable set to \'%s\'', input_file_path)
 
-    # TODO: modify to work with new StorageConfig
     @exception()
     def _parse_output(self):
-        for stg_prov in self._get_output_providers():
-            get_logger().info("Found '%s' output provider", stg_prov.get_type())
-            storage.upload_output(stg_prov, SysUtils.get_env_var("TMP_OUTPUT_DIR"))
+        self.stg_config.upload_input(self.output_tmp_dir.name)
 
     @exception()
     def run(self):
