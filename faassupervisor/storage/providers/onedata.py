@@ -18,15 +18,16 @@ import requests
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
 from faassupervisor.utils import SysUtils, FileUtils
+from faassupervisor.exceptions import OnedataDownloadError, \
+    OnedataUploadError, OnedataFolderCreationError
 
 
-# TODO: modify class to not use stg_path
-# TODO: raise exceptions in order to be readed by the main supervisor (define new exception -> error or warning)
 class Onedata(DefaultStorageProvider):
-    """ Class that manages downloads and uploads from Onedata. """
+    """Class that manages downloads and uploads from Onedata. """
 
-    _CDMI_PATH = 'cdmi'
     _TYPE = 'ONEDATA'
+    _CDMI_PATH = '/cdmi'
+    _CDMI_VERSION_HEADER = {'X-CDMI-Specification-Version': '1.1.1'}
 
     def __init__(self, stg_auth):
         super().__init__(stg_auth)
@@ -37,20 +38,29 @@ class Onedata(DefaultStorageProvider):
         self.oneprovider_host = self.stg_auth.get_credential('oneprovider_host')
         self.headers = {'X-Auth-Token': self.stg_auth.get_credential('token')}
 
-    # TODO: implement
     def _create_folder(self, folder_name):
-        pass
+        url = (f'https://{self.oneprovider_host}{self._CDMI_PATH}/'
+               f'{self.oneprovider_space}/{folder_name}/')
+        response = requests.put(url, headers=self.headers)
+        if response.status_code != 201:
+            raise OnedataFolderCreationError(folder_name=folder_name,
+                                             status_code=response.status_code)
 
-    # TODO: implement
     def _folder_exists(self, folder_name):
-        pass
+        url = (f'https://{self.oneprovider_host}{self._CDMI_PATH}/'
+               f'{self.oneprovider_space}/{folder_name}/')
+        headers = {**self._CDMI_VERSION_HEADER, **self.headers}
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return True
+        return False
 
     def download_file(self, parsed_event, input_dir_path):
-        """ Downloads the file from the space of Onedata and
+        """Downloads the file from the space of Onedata and
         returns the path were the download is placed. """
         file_download_path = ""
-        url = f"https://{self.oneprovider_host}/{self._CDMI_PATH}{parsed_event.object_key}"
-        get_logger().info("Downloading item from host '%s' with key '%s'",
+        url = f'https://{self.oneprovider_host}{self._CDMI_PATH}{parsed_event.object_key}'
+        get_logger().info('Downloading item from host \'%s\' with key \'%s\'',
                           self.oneprovider_host,
                           parsed_event.object_key)
         response = requests.get(url, headers=self.headers)
@@ -58,26 +68,37 @@ class Onedata(DefaultStorageProvider):
             file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
             FileUtils.create_file_with_content(file_download_path, response.content, mode='wb')
 
-            get_logger().info("Successful download of file '%s' with key '%s' in path '%s'",
+            get_logger().info('Successful download of file \'%s\' with key \'%s\' in path \'%s\'',
                               parsed_event.file_name,
                               parsed_event.object_key,
                               file_download_path)
         else:
-            get_logger().error("File '%s' download from Onedata host '%s' failed!",
-                               parsed_event.file_name,
-                               self.oneprovider_host)
+            raise OnedataDownloadError(file_name=parsed_event.object_key,
+                                       status_code=response.status_code)
         return file_download_path
 
-    # TODO: create subfolders from 'output_path' if they don't exist
-    def upload_file(self, file_path, output_path):
-        file_name = FileUtils.get_file_name(file_path)
-        url = (f'https://{self.oneprovider_host}/{self._CDMI_PATH}/'
-               f'{self.oneprovider_space}/{output_path}/{file_name}')
-        get_logger().info('Uploading file \'%s/%s\' to space \'%s\'',
-                          output_path,
-                          file_name,
+    def upload_file(self, file_path, file_name, output_path):
+        """Uploads the file to the Onedata output path."""
+        file_name = file_name.strip('/')
+        output_path = output_path.strip('/')
+        upload_path = f'{output_path}/{file_name}'
+        upload_folder = FileUtils.get_dir_name(upload_path)
+        # Create output folder (and subfolders) if it does not exists
+        if not self._folder_exists(upload_folder):
+            folders = upload_folder.split('/')
+            path = ''
+            for folder in folders:
+                path = f'{path}/{folder}'
+                if not self._folder_exists(path):
+                    self._create_folder(path)
+        # Upload the file
+        url = (f'https://{self.oneprovider_host}{self._CDMI_PATH}/'
+               f'{self.oneprovider_space}/{upload_path}')
+        get_logger().info('Uploading file \'%s\' to space \'%s\'',
+                          upload_path,
                           self.oneprovider_space)
         with open(file_path, 'rb') as data:
             response = requests.put(url, data=data, headers=self.headers)
             if response.status_code not in [201, 202, 204]:
-                get_logger().error("Upload failed. Status code: %s", response.status_code)
+                raise OnedataUploadError(file_name=file_name,
+                                         status_code=response.status_code)

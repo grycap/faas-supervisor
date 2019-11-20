@@ -15,12 +15,13 @@
 
 import functools
 import sys
+from requests.exceptions import RequestException
 from botocore.exceptions import ClientError
 from faassupervisor.logger import get_logger
 
 
 def exception():
-    """ A decorator that wraps the passed in function and logs exceptions. """
+    """A decorator that wraps the passed in function and logs exceptions."""
 
     def decorator(func):
 
@@ -33,6 +34,11 @@ def exception():
                 print(f"There was an exception in {func.__name__}")
                 print(cerr.response['Error']['Message'])
                 get_logger().error(cerr)
+                sys.exit(1)
+
+            except RequestException as rexc:
+                print(f"There was an exception in {func.__name__}")
+                get_logger().error(rexc)
                 sys.exit(1)
 
             except FaasSupervisorError as fse:
@@ -98,12 +104,14 @@ class ContainerImageNotFoundError(FaasSupervisorError):
     """
     fmt = "Container image id is not specified."
 
+
 class ContainerTimeoutExpiredWarning(FaasSupervisorError):
     """
     The udocker containers has exceeded the defined execution time.
 
     """
     fmt = "Container timeout expired.\nContainer execution stopped."
+
 
 class NoLambdaContextError(FaasSupervisorError):
     """
@@ -112,12 +120,14 @@ class NoLambdaContextError(FaasSupervisorError):
     """
     fmt = "No context found in the Lambda environment."
 
+
 class UnknowStorageEventWarning(FaasSupervisorError):
     """
     Unknown storage event detected
 
     """
     fmt = "Unknown storage event detected."
+
 
 ################################################
 ##        STORAGE PROVIDER EXCEPTIONS         ##
@@ -161,6 +171,7 @@ class StorageTypeError(FaasSupervisorError):
     """
     fmt = "The storage type '{auth_type}' is not allowed."
 
+
 class StorageAuthError(FaasSupervisorError):
     """
     The storage authentication is not well-defined.
@@ -168,9 +179,29 @@ class StorageAuthError(FaasSupervisorError):
     """
     fmt = "The storage authentication of '{auth_type}' is not well-defined."
 
-# TODO: define a new exception for Onedata
-class OnedataProviderError(FaasSupervisorError):
-    """
 
+################################################
+##        ONEDATA PROVIDER EXCEPTIONS         ##
+################################################
+class OnedataUploadError(FaasSupervisorError):
     """
-    fmt = ""
+    Uploading file to Onedata failed.
+    """
+    fmt = ("Uploading file '{file_name}' to Onedata failed. "
+           "Status code: {status_code}")
+
+
+class OnedataDownloadError(FaasSupervisorError):
+    """
+    Downloading file from Onedata failed.
+    """
+    fmt = ("Downloading file '{file_name}' from Onedata failed. "
+           "Status code: {status_code}")
+
+
+class OnedataFolderCreationError(FaasSupervisorError):
+    """
+    Folder creation in Onedata failed.
+    """
+    fmt = ("Folder '{folder_name}' creation in Onedata failed. "
+           "Status code: {status_code}")

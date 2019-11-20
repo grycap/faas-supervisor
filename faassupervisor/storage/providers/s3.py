@@ -41,8 +41,8 @@ class S3(DefaultStorageProvider):
         return boto3.client('s3')
 
     def download_file(self, parsed_event, input_dir_path):
-        """ Downloads the file from the S3 bucket and
-        returns the path were the download is placed. """
+        """Downloads the file from the S3 bucket and
+        returns the path were the download is placed."""
         file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
         get_logger().info('Downloading item from bucket \'%s\' with key \'%s\'',
                           parsed_event.bucket_name,
@@ -57,9 +57,8 @@ class S3(DefaultStorageProvider):
                           file_download_path)
         return file_download_path
 
-    def upload_file(self, file_path, output_path):
-        """ Uploads the file from the S3 path."""
-        file_name = FileUtils.get_file_name(file_path)
+    def upload_file(self, file_path, file_name, output_path):
+        """Uploads the file to the S3 output path."""
         file_key = get_file_key(output_path, file_name)
         bucket_name = get_bucket_name(output_path)
         get_logger().info('Uploading file \'%s\' to bucket \'%s\'', file_key, bucket_name)

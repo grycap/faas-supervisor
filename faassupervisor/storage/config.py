@@ -134,6 +134,7 @@ class StorageConfig():
                               output['storage_provider'].upper(),
                               output['path'])
             for file_path in output_files:
+                file_name = file_path.replace(f'{output_dir_path}/', '')
                 prefix_ok = False
                 suffix_ok = False
                 # Check prefixes
@@ -142,7 +143,7 @@ class StorageConfig():
                     prefix_ok = True
                 else:
                     for pref in output['prefix']:
-                        if file_path.startswith(pref):
+                        if file_name.startswith(pref):
                             prefix_ok = True
                             break
                 if prefix_ok:
@@ -152,7 +153,7 @@ class StorageConfig():
                         suffix_ok = True
                     else:
                         for suff in output['suffix']:
-                            if file_path.endswith(suff):
+                            if file_name.endswith(suff):
                                 suffix_ok = True
                                 break
                     # Only upload file if name matches the prefixes and suffixes
@@ -161,5 +162,5 @@ class StorageConfig():
                         if out_type not in stg_providers:
                             auth_data = self.get_auth_data_by_stg_type(out_type)
                             stg_providers[out_type] = create_provider(auth_data)
-                        stg_providers[out_type].upload_file(file_path, output['path'])
+                        stg_providers[out_type].upload_file(file_path, file_name, output['path'])
                         

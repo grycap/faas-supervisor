@@ -166,6 +166,11 @@ class FileUtils():
         """Returns the filename."""
         return os.path.basename(file_path)
 
+    @staticmethod
+    def get_dir_name(file_path):
+        """Returns the directory name."""
+        return os.path.dirname(file_path)
+
 
 class StrUtils():
     """Common methods for string management."""

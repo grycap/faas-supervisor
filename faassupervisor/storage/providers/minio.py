@@ -23,7 +23,7 @@ from faassupervisor.utils import SysUtils
 # TODO: modify class to not use stg_path
 # TODO: subclass of S3
 class Minio(DefaultStorageProvider):
-    """ Class that manages downloads and uploads from Minio. """
+    """Class that manages downloads and uploads from Minio. """
 
     _DEFAULT_MINIO_ENDPOINT = 'http://minio-service.minio:9000'
     _TYPE = 'MINIO'
@@ -64,8 +64,9 @@ class Minio(DefaultStorageProvider):
                           file_download_path)
         return file_download_path
 
-    def upload_file(self, file_path, file_name):
-        """Uploads a file to a minio bucket."""
+    # TODO: implement or inherit from S3
+    def upload_file(self, file_path, file_name, output_path):
+        """Uploads the file to the minio output path."""
         get_logger().info('Uploading file \'%s\' to bucket \'%s\'', file_name, self.stg_path)
         with open(file_path, 'rb') as data:
             self.client.upload_fileobj(data, self.stg_path, file_name)

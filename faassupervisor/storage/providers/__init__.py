@@ -72,7 +72,7 @@ class DefaultStorageProvider(metaclass=abc.ABCMeta):
         """Generic method to be implemented by all the storage providers."""
 
     @abc.abstractmethod
-    def upload_file(self, file_path, output_path):
+    def upload_file(self, file_path, file_name, output_path):
         """Generic method to be implemented by all the storage providers."""
 
     def get_type(self):
