@@ -21,7 +21,7 @@ from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
-from faassupervisor.utils import ConfigUtils, StrUtils, SysUtils
+from faassupervisor.utils import ConfigUtils, StrUtils
 from faassupervisor.exceptions import NoLambdaContextError
 
 

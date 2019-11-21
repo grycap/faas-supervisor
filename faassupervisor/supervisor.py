@@ -15,11 +15,9 @@
 """ Module with all the generic supervisor classes and methods.
 Also entry point of the faassupervisor package."""
 
-from faassupervisor.storage import create_provider
 from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig
-import faassupervisor.storage as storage
 from faassupervisor.utils import SysUtils, FileUtils
 from faassupervisor.logger import configure_logger, get_logger
 from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor
