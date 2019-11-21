@@ -21,12 +21,6 @@ from faassupervisor.storage.providers import DefaultStorageProvider, \
 from faassupervisor.utils import FileUtils, SysUtils
 
 
-def _set_file_acl(bucket_name, file_key):
-    obj = boto3.resource('s3').Object(bucket_name, file_key)
-    obj.Acl().put(ACL='public-read')
-
-
-# TODO: modify _get_client method to use provided credentials if defined in stg_auth...
 class S3(DefaultStorageProvider):
     """Class that manages downloads and uploads from S3."""
 
@@ -38,7 +32,23 @@ class S3(DefaultStorageProvider):
 
     def _get_client(self):
         """Returns S3 client with default configuration."""
-        return boto3.client('s3')
+        if self.stg_auth is None:
+            return boto3.client('s3')
+        region = self.stg_auth.get_credential('region')
+        if region == '':
+            region = None
+        return boto3.client('s3',
+                            region_name=region,
+                            aws_access_key_id=self.stg_auth.get_credential('access_key'),
+                            aws_secret_access_key=self.stg_auth.get_credential('secret_key'))
+
+    def _set_file_acl(self, bucket_name, file_key):
+        get_logger().info('Changing ACLs for public-read for object in bucket \'%s\' with key \'%s\'',
+                          bucket_name,
+                          file_key)
+        self.client.put_object_acl(ACL='public-read',
+                                   Bucket=bucket_name,
+                                   Key=file_key)
 
     def download_file(self, parsed_event, input_dir_path):
         """Downloads the file from the S3 bucket and
@@ -66,7 +76,4 @@ class S3(DefaultStorageProvider):
             self.client.upload_fileobj(data, bucket_name, file_key)
 
         # TODO: check if this is really required
-        get_logger().info('Changing ACLs for public-read for object in bucket \'%s\' with key \'%s\'',
-                          bucket_name,
-                          file_key)
-        _set_file_acl(bucket_name, file_key)
+        self._set_file_acl(bucket_name, file_key)

@@ -58,7 +58,7 @@ class StorageConfig():
             if ('s3' in storage_providers
                     and storage_providers['s3']):
                 # Do not validate s3 config (can contain 'user' in lambda env)
-                self.s3_auth = AuthData('S3', storage_providers['s3'])
+                self._validate_s3_creds(storage_providers['s3'])
             # minio storage provider auth
             if ('minio' in storage_providers
                     and storage_providers['minio']):
@@ -77,13 +77,25 @@ class StorageConfig():
                 and minio_creds['access_key'] is not ''
                 and 'secret_key' in minio_creds
                 and minio_creds['secret_key'] is not None
-                and minio_creds['secret_key'] is not ''
-                and 'endpoint' in minio_creds
-                and minio_creds['endpoint'] is not None
-                and minio_creds['endpoint'] is not ''):
+                and minio_creds['secret_key'] is not ''):
+                # and 'endpoint' in minio_creds
+                # and minio_creds['endpoint'] is not None
+                # and minio_creds['endpoint'] is not ''):
             self.minio_auth = AuthData('MINIO', minio_creds)
         else:
             raise StorageAuthError(auth_type='MINIO')
+
+    def _validate_s3_creds(self, s3_creds):
+        if (s3_creds is not []
+                and 'access_key' in s3_creds
+                and s3_creds['access_key'] is not None
+                and s3_creds['access_key'] is not ''
+                and 'secret_key' in s3_creds
+                and s3_creds['secret_key'] is not None
+                and s3_creds['secret_key'] is not ''):
+            self.s3_auth = AuthData('S3', s3_creds)
+        else:
+            raise StorageAuthError(auth_type='S3')
 
     def _validate_onedata_creds(self, onedata_creds):
         if (onedata_creds is not []
