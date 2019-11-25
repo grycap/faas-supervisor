@@ -80,6 +80,7 @@ def parse_event(event):
     # Make sure the event is always stored
     parsed_event = None
     if not isinstance(event, dict):
+        # TODO: son loads could raise an exception...
         event = json.loads(event)
     # Applies the event identification flow
     if _is_api_gateway_event(event):
@@ -90,6 +91,7 @@ def parse_event(event):
         if parsed_event.has_json_body():
             event = parsed_event.body
             if not isinstance(parsed_event.body, dict):
+                # TODO: json loads could raise an exception...
                 event = json.loads(parsed_event.body)
     if _is_storage_event(event):
         get_logger().info("Storage event found.")

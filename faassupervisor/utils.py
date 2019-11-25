@@ -21,7 +21,6 @@ import sys
 import tempfile
 import shutil
 import yaml
-from faassupervisor.logger import get_logger
 
 
 class SysUtils():
@@ -211,23 +210,18 @@ class ConfigUtils():
     def read_cfg_var(cls, variable):
         """Returns the value of a config variable or an empty
         string if not found."""
-        try:
-            if SysUtils.is_lambda_environment():
-                # Read config file
-                with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
-                    config = yaml.safe_load(file)
-            else:
-                # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
-                encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
-                decoded = StrUtils.base64_to_str(encoded)
-                config = yaml.safe_load(decoded)
-        except Exception as exc:
-            get_logger().warning('Error reading config definition: %s', exc)
-            return ''
+        if SysUtils.is_lambda_environment():
+            # Read config file
+            with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
+                config = yaml.safe_load(file)
         else:
-            # Manage variables that could be defined in environment
-            if variable in cls._CUSTOM_VARIABLES:
-                value = SysUtils.get_env_var(variable.upper())
-                if value is not '':
-                    return value
-            return config.get(variable, '')
+            # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
+            encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
+            decoded = StrUtils.base64_to_str(encoded)
+            config = yaml.safe_load(decoded)
+        # Manage variables that could be defined in environment
+        if variable in cls._CUSTOM_VARIABLES:
+            value = SysUtils.get_env_var(variable.upper())
+            if value is not '':
+                return value
+        return config.get(variable, '')

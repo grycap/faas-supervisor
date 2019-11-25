@@ -15,29 +15,6 @@
 used to define storage providers."""
 
 import abc
-from faassupervisor.storage.providers.local import Local
-from faassupervisor.storage.providers.minio import Minio
-from faassupervisor.storage.providers.onedata import Onedata
-from faassupervisor.storage.providers.s3 import S3
-from faassupervisor.exceptions import InvalidStorageProviderError
-
-
-def create_provider(storage_auth):
-    """Returns the storage provider needed
-    based on the authentication type defined.
-
-    If not storage auth provided, use local storage."""
-    if not storage_auth:
-        provider = Local(storage_auth)
-    elif storage_auth.type == 'MINIO':
-        provider = Minio(storage_auth)
-    elif storage_auth.type == 'ONEDATA':
-        provider = Onedata(storage_auth)
-    elif storage_auth.type == 'S3':
-        provider = S3(storage_auth)
-    else:
-        raise InvalidStorageProviderError(storage_type=storage_auth.type)
-    return provider
 
 
 def get_bucket_name(output_path):
