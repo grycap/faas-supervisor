@@ -51,7 +51,6 @@ class Supervisor():
         SysUtils.set_env_var("TMP_INPUT_DIR", self.input_tmp_dir.name)
         SysUtils.set_env_var("TMP_OUTPUT_DIR", self.output_tmp_dir.name)
 
-    @exception()
     def _read_storage_config(self):
         get_logger().info("Reading storage configuration")
         self.stg_config = StorageConfig()

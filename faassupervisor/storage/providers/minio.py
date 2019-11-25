@@ -44,5 +44,3 @@ class Minio(S3):
                             aws_access_key_id=self.stg_auth.get_credential('access_key'),
                             aws_secret_access_key=self.stg_auth.get_credential('secret_key'))
 
-    def _set_file_acl(self, bucket_name, file_key):
-        pass

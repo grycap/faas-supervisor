@@ -16,7 +16,7 @@ to manage a udocker container in the lambda environment."""
 
 import subprocess
 from faassupervisor.exceptions import ContainerImageNotFoundError
-from faassupervisor.utils import SysUtils, FileUtils
+from faassupervisor.utils import SysUtils, FileUtils, ConfigUtils
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import ContainerTimeoutExpiredWarning
 from faassupervisor.faas.aws_lambda.function import get_function_ip
@@ -41,7 +41,7 @@ class Udocker():
         self.udocker_exec = [SysUtils.get_env_var("UDOCKER_EXEC")]
         self.cont_cmd = self.udocker_exec + ["--quiet", "run"]
 
-        self.cont_img_id = SysUtils.get_env_var("IMAGE_ID")
+        self.cont_img_id = ConfigUtils.read_cfg_var('image')
         if not self.cont_img_id:
             raise ContainerImageNotFoundError()
 

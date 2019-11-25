@@ -32,7 +32,7 @@ class S3(DefaultStorageProvider):
 
     def _get_client(self):
         """Returns S3 client with default configuration."""
-        if self.stg_auth is None:
+        if self.stg_auth.creds is None:
             return boto3.client('s3')
         region = self.stg_auth.get_credential('region')
         if region == '':
@@ -41,14 +41,6 @@ class S3(DefaultStorageProvider):
                             region_name=region,
                             aws_access_key_id=self.stg_auth.get_credential('access_key'),
                             aws_secret_access_key=self.stg_auth.get_credential('secret_key'))
-
-    def _set_file_acl(self, bucket_name, file_key):
-        get_logger().info('Changing ACLs for public-read for object in bucket \'%s\' with key \'%s\'',
-                          bucket_name,
-                          file_key)
-        self.client.put_object_acl(ACL='public-read',
-                                   Bucket=bucket_name,
-                                   Key=file_key)
 
     def download_file(self, parsed_event, input_dir_path):
         """Downloads the file from the S3 bucket and
@@ -74,6 +66,3 @@ class S3(DefaultStorageProvider):
         get_logger().info('Uploading file \'%s\' to bucket \'%s\'', file_key, bucket_name)
         with open(file_path, 'rb') as data:
             self.client.upload_fileobj(data, bucket_name, file_key)
-
-        # TODO: check if this is really required
-        self._set_file_acl(bucket_name, file_key)

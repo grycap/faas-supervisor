@@ -42,8 +42,8 @@ def exception():
                 sys.exit(1)
 
             except FaasSupervisorError as fse:
-                print(fse.args[0])
-                get_logger().error(fse)
+                # print(fse.args[0])
+                # get_logger().error(fse)
                 if 'Warning' in fse.__class__.__name__:
                     get_logger().warning(fse)
                 # Finish the execution if it's an error
@@ -146,22 +146,6 @@ class NoStorageProviderDefinedWarning(FaasSupervisorError):
 
     """
     fmt = "There is no storage provider defined for this function execution."
-
-
-class NoInputStorageProviderDefinedWarning(NoStorageProviderDefinedWarning):
-    """
-    There is no input storage provider defined.
-
-    """
-    fmt = "There is no input storage provider defined for this function execution."
-
-
-class NoOutputStorageProviderDefinedWarning(NoStorageProviderDefinedWarning):
-    """
-    There is no output storage provider defined.
-
-    """
-    fmt = "There is no output storage provider defined for this function execution."
 
 
 class StorageTypeError(FaasSupervisorError):

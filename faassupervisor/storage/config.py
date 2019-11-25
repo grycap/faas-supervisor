@@ -13,8 +13,8 @@
 # limitations under the License.
 """Class to parse, store and manage storage information."""
 from faassupervisor.utils import ConfigUtils, FileUtils
-from faassupervisor.exceptions import NoOutputStorageProviderDefinedWarning, \
-    NoStorageProviderDefinedWarning, StorageAuthError, InvalidStorageProviderError
+from faassupervisor.exceptions import StorageAuthError, \
+    InvalidStorageProviderError, exception
 from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
@@ -22,7 +22,7 @@ from faassupervisor.storage.providers.s3 import S3
 from faassupervisor.logger import get_logger
 
 
-def create_provider(storage_auth):
+def _create_provider(storage_auth):
     """Returns the storage provider needed
     based on the authentication type defined.
 
@@ -60,25 +60,27 @@ class StorageConfig():
     """Parses providers authentication variables and defined outputs."""
 
     def __init__(self):
-        self.s3_auth = None
+        # Create s3_auth with empty credentials
+        self.s3_auth = AuthData('S3', None)
         self.minio_auth = None
         self.onedata_auth = None
         self.output = []
         self._parse_config()
 
+    @exception()
     def _parse_config(self):
         output = ConfigUtils.read_cfg_var('output')
         # Output list
         if output is not '':
             self.output = output
         else:
-            raise NoOutputStorageProviderDefinedWarning()
+            get_logger().warning('There is no output defined for this function execution.')
         storage_providers = ConfigUtils.read_cfg_var('storage_providers')
-        if storage_providers is not '':
+        if (storage_providers and
+                storage_providers is not ''):
             # s3 storage provider auth
             if ('s3' in storage_providers
                     and storage_providers['s3']):
-                # Do not validate s3 config (can contain 'user' in lambda env)
                 self._validate_s3_creds(storage_providers['s3'])
             # minio storage provider auth
             if ('minio' in storage_providers
@@ -89,7 +91,7 @@ class StorageConfig():
                     and storage_providers['onedata']):
                 self._validate_onedata_creds(storage_providers['onedata'])
         else:
-            raise NoStorageProviderDefinedWarning()
+            get_logger().warning('There is no storage provider defined for this function execution.')
 
     def _validate_minio_creds(self, minio_creds):
         if (minio_creds is not []
@@ -150,7 +152,7 @@ class StorageConfig():
         Returns the file path where the file is downloaded."""
         event_type = parsed_event.get_type()
         auth_data = self.get_auth_data_by_stg_type(event_type)
-        stg_provider = create_provider(auth_data)
+        stg_provider = _create_provider(auth_data)
         get_logger().info('Found \'%s\' input provider', stg_provider.get_type())
         return stg_provider.download_file(parsed_event, input_dir_path)
 
@@ -194,6 +196,5 @@ class StorageConfig():
                         out_type = output['storage_provider'].upper()
                         if out_type not in stg_providers:
                             auth_data = self.get_auth_data_by_stg_type(out_type)
-                            stg_providers[out_type] = create_provider(auth_data)
+                            stg_providers[out_type] = _create_provider(auth_data)
                         stg_providers[out_type].upload_file(file_path, file_name, output['path'])
-                        
