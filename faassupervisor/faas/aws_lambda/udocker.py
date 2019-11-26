@@ -41,7 +41,7 @@ class Udocker():
         self.udocker_exec = [SysUtils.get_env_var("UDOCKER_EXEC")]
         self.cont_cmd = self.udocker_exec + ["--quiet", "run"]
 
-        self.cont_img_id = ConfigUtils.read_cfg_var('image')
+        self.cont_img_id = ConfigUtils.read_cfg_var('container').get('image')
         if not self.cont_img_id:
             raise ContainerImageNotFoundError()
 

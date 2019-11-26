@@ -196,7 +196,6 @@ class ConfigUtils():
     _LAMBDA_STORAGE_CONFIG_PATH = '/var/task/function_config.yaml'
     _BINARY_STORAGE_CONFIG_ENV = 'FUNCTION_CONFIG'
     _CUSTOM_VARIABLES = [
-        'image',
         'log_level',
         'execution_mode',
         'extra_payload',

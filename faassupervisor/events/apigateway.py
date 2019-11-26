@@ -91,12 +91,17 @@ class ApiGatewayEvent(UnknownEvent):
 
         Also check for request parameters."""
         self.body = self.event.get('body')
+        if not self.body:
+            self.body = ''
         if self._is_request_with_parameters():
             self._save_request_parameters()
 
     def has_json_body(self):
         """Returns true if the type of the request is JSON"""
-        return self.event['headers']['Content-Type'].strip() == _JSON_TYPE
+        if ('Content-Type' in self.event['headers'] and
+                self.event['headers']['Content-Type']):
+            return self.event['headers']['Content-Type'].strip() == _JSON_TYPE
+        return False
 
     def _is_request_with_parameters(self):
         return "queryStringParameters" in self.event \
