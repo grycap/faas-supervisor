@@ -29,7 +29,7 @@ class Minio(S3):
     def _get_client(self):
         """Return Minio client with user configuration."""
         endpoint = self.stg_auth.get_credential('endpoint')
-        if 'endpoint' == '':
+        if endpoint == '':
             endpoint = self._DEFAULT_MINIO_ENDPOINT
         verify = self.stg_auth.get_credential('verify')
         if verify == '':

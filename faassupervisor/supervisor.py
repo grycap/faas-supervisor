@@ -116,4 +116,6 @@ def main(event, context=None):
 if __name__ == "__main__":
     # If supervisor is running as a binary
     # receive the input from stdin.
-    main(SysUtils.get_stdin())
+    ret = main(SysUtils.get_stdin())
+    if ret != None:
+        print(ret)

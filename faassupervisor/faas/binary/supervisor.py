@@ -27,10 +27,9 @@ class BinarySupervisor(DefaultSupervisor):
     _SCRIPT_FILE_NAME = 'script.sh'
 
     def __init__(self):
+        self.output = ''
         get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
-    # TODO: support user requests (not only storage events)
-    # TODO: support to return files in body (return file bytes)
     def execute_function(self):
         if SysUtils.is_var_in_env('SCRIPT'):
             script_path = SysUtils.join_paths(SysUtils.get_env_var("TMP_INPUT_DIR"),
@@ -45,23 +44,22 @@ class BinarySupervisor(DefaultSupervisor):
                 orig_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH_ORIG')
                 if orig_library_path:
                     SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
-                script_output = subprocess.check_output(['/bin/sh', script_path],
-                                                        stderr=subprocess.STDOUT).decode("latin-1")
+                self.output = subprocess.check_output(['/bin/sh', script_path],
+                                                      stderr=subprocess.STDOUT).decode("latin-1")
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)
-                get_logger().info(script_output)
+                get_logger().debug("CONTAINER OUTPUT:\n %s", self.output)
             except subprocess.CalledProcessError as cpe:
                 # Exit with user script return code if an
                 # error occurs (Kubernetes handles the error)
                 get_logger().error(cpe.output.decode('latin-1'))
                 sys.exit(cpe.returncode)
         else:
-            # TODO: allow executions without scripts
+            # TODO: allow executions without scripts?
             get_logger().error('No user script found!')
 
-    # TODO: implement to work with user requests
     def create_response(self):
-        pass
+        return self.output
 
-    # TODO: implement to work with user requests
+    # TODO: implement to work with user requests?
     def create_error_response(self):
         pass

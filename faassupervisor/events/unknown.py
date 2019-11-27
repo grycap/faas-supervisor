@@ -13,6 +13,8 @@
 # limitations under the License.
 """Module used to define a generic unknown event."""
 
+import json
+import base64
 from faassupervisor.utils import SysUtils, FileUtils
 
 
@@ -46,5 +48,13 @@ class UnknownEvent():
         """Stores the unknown event and returns
         the file path where the file is stored."""
         file_path = SysUtils.join_paths(input_dir_path, self._FILE_NAME)
-        FileUtils.create_file_with_content(file_path, self.event)
+        try:
+            json.loads(self.event)
+        except ValueError:
+            FileUtils.create_file_with_content(file_path,
+                                               base64.b64decode(self.event),
+                                               mode='wb')
+        else:
+            FileUtils.create_file_with_content(file_path, self.event)
+
         return file_path

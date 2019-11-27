@@ -223,4 +223,4 @@ class ConfigUtils():
             value = SysUtils.get_env_var(variable.upper())
             if value is not '':
                 return value
-        return config.get(variable, '')
+        return config.get(variable, '') if config else ''
