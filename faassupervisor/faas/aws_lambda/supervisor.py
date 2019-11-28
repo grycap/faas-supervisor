@@ -79,7 +79,7 @@ class LambdaSupervisor(DefaultSupervisor):
                 "amz-log-group-name": self.lambda_instance.get_log_group_name(),
                 "amz-log-stream-name": self.lambda_instance.get_log_stream_name()
             },
-            "body": StrUtils.dict_to_base64str({"exception" : exception_msg}),
+            "body": StrUtils.dict_to_base64str({"exception": exception_msg}),
             "isBase64Encoded": True,
         }
 

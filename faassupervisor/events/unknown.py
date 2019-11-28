@@ -54,6 +54,8 @@ class UnknownEvent():
             FileUtils.create_file_with_content(file_path,
                                                base64.b64decode(self.event),
                                                mode='wb')
+        except TypeError:
+            FileUtils.create_file_with_content(file_path, self.event)
         else:
             FileUtils.create_file_with_content(file_path, self.event)
 

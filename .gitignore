@@ -107,3 +107,6 @@ venv.bak/
 # Eclipse stuff
 .project
 .pydevproject
+
+# VSCode
+.vscode/

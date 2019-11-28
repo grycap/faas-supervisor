@@ -86,7 +86,8 @@ class EventModuleTest(unittest.TestCase):
         self.assertIsInstance(result, OnedataEvent)
 
     def test_parse_storage_event_unknown(self):
-        self.assertRaises(UnknowStorageEventWarning, events._parse_storage_event(UNKNOWN_EVENT))
+        result = events._parse_storage_event(UNKNOWN_EVENT)
+        self.assertIsNone(result)
 
     def test_parse_event_unknown(self):
         result = events.parse_event(UNKNOWN_EVENT)
@@ -153,7 +154,7 @@ class MinioEventTest(unittest.TestCase):
 
     def test_minio_event_creation(self):
         event = MinioEvent(MINIO_EVENT)
-        self.assertEqual(event.object_key, "images/nature-wallpaper-229.jpg")
+        self.assertEqual(event.object_key, "nature-wallpaper-229.jpg")
         self.assertEqual(event.bucket_arn, "arn:aws:s3:::images")
         self.assertEqual(event.bucket_name, "images")
         self.assertEqual(event.file_name, "nature-wallpaper-229.jpg")
