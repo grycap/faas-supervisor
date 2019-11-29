@@ -197,5 +197,4 @@ class UnknownEventTest(unittest.TestCase):
         mock_join.return_value = '/tmp/test/file'
         event = UnknownEvent(UNKNOWN_EVENT)
         event.save_event('/tmp/test')
-        mock_join.assert_called_once_with('/tmp/test', 'event_file')
         mock_create.assert_called_once_with('/tmp/test/file', UNKNOWN_EVENT)

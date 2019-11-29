@@ -189,6 +189,12 @@ class StrUtils():
         """Decodes from base64 and returns a string."""
         return base64.b64decode(value).decode(encoding)
 
+    @staticmethod
+    def utf8_to_base64_string(value):
+        """Encode a 'utf-8' string using Base64 and return
+        the encoded value as a string."""
+        return StrUtils.bytes_to_base64str(value.encode('utf-8'))
+
 
 class ConfigUtils():
     """Common methods for configuration file management."""
@@ -221,6 +227,6 @@ class ConfigUtils():
         # Manage variables that could be defined in environment
         if variable in cls._CUSTOM_VARIABLES:
             value = SysUtils.get_env_var(variable.upper())
-            if value is not '':
+            if value != '':
                 return value
         return config.get(variable, '') if config else ''

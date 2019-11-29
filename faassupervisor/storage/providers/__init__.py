@@ -22,7 +22,6 @@ def get_bucket_name(output_path):
     return output_path.split('/')[0]
 
 
-# TODO: decide if every function saves the output in unique folder inside the storage provider path!
 def get_file_key(output_path, file_name):
     """Returns the correct \'file_key\' required for uploading files."""
     stg_path = output_path.split('/', 1)

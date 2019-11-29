@@ -18,11 +18,14 @@ import io
 import os
 import unittest
 from unittest import mock
-from faassupervisor.utils import SysUtils, StrUtils, FileUtils
+from faassupervisor.utils import SysUtils, StrUtils, FileUtils, ConfigUtils
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
 
+CONFIG_FILE = """
+name: test-func
+"""
 
 class SysUtilsTest(unittest.TestCase):
 
@@ -171,3 +174,29 @@ class StrUtilsTest(unittest.TestCase):
 
     def test_base64_to_str(self):
         self.assertEqual(StrUtils.base64_to_str("dGVzdGluZwplbmNvZGUu"), "testing\nencode.")
+
+    def test_utf8_to_base64_string(self):
+        self.assertEqual(StrUtils.utf8_to_base64_string("testing\nencode."), "dGVzdGluZwplbmNvZGUu")
+
+
+class ConfigUtilsTest(unittest.TestCase):
+
+    def test_read_cfg_var_environment(self):
+        with mock.patch.dict('os.environ', {'LOG_LEVEL': 'TEST'}, clear=True):
+            self.assertEqual(ConfigUtils.read_cfg_var('log_level'), 'TEST')
+
+    def test_read_cfg_var_config_file(self):
+        with mock.patch.dict('os.environ',
+                             {'AWS_EXECUTION_ENV': 'AWS_Lambda_'},
+                             clear=True):
+            mopen = mock.mock_open(read_data=CONFIG_FILE)
+            with mock.patch('builtins.open', mopen, create=True):
+                var = ConfigUtils.read_cfg_var('name')
+                mopen.assert_called_once_with('/var/task/function_config.yaml')
+                self.assertEqual(var, 'test-func')
+
+    def test_read_cfg_var_config_encoded(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE)},
+                             clear=True):
+            self.assertEqual(ConfigUtils.read_cfg_var('name'), 'test-func')
