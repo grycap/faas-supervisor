@@ -23,7 +23,7 @@ def get_bucket_name(output_path):
 
 
 def get_file_key(output_path, file_name):
-    """Returns the correct \'file_key\' required for uploading files."""
+    """Returns the correct 'file_key' required for uploading files."""
     stg_path = output_path.split('/', 1)
     # Path format => stg_path: bucket/<folder-path>
     # Last part is optional

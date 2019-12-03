@@ -17,199 +17,293 @@ import unittest
 from unittest import mock
 from unittest.mock import call
 from collections import namedtuple
-import faassupervisor.storage as storage
-from faassupervisor.exceptions import InvalidStorageProviderError
-from faassupervisor.storage.auth import AuthData, StorageAuth
+from faassupervisor.storage.providers import get_bucket_name, get_file_key
+from faassupervisor.storage.config import StorageConfig, AuthData, create_provider
 from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
-from faassupervisor.events.minio import MinioEvent
 from faassupervisor.storage.providers.onedata import Onedata
-from faassupervisor.storage.providers.s3 import S3, _get_client
-from faassupervisor.events.apigateway import ApiGatewayEvent
+from faassupervisor.storage.providers.s3 import S3
+from faassupervisor.events.minio import MinioEvent
+from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.onedata import OnedataEvent
+from faassupervisor.utils import StrUtils
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
 # pylint: disable=protected-access
 
+CONFIG_FILE_OK = """
+name: test-func
+output:
+- storage_provider: s3
+  path: bucket/folder
+- storage_provider: minio
+  path: bucket
+  suffix: ['txt', 'jpg']
+  prefix: ['result-']
+storage_providers:
+  minio:
+    access_key: test_minio_access
+    secret_key: test_minio_secret
+  onedata:
+    oneprovider_host: test_oneprovider.host
+    token: test_onedata_token
+    space: test_onedata_space
+"""
 
-# TODO: modify to work with new storage configuration!!
-class StorageModuleTest(unittest.TestCase):
+CONFIG_FILE_NO_OUTPUT = """
+name: test-func
+storage_providers:
+  minio:
+    access_key: test_minio_access
+    secret_key: test_minio_secret
+"""
 
-    auth = namedtuple("auth", ["type"])
+CONFIG_FILE_NO_STORAGE_PROVIDER = """
+name: test-func
+output:
+- storage_provider: s3
+  path: bucket/folder
+"""
 
-    def test_create_provider_local(self):
-        prov = storage.create_provider(())
-        self.assertEqual(prov.get_type(), "LOCAL")
+CONFIG_FILE_INVALID_MINIO = """
+name: test-func
+storage_providers:
+  minio:
+    secret_key: test_minio_secret
+"""
 
-    def test_create_provider_minio(self):
-        prov = storage.create_provider(self.auth("MINIO"))
-        self.assertEqual(prov.get_type(), "MINIO")
+CONFIG_FILE_INVALID_ONEDATA = """
+name: test-func
+storage_providers:
+  onedata:
+    token: test_onedata_token
+    space: test_onedata_space
+"""
 
-    @mock.patch("faassupervisor.storage.providers.onedata.Onedata._set_onedata_environment")
-    def test_create_provider_onedata(self, onepatch):
-        prov = storage.create_provider(self.auth("ONEDATA"))
-        onepatch.assert_called_once()
-        self.assertEqual(prov.get_type(), "ONEDATA")
+CONFIG_FILE_INVALID_S3 = """
+name: test-func
+storage_providers:
+  s3:
+    user: test
+"""
 
-    def test_create_provider_s3(self):
-        prov = storage.create_provider(self.auth("S3"))
-        self.assertEqual(prov.get_type(), "S3")
-
-    def test_create_provider_invalid(self):
-        with self.assertRaises(InvalidStorageProviderError):
-            storage.create_provider(self.auth("ERROR"))
-
-    @mock.patch("faassupervisor.storage.providers.s3.S3.download_file")
-    def test_download_input(self, mock_s3):
-        prov = storage.create_provider(self.auth("S3"))
-        storage.download_input(prov, {}, '/tmp/test')
-        mock_s3.assert_called_once_with({}, '/tmp/test')
-
-    @mock.patch("faassupervisor.utils.FileUtils.get_all_files_in_dir")
-    @mock.patch("faassupervisor.storage.providers.s3.S3.upload_file")
-    def test_upload_output(self, mock_s3, mock_utils):
-        mock_utils.return_value = ['/tmp/test/f1', '/tmp/test/k1/f2']
-        prov = storage.create_provider(self.auth("S3"))
-        storage.upload_output(prov, '/tmp/test')
-        mock_s3.call_count = 2
-        mock_s3.mock_call()[0] = call('/tmp/test/f1', 'f1')
-        mock_s3.mock_call()[1] = call('/tmp/test/k1/f2', 'k1/f2')
-
-    def test_get_output_paths(self):
-        # Mock environment variables
-        with mock.patch.dict('os.environ',
-                             {"STORAGE_PATH_OUTPUT_1" : "tmp1", "STORAGE_PATH_OUTPUT_2" : "tmp1"},
-                             clear=True):
-            result = storage.get_output_paths()
-            storage_path = namedtuple('storage_path', ['id', 'path'])
-            self.assertEqual(result,
-                             [storage_path(id='1', path='tmp1'),
-                              storage_path(id='2', path='tmp1')])
-
-
-# TODO: modify to work with new storage configuration!!
 class AuthDataTest(unittest.TestCase):
 
     def test_create_auth_data(self):
-        auth = AuthData('1', 'LOCAL')
-        self.assertEqual(auth.storage_id, '1')
-        self.assertEqual(auth.type, 'LOCAL')
-        self.assertEqual(auth.creds, {})
-
-    def test_set_auth_data_credential(self):
-        auth = AuthData('1', 'LOCAL')
-        auth.set_credential('K1', 'V1')
-        self.assertEqual(auth.creds, {'K1':'V1'})
+        auth = AuthData('MINIO', {'access_key': 'test'})
+        self.assertEqual(auth.type, 'MINIO')
+        self.assertEqual(auth.creds, {'access_key': 'test'})
 
     def test_get_auth_data_credential(self):
-        auth = AuthData('1', 'LOCAL')
-        auth.set_credential('K1', 'V1')
-        self.assertEqual(auth.get_credential('K1'), 'V1')
-        self.assertEqual(auth.get_credential('K11'), '')
+        auth = AuthData('MINIO', {'access_key': 'test'})
+        self.assertEqual(auth.get_credential('access_key'), 'test')
+        self.assertEqual(auth.get_credential('k'), '')
 
 
-# TODO: modify to work with new storage configuration!!
-class StorageAuthTest(unittest.TestCase):
+class StorageConfigTest(unittest.TestCase):
 
-    def test_create_storage_auth(self):
-        stga = StorageAuth()
-        self.assertEqual(stga.auth_id, {})
-        self.assertEqual(stga.auth_type, {})
-
-    @mock.patch('faassupervisor.storage.auth.AuthData')
-    def test_read_storage_providers(self, mock_auth):
-        # Mock environment variables
+    def test_parse_config_valid(self):
         with mock.patch.dict('os.environ',
-                             {"STORAGE_AUTH_S3_USER_1" : "u1", "STORAGE_AUTH_S3_PASS_1" : "p1"},
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
-            stga = StorageAuth()
-            stga.read_storage_providers()
-            self.assertEqual(stga.auth_id, {'1' : 'S3'})
-            mock_auth.assert_called_once()
-            self.assertEqual(mock_auth.mock_calls[0], call('1', 'S3'))
-            self.assertEqual(mock_auth.mock_calls[1], call().set_credential('USER', 'u1'))
-            self.assertEqual(mock_auth.mock_calls[2], call().set_credential('PASS', 'p1'))
+            config = StorageConfig()
+            expected_output = [
+                {
+                    'storage_provider': 's3',
+                    'path': 'bucket/folder'
+                }, {
+                    'storage_provider': 'minio',
+                    'path': 'bucket',
+                    'suffix': ['txt', 'jpg'],
+                    'prefix': ['result-']
+                }
+            ]
+            self.assertEqual(config.output, expected_output)
+            self.assertEqual(config.minio_auth.type, 'MINIO')
+            self.assertEqual(config.minio_auth.get_credential('access_key'), 'test_minio_access')
+            self.assertEqual(config.minio_auth.get_credential('secret_key'), 'test_minio_secret')
+            self.assertEqual(config.onedata_auth.type, 'ONEDATA')
+            self.assertEqual(config.onedata_auth.get_credential('oneprovider_host'), 'test_oneprovider.host')
+            self.assertEqual(config.onedata_auth.get_credential('token'), 'test_onedata_token')
+            self.assertEqual(config.onedata_auth.get_credential('space'), 'test_onedata_space')
+            self.assertEqual(config.s3_auth.type, 'S3')
 
-    def test_get_auth_data_by_stg_type(self):
-        # Mock environment variables
+    def test_parse_config_no_output(self):
         with mock.patch.dict('os.environ',
-                             {"STORAGE_AUTH_S3_USER_1" : "u1", "STORAGE_AUTH_S3_PASS_1" : "p1"},
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_NO_OUTPUT)},
                              clear=True):
-            stga = StorageAuth()
-            stga.read_storage_providers()
-            self.assertEqual(stga.get_auth_data_by_stg_type('S3').get_credential('USER'), 'u1')
-            self.assertEqual(stga.get_auth_data_by_stg_type('S3').get_credential('PASS'), 'p1')
+            StorageConfig()
+            self.assertLogs('There is no output defined for this function.',
+                             level='WARNING')
 
-    def test_get_data_by_stg_id(self):
-        # Mock environment variables
+    def test_parse_config_no_storage_provider(self):
         with mock.patch.dict('os.environ',
-                             {"STORAGE_AUTH_S3_USER_1" : "u1", "STORAGE_AUTH_S3_PASS_1" : "p1"},
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_NO_STORAGE_PROVIDER)},
                              clear=True):
-            stga = StorageAuth()
-            stga.read_storage_providers()
-            self.assertEqual(stga.get_data_by_stg_id('1').get_credential('USER'), 'u1')
-            self.assertEqual(stga.get_data_by_stg_id('1').get_credential('PASS'), 'p1')
+            StorageConfig()
+            self.assertLogs('There is no storage provider defined for this function.',
+                             level='WARNING')
+
+    def test_parse_config_invalid_minio(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_INVALID_MINIO)},
+                             clear=True):
+            with self.assertRaises(SystemExit):
+                StorageConfig()
+                self.assertLogs('The storage authentication of \'MINIO\' is not well-defined.',
+                                level='ERROR')
+
+    def test_parse_config_invalid_s3(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_INVALID_S3)},
+                             clear=True):
+            with self.assertRaises(SystemExit):
+                StorageConfig()
+                self.assertLogs('The storage authentication of \'S3\' is not well-defined.',
+                                level='ERROR')
+
+    def test_parse_config_invalid_onedata(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_INVALID_ONEDATA)},
+                             clear=True):
+            with self.assertRaises(SystemExit):
+                StorageConfig()
+                self.assertLogs('The storage authentication of \'ONEDATA\' is not well-defined.',
+                                level='ERROR')
+
+    def test_get_minio_auth(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            minio_auth = StorageConfig().get_auth_data_by_stg_type('MINIO')
+            self.assertEqual(minio_auth.type, 'MINIO')
+            self.assertEqual(minio_auth.get_credential('access_key'),
+                             'test_minio_access')
+            self.assertEqual(minio_auth.get_credential('secret_key'),
+                             'test_minio_secret')
+
+    def test_get_s3_auth(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            s3_auth = StorageConfig().get_auth_data_by_stg_type('S3')
+            self.assertEqual(s3_auth.type, 'S3')
+
+    def test_get_onedata_auth(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            onedata_auth = StorageConfig().get_auth_data_by_stg_type('ONEDATA')
+            self.assertEqual(onedata_auth.type, 'ONEDATA')
+            self.assertEqual(onedata_auth.get_credential('oneprovider_host'),
+                             'test_oneprovider.host')
+            self.assertEqual(onedata_auth.get_credential('token'),
+                             'test_onedata_token')
+            self.assertEqual(onedata_auth.get_credential('space'),
+                             'test_onedata_space')
+
+    def test_get_invalid_auth(self):
+        invalid_auth = StorageConfig().get_auth_data_by_stg_type('INVALID_TYPE')
+        self.assertIsNone(invalid_auth)
+
+    @mock.patch('faassupervisor.storage.providers.local.Local.download_file')
+    def test_download_input(self, mock_download_file):
+        event = UnknownEvent('')
+        StorageConfig().download_input(event, '/tmp/test')
+        mock_download_file.assert_called_once_with(event, '/tmp/test')
+
+    @mock.patch('faassupervisor.utils.FileUtils.get_all_files_in_dir')
+    @mock.patch('faassupervisor.storage.providers.s3.S3.upload_file')
+    @mock.patch('faassupervisor.storage.providers.minio.Minio.upload_file')
+    def test_upload_output(self, mock_minio, mock_s3, mock_get_files):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            files = [
+                '/tmp/test/file1.txt',
+                '/tmp/test/file1.jpg',
+                '/tmp/test/result-file.txt',
+                '/tmp/test/result-file.out',
+                '/tmp/test/file2.txt',
+                '/tmp/test/file2.out'
+            ]
+            mock_get_files.return_value = files
+            StorageConfig().upload_output('/tmp/test')
+            self.assertEqual(mock_minio.call_count, 1)
+            self.assertEqual(mock_minio.call_args,
+                             call('/tmp/test/result-file.txt',
+                                  'result-file.txt',
+                                  'bucket'))
+            self.assertEqual(mock_s3.call_count, 6)
+            for i, f in enumerate(files):
+                self.assertEqual(mock_s3.call_args_list[i],
+                                 call(f, f.split('/')[3], 'bucket/folder'))
 
 
-# TODO: modify to work with new storage configuration!!
-class LocalStorageTest(unittest.TestCase):
+class ProvidersModuleTest(unittest.TestCase):
 
-    def test_create_local_storage(self):
-        stg = Local('auth', 'path')
-        self.assertEqual(stg.stg_auth, 'auth')
-        self.assertEqual(stg.stg_path, 'path')
-        self.assertEqual(stg.get_type(), 'LOCAL')
+    def test_get_bucket_name(self):
+        self.assertEqual(get_bucket_name('bucket/folder1/folder2'), 'bucket')
+        self.assertEqual(get_bucket_name('bucket'), 'bucket')
+
+    def test_get_file_key(self):
+        self.assertEqual(get_file_key('bucket/folder1/folder2', 'file'),
+                         'folder1/folder2/file')
+        self.assertEqual(get_file_key('bucket', 'file'), 'file')
+
+
+class LocalProviderTest(unittest.TestCase):
+
+    def test_create_local_provider(self):
+        provider = create_provider(None)
+        self.assertEqual(provider.get_type(), 'LOCAL')
 
     def test_download_file(self):
-        stg = Local('auth', 'path')
-        parsed_event = mock.Mock(spec=ApiGatewayEvent)
-        stg.download_file(parsed_event, '/tmp/local')
+        provider = Local(None)
+        parsed_event = mock.Mock(spec=UnknownEvent)
+        provider.download_file(parsed_event, '/tmp/local')
         parsed_event.save_event.assert_called_once_with('/tmp/local')
 
 
-# TODO: modify to work with new storage configuration!!
-class MinioStorageTest(unittest.TestCase):
+class MinioProviderTest(unittest.TestCase):
 
-    def _get_minio_class_and_auth(self):
-        auth = mock.Mock(spec=AuthData)
-        auth.get_credential.return_value = 'test'
-        return (Minio(auth, 'minio_path'), auth)
+    MINIO_CREDS = {
+            'access_key': 'test_minio_access',
+            'secret_key': 'test_minio_secret'
+    }
 
-    def test_create_minio_storage(self):
-        stg, auth = self._get_minio_class_and_auth()
-        self.assertEqual(stg.stg_auth, auth)
-        self.assertEqual(stg.stg_path, 'minio_path')
-        self.assertEqual(stg.get_type(), 'MINIO')
+    def test_create_minio_provider(self):
+        minio_auth = AuthData('MINIO', self.MINIO_CREDS)
+        provider = create_provider(minio_auth)
+        self.assertEqual(provider.get_type(), 'MINIO')
+        self.assertEqual(provider.stg_auth.creds, self.MINIO_CREDS)
 
     @mock.patch('boto3.client')
     def test_get_client_default_endpoint(self, mock_boto):
-        stg, auth = self._get_minio_class_and_auth()
-        stg._get_client()
-        self.assertEqual(auth.get_credential.mock_calls[0], call('USER'))
-        self.assertEqual(auth.get_credential.mock_calls[1], call('PASS'))
+        Minio(AuthData('MINIO', self.MINIO_CREDS))
         mock_boto.assert_called_once_with('s3',
-                                          aws_access_key_id='test',
-                                          aws_secret_access_key='test',
-                                          endpoint_url='http://minio-service.minio:9000')
+                                           endpoint_url='http://minio-service.minio:9000',
+                                           region_name=None,
+                                           verify=True,
+                                           aws_access_key_id='test_minio_access',
+                                           aws_secret_access_key='test_minio_secret')
 
     @mock.patch('boto3.client')
-    def test_get_client(self, mock_boto):
-        # Mock environment variables
-        with mock.patch.dict('os.environ', {"MINIO_ENDPOINT" : "test_endpoint"}, clear=True):
-            stg, auth = self._get_minio_class_and_auth()
-            stg._get_client()
-            self.assertEqual(auth.get_credential.mock_calls[0], call('USER'))
-            self.assertEqual(auth.get_credential.mock_calls[1], call('PASS'))
-            mock_boto.assert_called_once_with('s3',
-                                              aws_access_key_id='test',
-                                              aws_secret_access_key='test',
-                                              endpoint_url='test_endpoint')
+    def test_get_client_custom_endpoint(self, mock_boto):
+        Minio(AuthData('MINIO', {**self.MINIO_CREDS,
+                                 'endpoint': 'https://test.endpoint'}))
+        mock_boto.assert_called_once_with('s3',
+                                           endpoint_url='https://test.endpoint',
+                                           region_name=None,
+                                           verify=True,
+                                           aws_access_key_id='test_minio_access',
+                                           aws_secret_access_key='test_minio_secret')
 
     @mock.patch('boto3.client')
     def test_download_file(self, mock_boto):
-        stg, _ = self._get_minio_class_and_auth()
+        minio_provider = Minio(AuthData('MINIO', self.MINIO_CREDS))
         # Mock file management
         mopen = mock.mock_open()
         with mock.patch('builtins.open', mopen, create=True):
@@ -217,7 +311,8 @@ class MinioStorageTest(unittest.TestCase):
             event = mock.Mock(spec=MinioEvent)
             type(event).bucket_name = mock.PropertyMock(return_value='minio_bucket')
             type(event).file_name = mock.PropertyMock(return_value='minio_file')
-            file_path = stg.download_file(event, '/tmp/input')
+            type(event).object_key = mock.PropertyMock(return_value='minio_file')
+            file_path = minio_provider.download_file(event, '/tmp/input')
             # Check returned file path
             self.assertEqual(file_path, '/tmp/input/minio_file')
             # Check file writing call
@@ -230,142 +325,36 @@ class MinioStorageTest(unittest.TestCase):
 
     @mock.patch('boto3.client')
     def test_upload_file(self, mock_boto):
-        stg, _ = self._get_minio_class_and_auth()
+        minio_provider = Minio(AuthData('MINIO', self.MINIO_CREDS))
         # Mock file management
         mopen = mock.mock_open()
         with mock.patch('builtins.open', mopen, create=True):
-            stg.upload_file('/tmp/output/processed.jpg', 'processed.jpg')
+            minio_provider.upload_file('/tmp/output/processed.jpg', 'processed.jpg', 'minio_bucket')
             # Check file reading call
             mopen.assert_called_once_with('/tmp/output/processed.jpg', 'rb')
             # Check boto client upload call
             self.assertEqual(mock_boto.mock_calls[1],
                              call().upload_fileobj(mopen.return_value,
-                                                   'minio_path',
+                                                   'minio_bucket',
                                                    'processed.jpg'))
 
 
-# TODO: modify to work with new storage configuration!!
-class S3StorageTest(unittest.TestCase):
+class OnedataProviderTest(unittest.TestCase):
 
-    def _get_s3_class_and_auth(self, path=None):
-        auth = mock.Mock(spec=AuthData)
-        auth.get_credential.return_value = 'test'
-        s3_path = 's3_path'
-        if path:
-            s3_path = path
-        return (S3(auth, s3_path), auth)
-
-    def test_create_s3_storage(self):
-        stg, auth = self._get_s3_class_and_auth()
-        self.assertEqual(stg.stg_auth, auth)
-        self.assertEqual(stg.stg_path, 's3_path')
-        self.assertEqual(stg.get_type(), 'S3')
-
-    def test_get_file_key_wo_folder(self):
-        stg, _ = self._get_s3_class_and_auth()
-        # Mock environment variables
-        with mock.patch.dict('os.environ',
-                             {"AWS_LAMBDA_FUNCTION_NAME" : "func_name",
-                              "AWS_LAMBDA_REQUEST_ID" : "req_id"},
-                             clear=True):
-            res = stg._get_file_key('test.jpg')
-            self.assertEqual(res, "func_name/output/req_id/test.jpg")
-
-    def test_get_file_key_w_folder(self):
-        stg, _ = self._get_s3_class_and_auth(path='bucket/f1/f2')
-        res = stg._get_file_key('test.jpg')
-        self.assertEqual(res, "f1/f2/test.jpg")
-
-    def test_get_bucket_name_wo_folder(self):
-        stg, _ = self._get_s3_class_and_auth()
-        res = stg._get_bucket_name()
-        self.assertEqual(res, 's3_path')
-
-    def test_get_bucket_name_w_folder(self):
-        stg, _ = self._get_s3_class_and_auth(path='bucket/f1/f2')
-        res = stg._get_bucket_name()
-        self.assertEqual(res, 'bucket')
-
-    @mock.patch('boto3.client')
-    def test_get_client(self, mock_boto):
-        _get_client()
-        mock_boto.assert_called_once_with('s3')
-
-    @mock.patch('boto3.client')
-    def test_download_file(self, mock_boto):
-        stg, _ = self._get_s3_class_and_auth()
-        # Mock file management
-        mopen = mock.mock_open()
-        with mock.patch('builtins.open', mopen, create=True):
-            # Mock S3 event and event properties
-            event = mock.Mock(spec=S3Event)
-            type(event).bucket_name = mock.PropertyMock(return_value='s3_bucket')
-            type(event).file_name = mock.PropertyMock(return_value='s3_file')
-            type(event).object_key = mock.PropertyMock(return_value='s3_file_key')
-            file_path = stg.download_file(event, '/tmp/input')
-            # Check returned file path
-            self.assertEqual(file_path, '/tmp/input/s3_file')
-            # Check file writing call
-            mopen.assert_called_once_with('/tmp/input/s3_file', 'wb')
-            # Check boto client download call
-            self.assertEqual(mock_boto.mock_calls[1],
-                             call().download_fileobj('s3_bucket',
-                                                     's3_file_key',
-                                                     mopen.return_value))
-
-    @mock.patch('boto3.resource')
-    @mock.patch('boto3.client')
-    def test_upload_file(self, mock_boto_client, mock_boto_resource):
-        stg, _ = self._get_s3_class_and_auth()
-        # Mock environment variables
-        with mock.patch.dict('os.environ',
-                             {"AWS_LAMBDA_FUNCTION_NAME" : "func_name",
-                              "AWS_LAMBDA_REQUEST_ID" : "req_id"},
-                             clear=True):
-            # Mock file management
-            mopen = mock.mock_open()
-            with mock.patch('builtins.open', mopen, create=True):
-                stg.upload_file('/tmp/output/processed.jpg', 'processed.jpg')
-                # Check file read
-                mopen.assert_called_once_with('/tmp/output/processed.jpg', 'rb')
-                # Check boto client upload call
-                self.assertEqual(mock_boto_client.mock_calls[1],
-                                 call().upload_fileobj(mopen.return_value,
-                                                       's3_path',
-                                                       'func_name/output/req_id/processed.jpg'))
-                # Check resource creation
-                mock_boto_resource.assert_called_once_with('s3')
-                # Check resource call
-                self.assertEqual(mock_boto_resource.mock_calls[1],
-                                 call().Object('s3_path', 'func_name/output/req_id/processed.jpg'))
-                # Check setting resource properties
-                self.assertEqual(mock_boto_resource.mock_calls[3],
-                                 call().Object().Acl().put(ACL='public-read'))
-
-
-# TODO: modify to work with new storage configuration!!
-class OnedataStorageTest(unittest.TestCase):
-
-    def _get_onedata_class_and_auth(self, path=None):
-        auth = mock.Mock(spec=AuthData)
-        auth.get_credential.return_value = 'test'
-        one_path = 'onedata_path'
-        if path:
-            one_path = path
-        return (Onedata(auth, one_path), auth)
-
-    def test_create_onedata_storage(self):
-        stg, auth = self._get_onedata_class_and_auth()
-        self.assertEqual(stg.stg_auth, auth)
-        self.assertEqual(stg.stg_auth.mock_calls[0], call.get_credential('SPACE'))
-        self.assertEqual(stg.stg_auth.mock_calls[1], call.get_credential('HOST'))
-        self.assertEqual(stg.stg_auth.mock_calls[2], call.get_credential('TOKEN'))
-        self.assertEqual(stg.stg_path, 'onedata_path')
-        self.assertEqual(stg.get_type(), 'ONEDATA')
+    ONEDATA_CREDS = {
+        'oneprovider_host': 'test_oneprovider.host',
+        'token': 'test_onedata_token',
+        'space': 'test_onedata_space'
+    }
+    def test_create_onedata_provider(self):
+        onedata_auth = AuthData('ONEDATA', self.ONEDATA_CREDS)
+        provider = create_provider(onedata_auth)
+        self.assertEqual(provider.get_type(), 'ONEDATA')
+        self.assertEqual(provider.stg_auth.creds, self.ONEDATA_CREDS)
 
     @mock.patch('requests.get')
     def test_download_file(self, mock_requests):
-        stg, _ = self._get_onedata_class_and_auth()
+        onedata_provider = Onedata(AuthData('ONEDATA', self.ONEDATA_CREDS))
         # Mock requests.get response
         response = namedtuple('response', ['content', 'status_code'])
         mock_requests.return_value = response('test response', 200)
@@ -376,29 +365,100 @@ class OnedataStorageTest(unittest.TestCase):
         # Mock file management
         mopen = mock.mock_open()
         with mock.patch('builtins.open', mopen, create=True):
-            file_path = stg.download_file(event, '/tmp/input')
+            file_path = onedata_provider.download_file(event, '/tmp/input')
             # Check returned file path
             self.assertEqual(file_path, '/tmp/input/onedata_file')
             # Check request to onedata endpoint
-            mock_requests.assert_called_once_with('https://test/cdmi/onedata_file_key',
-                                                  headers={'X-Auth-Token': 'test'})
+            mock_requests.assert_called_once_with('https://test_oneprovider.host/cdmi/onedata_file_key',
+                                                  headers={'X-Auth-Token': 'test_onedata_token'})
             # Check file writing
             mopen.assert_called_once_with('/tmp/input/onedata_file', 'wb')
 
+    @mock.patch('requests.get')
     @mock.patch('requests.put')
-    def test_upload_file(self, mock_requests):
-        stg, _ = self._get_onedata_class_and_auth()
-        # Mock requests.put response
+    def test_upload_file(self, mock_put, mock_get):
+        onedata_provider = Onedata(AuthData('ONEDATA', self.ONEDATA_CREDS))
         response = namedtuple('response', ['status_code'])
-        mock_requests.return_value = response(202)
+        # Mock requests.get response (check if folder exists)
+        mock_get.return_value = response(200)
+        # Mock requests.put response
+        mock_put.return_value = response(202)
         # Mock file management
         mopen = mock.mock_open()
         with mock.patch('builtins.open', mopen, create=True):
-            stg.upload_file('/tmp/output/onedata_file', 'onedata_file')
+            onedata_provider.upload_file('/tmp/output/onedata_file', 'onedata_file', 'onedata_path')
             # Check request to onedata endpoint
-            mock_requests.assert_called_once_with(
-                'https://test/cdmi/test/onedata_path/onedata_file',
+            mock_get.assert_called_once_with(
+                'https://test_oneprovider.host/cdmi/test_onedata_space/onedata_path/',
+                headers={**onedata_provider._CDMI_VERSION_HEADER,
+                         'X-Auth-Token': 'test_onedata_token'})
+            mock_put.assert_called_once_with(
+                'https://test_oneprovider.host/cdmi/test_onedata_space/onedata_path/onedata_file',
                 data=mopen.return_value,
-                headers={'X-Auth-Token': 'test'})
+                headers={'X-Auth-Token': 'test_onedata_token'})
             # Check file writing
             mopen.assert_called_once_with('/tmp/output/onedata_file', 'rb')
+
+
+class S3ProviderTest(unittest.TestCase):
+
+    S3_CREDS = {
+        'access_key': 'test_s3_access',
+        'secret_key': 'test_s3_secret'
+    }
+
+    def test_create_s3_provider(self):
+        minio_auth = AuthData('S3', None)
+        provider = create_provider(minio_auth)
+        self.assertEqual(provider.get_type(), 'S3')
+        self.assertIsNone(provider.stg_auth.creds)
+
+    @mock.patch('boto3.client')
+    def test_get_client_without_creds(self, mock_boto):
+        S3(AuthData('S3', None))
+        mock_boto.assert_called_once_with('s3')
+
+    @mock.patch('boto3.client')
+    def test_get_client_with_creds(self, mock_boto):
+        S3(AuthData('S3', self.S3_CREDS))
+        mock_boto.assert_called_once_with('s3',
+                                           region_name=None,
+                                           aws_access_key_id='test_s3_access',
+                                           aws_secret_access_key='test_s3_secret')
+
+    @mock.patch('boto3.client')
+    def test_download_file(self, mock_boto):
+        s3_provider = S3(AuthData('S3', None))
+        # Mock file management
+        mopen = mock.mock_open()
+        with mock.patch('builtins.open', mopen, create=True):
+            # Create mock event and event properties
+            event = mock.Mock(spec=S3Event)
+            type(event).bucket_name = mock.PropertyMock(return_value='s3_bucket')
+            type(event).file_name = mock.PropertyMock(return_value='s3_file')
+            type(event).object_key = mock.PropertyMock(return_value='s3_folder/s3_file')
+            file_path = s3_provider.download_file(event, '/tmp/input')
+            # Check returned file path
+            self.assertEqual(file_path, '/tmp/input/s3_file')
+            # Check file writing call
+            mopen.assert_called_once_with('/tmp/input/s3_file', 'wb')
+            # Check boto client download call
+            self.assertEqual(mock_boto.mock_calls[1],
+                             call().download_fileobj('s3_bucket',
+                                                     's3_folder/s3_file',
+                                                     mopen.return_value))
+
+    @mock.patch('boto3.client')
+    def test_upload_file(self, mock_boto):
+        s3_provider = S3(AuthData('S3', None))
+        # Mock file management
+        mopen = mock.mock_open()
+        with mock.patch('builtins.open', mopen, create=True):
+            s3_provider.upload_file('/tmp/output/processed.jpg', 'processed.jpg', 's3_bucket/s3_folder')
+            # Check file reading call
+            mopen.assert_called_once_with('/tmp/output/processed.jpg', 'rb')
+            # Check boto client upload call
+            self.assertEqual(mock_boto.mock_calls[1],
+                             call().upload_fileobj(mopen.return_value,
+                                                   's3_bucket',
+                                                   's3_folder/processed.jpg'))

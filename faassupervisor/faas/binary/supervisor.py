@@ -54,12 +54,10 @@ class BinarySupervisor(DefaultSupervisor):
                 get_logger().error(cpe.output.decode('latin-1'))
                 sys.exit(cpe.returncode)
         else:
-            # TODO: allow executions without scripts?
             get_logger().error('No user script found!')
 
     def create_response(self):
         return self.output
 
-    # TODO: implement to work with user requests?
     def create_error_response(self):
         pass

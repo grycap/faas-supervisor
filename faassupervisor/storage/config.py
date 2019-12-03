@@ -22,7 +22,7 @@ from faassupervisor.storage.providers.s3 import S3
 from faassupervisor.logger import get_logger
 
 
-def _create_provider(storage_auth):
+def create_provider(storage_auth):
     """Returns the storage provider needed
     based on the authentication type defined.
 
@@ -47,13 +47,9 @@ class AuthData():
         self.type = storage_type
         self.creds = credentials
 
-    def set_credential(self, key, val):
-        """Store authentication credentials like USER|PASS|TOKEN|SPACE|HOST."""
-        self.creds[key] = val
-
     def get_credential(self, key):
         """Return authentication credentials previously stored."""
-        return self.creds.get(key, "")
+        return self.creds.get(key, '')
 
 
 class StorageConfig():
@@ -71,10 +67,10 @@ class StorageConfig():
     def _parse_config(self):
         output = ConfigUtils.read_cfg_var('output')
         # Output list
-        if output is not '':
+        if output != '':
             self.output = output
         else:
-            get_logger().warning('There is no output defined for this function execution.')
+            get_logger().warning('There is no output defined for this function.')
         storage_providers = ConfigUtils.read_cfg_var('storage_providers')
         if (storage_providers and
                 storage_providers is not ''):
@@ -91,46 +87,43 @@ class StorageConfig():
                     and storage_providers['onedata']):
                 self._validate_onedata_creds(storage_providers['onedata'])
         else:
-            get_logger().warning('There is no storage provider defined for this function execution.')
+            get_logger().warning('There is no storage provider defined for this function.')
 
     def _validate_minio_creds(self, minio_creds):
-        if (minio_creds is not []
+        if (isinstance(minio_creds, dict)
                 and 'access_key' in minio_creds
                 and minio_creds['access_key'] is not None
-                and minio_creds['access_key'] is not ''
+                and minio_creds['access_key'] != ''
                 and 'secret_key' in minio_creds
                 and minio_creds['secret_key'] is not None
-                and minio_creds['secret_key'] is not ''):
-                # and 'endpoint' in minio_creds
-                # and minio_creds['endpoint'] is not None
-                # and minio_creds['endpoint'] is not ''):
+                and minio_creds['secret_key'] != ''):
             self.minio_auth = AuthData('MINIO', minio_creds)
         else:
             raise StorageAuthError(auth_type='MINIO')
 
     def _validate_s3_creds(self, s3_creds):
-        if (s3_creds is not []
+        if (isinstance(s3_creds, dict)
                 and 'access_key' in s3_creds
                 and s3_creds['access_key'] is not None
-                and s3_creds['access_key'] is not ''
+                and s3_creds['access_key'] != ''
                 and 'secret_key' in s3_creds
                 and s3_creds['secret_key'] is not None
-                and s3_creds['secret_key'] is not ''):
+                and s3_creds['secret_key'] != ''):
             self.s3_auth = AuthData('S3', s3_creds)
         else:
             raise StorageAuthError(auth_type='S3')
 
     def _validate_onedata_creds(self, onedata_creds):
-        if (onedata_creds is not []
+        if (isinstance(onedata_creds, dict)
                 and 'oneprovider_host' in onedata_creds
                 and onedata_creds['oneprovider_host'] is not None
-                and onedata_creds['oneprovider_host'] is not ''
+                and onedata_creds['oneprovider_host'] != ''
                 and 'token' in onedata_creds
                 and onedata_creds['token'] is not None
-                and onedata_creds['token'] is not ''
+                and onedata_creds['token'] != ''
                 and 'space' in onedata_creds
                 and onedata_creds['space'] is not None
-                and onedata_creds['space'] is not ''):
+                and onedata_creds['space'] != ''):
             self.onedata_auth = AuthData('ONEDATA', onedata_creds)
         else:
             raise StorageAuthError(auth_type='ONEDATA')
@@ -152,11 +145,11 @@ class StorageConfig():
         Returns the file path where the file is downloaded."""
         event_type = parsed_event.get_type()
         auth_data = self.get_auth_data_by_stg_type(event_type)
-        stg_provider = _create_provider(auth_data)
+        stg_provider = create_provider(auth_data)
         get_logger().info('Found \'%s\' input provider', stg_provider.get_type())
         return stg_provider.download_file(parsed_event, input_dir_path)
 
-    def upload_input(self, output_dir_path):
+    def upload_output(self, output_dir_path):
         """Receives the tmp_dir_path where the files to upload are stored and
         uploads files whose name matches the prefixes and suffixes specified
         in 'output'."""
@@ -196,5 +189,5 @@ class StorageConfig():
                         out_type = output['storage_provider'].upper()
                         if out_type not in stg_providers:
                             auth_data = self.get_auth_data_by_stg_type(out_type)
-                            stg_providers[out_type] = _create_provider(auth_data)
+                            stg_providers[out_type] = create_provider(auth_data)
                         stg_providers[out_type].upload_file(file_path, file_name, output['path'])
