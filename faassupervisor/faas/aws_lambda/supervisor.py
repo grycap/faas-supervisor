@@ -22,7 +22,8 @@ from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import ConfigUtils, StrUtils
-from faassupervisor.exceptions import NoLambdaContextError
+from faassupervisor.exceptions import NoLambdaContextError, \
+    ContainerTimeoutExpiredWarning
 
 
 def is_batch_execution():
@@ -58,7 +59,7 @@ class LambdaSupervisor(DefaultSupervisor):
             udocker.prepare_container()
             self.body["udocker_output"] = udocker.launch_udocker_container()
             get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"].decode("latin-1"))
-        except subprocess.TimeoutExpired:
+        except (subprocess.TimeoutExpired, ContainerTimeoutExpiredWarning):
             get_logger().warning("Container execution timed out")
             if _is_lambda_batch_execution():
                 self._execute_batch()
