@@ -18,7 +18,7 @@ from unittest import mock
 import subprocess
 from faassupervisor.faas.binary.supervisor import BinarySupervisor
 from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor, \
-                                                      _is_batch_execution, \
+                                                      is_batch_execution, \
                                                       _is_lambda_batch_execution
 from faassupervisor.exceptions import NoLambdaContextError
 
@@ -54,13 +54,13 @@ class LambdaSupervisorTest(unittest.TestCase):
         return  mock_context
 
     def test_is_batch_execution(self):
-        with mock.patch.dict('os.environ', {'EXECUTION_MODE':'batch'}, clear=True):
-            self.assertTrue(_is_batch_execution())
+        with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'batch'}, clear=True):
+            self.assertTrue(is_batch_execution())
         with mock.patch.dict('os.environ', {}, clear=True):
-            self.assertFalse(_is_batch_execution())
+            self.assertFalse(is_batch_execution())
 
     def test_is_lambda_batch_execution(self):
-        with mock.patch.dict('os.environ', {'EXECUTION_MODE':'lambda-batch'}, clear=True):
+        with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'lambda-batch'}, clear=True):
             self.assertTrue(_is_lambda_batch_execution())
         with mock.patch.dict('os.environ', {}, clear=True):
             self.assertFalse(_is_lambda_batch_execution())
@@ -68,8 +68,8 @@ class LambdaSupervisorTest(unittest.TestCase):
     def test_create_lambda_supervisor(self):
         with self.assertRaises(NoLambdaContextError):
             LambdaSupervisor(None, None)
-        with mock.patch.dict('os.environ', {'EXECUTION_MODE':'lambda-batch',
-                                            'TMP_INPUT_DIR':'/tmp/input',
-                                            'TMP_OUTPUT_DIR':'/tmp/output'}, clear=True):
+        with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'lambda-batch',
+                                            'TMP_INPUT_DIR': '/tmp/input',
+                                            'TMP_OUTPUT_DIR': '/tmp/output'}, clear=True):
 
             LambdaSupervisor('event', self._get_context())

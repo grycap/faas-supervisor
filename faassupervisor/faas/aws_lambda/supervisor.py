@@ -25,7 +25,7 @@ from faassupervisor.utils import ConfigUtils, StrUtils
 from faassupervisor.exceptions import NoLambdaContextError
 
 
-def _is_batch_execution():
+def is_batch_execution():
     return ConfigUtils.read_cfg_var("execution_mode") == "batch"
 
 
@@ -64,7 +64,7 @@ class LambdaSupervisor(DefaultSupervisor):
                 self._execute_batch()
 
     def execute_function(self):
-        if _is_batch_execution():
+        if is_batch_execution():
             self._execute_batch()
         else:
             self._execute_udocker()

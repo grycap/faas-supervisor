@@ -20,7 +20,7 @@ from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig
 from faassupervisor.utils import SysUtils, FileUtils
 from faassupervisor.logger import configure_logger, get_logger
-from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor
+from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor, is_batch_execution
 from faassupervisor.faas.binary.supervisor import BinarySupervisor
 
 
@@ -78,9 +78,13 @@ class Supervisor():
     def run(self):
         """Generic method to launch the supervisor execution."""
         try:
-            self._parse_input()
-            self.supervisor.execute_function()
-            self._parse_output()
+            if is_batch_execution() and SysUtils.is_lambda_environment():
+                # Only delegate to batch
+                self.supervisor.execute_function()
+            else:
+                self._parse_input()
+                self.supervisor.execute_function()
+                self._parse_output()
             get_logger().info('Creating response')
             return self.supervisor.create_response()
         except FaasSupervisorError as fse:
@@ -117,5 +121,5 @@ if __name__ == "__main__":
     # If supervisor is running as a binary
     # receive the input from stdin.
     ret = main(SysUtils.get_stdin())
-    if ret != None:
+    if ret is not None:
         print(ret)

@@ -16,8 +16,6 @@ related with the Minio storage provider. """
 
 import boto3
 from faassupervisor.storage.providers.s3 import S3
-from faassupervisor.logger import get_logger
-from faassupervisor.utils import SysUtils
 
 
 class Minio(S3):
