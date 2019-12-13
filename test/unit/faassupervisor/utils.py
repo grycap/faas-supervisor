@@ -57,21 +57,15 @@ class SysUtilsTest(unittest.TestCase):
             self.assertEqual(SysUtils.get_env_var("K2"), "V2")
             self.assertEqual(SysUtils.get_env_var("K3"), "")
 
-    def test_get_cont_env_vars(self):
-        with mock.patch.dict('os.environ',
-                             {"K1":"V1", "CONT_VAR_C1":"VC1", "CONT_VAR_C2":"VC2"},
-                             clear=True):
-            # Variables without the prefix
-            self.assertEqual(SysUtils.get_cont_env_vars(), {"C1":"VC1", "C2":"VC2"})
-
-        with mock.patch.dict('os.environ', {"K1":"V1"}, clear=True):
-            self.assertEqual(SysUtils.get_cont_env_vars(), {})
-
-    def test_get_filtered_env_vars(self):
-        with mock.patch.dict('os.environ',
-                             {"K1":"V1", "F1_C1":"VC1", "F1_C2":"VC2"},
-                             clear=True):
-            self.assertEqual(SysUtils.get_filtered_env_vars("F1_"), {"C1":"VC1", "C2":"VC2"})
+#     def test_get_cont_env_vars(self):
+#         with mock.patch.dict('os.environ',
+#                              {"K1":"V1", "CONT_VAR_C1":"VC1", "CONT_VAR_C2":"VC2"},
+#                              clear=True):
+#             # Variables without the prefix
+#             self.assertEqual(SysUtils.get_cont_env_vars(), {"C1":"VC1", "C2":"VC2"})
+#  
+#         with mock.patch.dict('os.environ', {"K1":"V1"}, clear=True):
+#             self.assertEqual(SysUtils.get_cont_env_vars(), {})
 
     @mock.patch('subprocess.call')
     def test_execute_cmd(self, mock_call):
