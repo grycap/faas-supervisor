@@ -61,20 +61,8 @@ class SysUtils():
     @staticmethod
     def get_cont_env_vars():
         """Returns the defined container environment variables."""
-        return SysUtils.get_filtered_env_vars("CONT_VAR_")
-
-    @staticmethod
-    def get_filtered_env_vars(key_filter):
-        """Returns the global variables that start with the
-        key_filter provided and removes the filter used."""
-
-        size = len(key_filter)
-        env_vars = {}
-        for key, val in SysUtils.get_all_env_vars().items():
-            # Find global variables with the specified prefix
-            if key.startswith(key_filter):
-                env_vars[key[size:]] = val
-        return env_vars
+        container = ConfigUtils.read_cfg_var('container')
+        return container.get('environment', {}).get('Variables', {})
 
     @staticmethod
     def execute_cmd(command):

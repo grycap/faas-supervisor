@@ -131,15 +131,6 @@ class Udocker():
         for key, value in SysUtils.get_cont_env_vars().items():
             self.cont_cmd.extend(_parse_cont_env_var(key, value))
 
-    def _add_iam_credentials(self):
-        iam_creds = {'CONT_VAR_AWS_ACCESS_KEY_ID':'AWS_ACCESS_KEY_ID',
-                     'CONT_VAR_AWS_SECRET_ACCESS_KEY':'AWS_SECRET_ACCESS_KEY',
-                     'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
-        # Add IAM credentials
-        for key, value in iam_creds.items():
-            if SysUtils.is_var_in_env(key):
-                self.cont_cmd.extend(_parse_cont_env_var(value, SysUtils.get_env_var(key)))
-
     def _add_input_file(self):
         self.cont_cmd.extend(_parse_cont_env_var("INPUT_FILE_PATH",
                                                  SysUtils.get_env_var("INPUT_FILE_PATH")))
@@ -163,7 +154,6 @@ class Udocker():
         self._add_function_request_id()
         self._add_function_ip()
         self._add_cont_env_vars()
-        self._add_iam_credentials()
         self._add_input_file()
         self._add_output_dir()
         self._add_extra_payload_path()
