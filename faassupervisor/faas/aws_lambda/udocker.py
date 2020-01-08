@@ -16,7 +16,7 @@ to manage a udocker container in the lambda environment."""
 
 import subprocess
 from faassupervisor.exceptions import ContainerImageNotFoundError
-from faassupervisor.utils import SysUtils, FileUtils
+from faassupervisor.utils import SysUtils, FileUtils, ConfigUtils
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import ContainerTimeoutExpiredWarning
 from faassupervisor.faas.aws_lambda.function import get_function_ip
@@ -41,7 +41,7 @@ class Udocker():
         self.udocker_exec = [SysUtils.get_env_var("UDOCKER_EXEC")]
         self.cont_cmd = self.udocker_exec + ["--quiet", "run"]
 
-        self.cont_img_id = SysUtils.get_env_var("IMAGE_ID")
+        self.cont_img_id = ConfigUtils.read_cfg_var('container').get('image')
         if not self.cont_img_id:
             raise ContainerImageNotFoundError()
 
@@ -131,15 +131,6 @@ class Udocker():
         for key, value in SysUtils.get_cont_env_vars().items():
             self.cont_cmd.extend(_parse_cont_env_var(key, value))
 
-    def _add_iam_credentials(self):
-        iam_creds = {'CONT_VAR_AWS_ACCESS_KEY_ID':'AWS_ACCESS_KEY_ID',
-                     'CONT_VAR_AWS_SECRET_ACCESS_KEY':'AWS_SECRET_ACCESS_KEY',
-                     'CONT_VAR_AWS_SESSION_TOKEN':'AWS_SESSION_TOKEN'}
-        # Add IAM credentials
-        for key, value in iam_creds.items():
-            if SysUtils.is_var_in_env(key):
-                self.cont_cmd.extend(_parse_cont_env_var(value, SysUtils.get_env_var(key)))
-
     def _add_input_file(self):
         self.cont_cmd.extend(_parse_cont_env_var("INPUT_FILE_PATH",
                                                  SysUtils.get_env_var("INPUT_FILE_PATH")))
@@ -163,7 +154,6 @@ class Udocker():
         self._add_function_request_id()
         self._add_function_ip()
         self._add_cont_env_vars()
-        self._add_iam_credentials()
         self._add_input_file()
         self._add_output_dir()
         self._add_extra_payload_path()

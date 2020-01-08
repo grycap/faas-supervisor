@@ -43,6 +43,7 @@
 
 from urllib.parse import unquote_plus
 from faassupervisor.events.unknown import UnknownEvent
+from faassupervisor.utils import FileUtils
 
 
 class MinioEvent(UnknownEvent):
@@ -53,7 +54,7 @@ class MinioEvent(UnknownEvent):
     _TYPE = 'MINIO'
 
     def _set_event_params(self):
-        self.object_key = self.event['Key']
         self.bucket_arn = self.event_records['s3']['bucket']['arn']
         self.bucket_name = self.event_records['s3']['bucket']['name']
-        self.file_name = unquote_plus(self.event_records['s3']['object']['key'])
+        self.object_key = unquote_plus(self.event_records['s3']['object']['key'])
+        self.file_name = FileUtils.get_file_name(self.object_key)

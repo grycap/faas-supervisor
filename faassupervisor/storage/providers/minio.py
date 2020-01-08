@@ -15,45 +15,30 @@
 related with the Minio storage provider. """
 
 import boto3
-from faassupervisor.logger import get_logger
-from faassupervisor.storage.providers import DefaultStorageProvider
-from faassupervisor.utils import SysUtils
+from faassupervisor.storage.providers.s3 import S3
 
 
-class Minio(DefaultStorageProvider):
-    """ Class that manages downloads and uploads from Minio. """
+class Minio(S3):
+    """Class that manages downloads and uploads from Minio. """
 
     _DEFAULT_MINIO_ENDPOINT = 'http://minio-service.minio:9000'
     _TYPE = 'MINIO'
 
     def _get_client(self):
         """Return Minio client with user configuration."""
-        endpoint = SysUtils.get_env_var('MINIO_ENDPOINT')
-        if not endpoint:
+        endpoint = self.stg_auth.get_credential('endpoint')
+        if endpoint == '':
             endpoint = self._DEFAULT_MINIO_ENDPOINT
-        return boto3.client('s3', endpoint_url=endpoint, verify=False,
-                            aws_access_key_id=self.stg_auth.get_credential('USER'),
-                            aws_secret_access_key=self.stg_auth.get_credential('PASS'))
+        verify = self.stg_auth.get_credential('verify')
+        if verify == '':
+            verify = True
+        region = self.stg_auth.get_credential('region')
+        if region == '':
+            region = None
+        return boto3.client('s3',
+                            endpoint_url=endpoint,
+                            region_name=region,
+                            verify=verify,
+                            aws_access_key_id=self.stg_auth.get_credential('access_key'),
+                            aws_secret_access_key=self.stg_auth.get_credential('secret_key'))
 
-    def download_file(self, parsed_event, input_dir_path):
-        """Downloads a file from a minio bucket."""
-        file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
-        get_logger().info("Downloading item from bucket '%s' with key '%s'",
-                          parsed_event.bucket_name,
-                          parsed_event.file_name)
-
-        with open(file_download_path, 'wb') as data:
-            self._get_client().download_fileobj(parsed_event.bucket_name,
-                                                parsed_event.file_name,
-                                                data)
-        get_logger().info("Successful download of file '%s' from bucket '%s' in path '%s'",
-                          parsed_event.file_name,
-                          parsed_event.bucket_name,
-                          file_download_path)
-        return file_download_path
-
-    def upload_file(self, file_path, file_name):
-        """Uploads a file to a minio bucket."""
-        get_logger().info("Uploading file '%s' to bucket '%s'", file_name, self.stg_path)
-        with open(file_path, 'rb') as data:
-            self._get_client().upload_fileobj(data, self.stg_path, file_name)

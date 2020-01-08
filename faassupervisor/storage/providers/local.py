@@ -26,5 +26,5 @@ class Local(DefaultStorageProvider):
         """Delegates the 'download' and local storage to the event."""
         return parsed_event.save_event(input_dir_path)
 
-    def upload_file(self, file_path, file_name):
+    def upload_file(self, file_path, file_name, output_path):
         pass

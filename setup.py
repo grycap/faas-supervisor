@@ -19,7 +19,7 @@ with open('README.md', mode='r', encoding='utf-8') as f:
     readme = f.read()
 
 # Load version
-with open('faassupervisor/version.py', mode='r', encoding='utf-8')  as f:
+with open('faassupervisor/version.py', mode='r', encoding='utf-8') as f:
     exec(f.read())
 
 setup(name='faas-supervisor',
@@ -35,7 +35,8 @@ setup(name='faas-supervisor',
       install_requires=[
           'requests',
           'boto3',
-          'setuptools >= 40.8.0'
+          'setuptools >= 40.8.0',
+          'pyyaml'
       ],
       classifiers=[
           'Programming Language :: Python :: 3',

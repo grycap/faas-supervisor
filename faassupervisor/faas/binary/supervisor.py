@@ -27,6 +27,7 @@ class BinarySupervisor(DefaultSupervisor):
     _SCRIPT_FILE_NAME = 'script.sh'
 
     def __init__(self):
+        self.output = ''
         get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
     def execute_function(self):
@@ -43,10 +44,10 @@ class BinarySupervisor(DefaultSupervisor):
                 orig_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH_ORIG')
                 if orig_library_path:
                     SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
-                script_output = subprocess.check_output(['/bin/sh', script_path],
-                                                        stderr=subprocess.STDOUT).decode("latin-1")
+                self.output = subprocess.check_output(['/bin/sh', script_path],
+                                                      stderr=subprocess.STDOUT).decode("latin-1")
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)
-                get_logger().info(script_output)
+                get_logger().debug("CONTAINER OUTPUT:\n %s", self.output)
             except subprocess.CalledProcessError as cpe:
                 # Exit with user script return code if an
                 # error occurs (Kubernetes handles the error)
@@ -56,7 +57,7 @@ class BinarySupervisor(DefaultSupervisor):
             get_logger().error('No user script found!')
 
     def create_response(self):
-        pass
+        return self.output
 
     def create_error_response(self):
         pass

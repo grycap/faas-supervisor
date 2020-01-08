@@ -80,7 +80,10 @@ def parse_event(event):
     # Make sure the event is always stored
     parsed_event = None
     if not isinstance(event, dict):
-        event = json.loads(event)
+        try:
+            event = json.loads(event)
+        except ValueError:
+            return UnknownEvent(event)
     # Applies the event identification flow
     if _is_api_gateway_event(event):
         get_logger().info("API Gateway event found.")

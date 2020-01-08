@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import shutil
+import yaml
 
 
 class SysUtils():
@@ -60,20 +61,8 @@ class SysUtils():
     @staticmethod
     def get_cont_env_vars():
         """Returns the defined container environment variables."""
-        return SysUtils.get_filtered_env_vars("CONT_VAR_")
-
-    @staticmethod
-    def get_filtered_env_vars(key_filter):
-        """Returns the global variables that start with the
-        key_filter provided and removes the filter used."""
-
-        size = len(key_filter)
-        env_vars = {}
-        for key, val in SysUtils.get_all_env_vars().items():
-            # Find global variables with the specified prefix
-            if key.startswith(key_filter):
-                env_vars[key[size:]] = val
-        return env_vars
+        container = ConfigUtils.read_cfg_var('container')
+        return container.get('environment', {}).get('Variables', {})
 
     @staticmethod
     def execute_cmd(command):
@@ -84,6 +73,12 @@ class SysUtils():
     def execute_cmd_and_return_output(command, encoding='utf-8'):
         """Executes a bash command and returns the console output."""
         return subprocess.check_output(command).decode(encoding)
+
+    @staticmethod
+    def is_lambda_environment():
+        """Checks if supervisor is running in AWS Lambda."""
+        return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
+                SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
 
 
 class FileUtils():
@@ -158,6 +153,11 @@ class FileUtils():
         """Returns the filename."""
         return os.path.basename(file_path)
 
+    @staticmethod
+    def get_dir_name(file_path):
+        """Returns the directory name."""
+        return os.path.dirname(file_path)
+
 
 class StrUtils():
     """Common methods for string management."""
@@ -176,3 +176,45 @@ class StrUtils():
     def base64_to_str(value, encoding='utf-8'):
         """Decodes from base64 and returns a string."""
         return base64.b64decode(value).decode(encoding)
+
+    @staticmethod
+    def utf8_to_base64_string(value):
+        """Encode a 'utf-8' string using Base64 and return
+        the encoded value as a string."""
+        return StrUtils.bytes_to_base64str(value.encode('utf-8'))
+
+
+class ConfigUtils():
+    """Common methods for configuration file management."""
+
+    _LAMBDA_STORAGE_CONFIG_PATH = '/var/task/function_config.yaml'
+    _BINARY_STORAGE_CONFIG_ENV = 'FUNCTION_CONFIG'
+    _CUSTOM_VARIABLES = [
+        'log_level',
+        'execution_mode',
+        'extra_payload',
+        'udocker_exec',
+        'udocker_dir',
+        'udocker_bin',
+        'udocker_lib'
+    ]
+
+    @classmethod
+    def read_cfg_var(cls, variable):
+        """Returns the value of a config variable or an empty
+        string if not found."""
+        if SysUtils.is_lambda_environment():
+            # Read config file
+            with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
+                config = yaml.safe_load(file)
+        else:
+            # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
+            encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
+            decoded = StrUtils.base64_to_str(encoded)
+            config = yaml.safe_load(decoded)
+        # Manage variables that could be defined in environment
+        if variable in cls._CUSTOM_VARIABLES:
+            value = SysUtils.get_env_var(variable.upper())
+            if value != '':
+                return value
+        return config.get(variable, '') if config else ''

@@ -21,16 +21,17 @@ from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
-from faassupervisor.utils import SysUtils, StrUtils
-from faassupervisor.exceptions import NoLambdaContextError
+from faassupervisor.utils import ConfigUtils, StrUtils
+from faassupervisor.exceptions import NoLambdaContextError, \
+    ContainerTimeoutExpiredWarning
 
 
-def _is_batch_execution():
-    return SysUtils.get_env_var("EXECUTION_MODE") == "batch"
+def is_batch_execution():
+    return ConfigUtils.read_cfg_var("execution_mode") == "batch"
 
 
 def _is_lambda_batch_execution():
-    return SysUtils.get_env_var("EXECUTION_MODE") == "lambda-batch"
+    return ConfigUtils.read_cfg_var("execution_mode") == "lambda-batch"
 
 
 class LambdaSupervisor(DefaultSupervisor):
@@ -57,14 +58,14 @@ class LambdaSupervisor(DefaultSupervisor):
             udocker = Udocker(self.lambda_instance)
             udocker.prepare_container()
             self.body["udocker_output"] = udocker.launch_udocker_container()
-            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"])
-        except subprocess.TimeoutExpired:
+            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"].decode("latin-1"))
+        except (subprocess.TimeoutExpired, ContainerTimeoutExpiredWarning):
             get_logger().warning("Container execution timed out")
             if _is_lambda_batch_execution():
                 self._execute_batch()
 
     def execute_function(self):
-        if _is_batch_execution():
+        if is_batch_execution():
             self._execute_batch()
         else:
             self._execute_udocker()
@@ -79,7 +80,7 @@ class LambdaSupervisor(DefaultSupervisor):
                 "amz-log-group-name": self.lambda_instance.get_log_group_name(),
                 "amz-log-stream-name": self.lambda_instance.get_log_stream_name()
             },
-            "body": StrUtils.dict_to_base64str({"exception" : exception_msg}),
+            "body": StrUtils.dict_to_base64str({"exception": exception_msg}),
             "isBase64Encoded": True,
         }
 

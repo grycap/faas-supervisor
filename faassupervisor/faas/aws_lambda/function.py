@@ -16,7 +16,7 @@ data created when a Lambda function is invoked."""
 
 import json
 import socket
-from faassupervisor.utils import SysUtils, FileUtils, StrUtils
+from faassupervisor.utils import ConfigUtils, FileUtils, StrUtils, SysUtils
 
 def get_function_ip():
     """Returns the IP of the invoked function."""
@@ -49,10 +49,10 @@ class LambdaInstance():
             # Add args
             self.cmd_args = json.loads(self.raw_event['cmd_args'])
         # Script to be executed every time (if defined)
-        elif SysUtils.is_var_in_env('INIT_SCRIPT_PATH'):
+        elif ConfigUtils.read_cfg_var('init_script') is not '':
             # Add init script
             self.init_script_path = f"{self.input_folder}/init_script.sh"
-            FileUtils.cp_file(SysUtils.get_env_var("INIT_SCRIPT_PATH"), self.init_script_path)
+            FileUtils.cp_file(ConfigUtils.read_cfg_var('init_script'), self.init_script_path)
 
     def _set_lambda_env_vars(self):
         SysUtils.set_env_var('AWS_LAMBDA_REQUEST_ID', self.get_request_id())
@@ -84,5 +84,7 @@ class LambdaInstance():
     def get_remaining_time_in_seconds(self):
         """Returns the amount of time remaining for the invocation in seconds."""
         remaining_time = int(self.context.get_remaining_time_in_millis() / 1000)
-        timeout_threshold = int(SysUtils.get_env_var('TIMEOUT_THRESHOLD'))
-        return remaining_time - timeout_threshold
+        timeout_threshold = SysUtils.get_env_var('TIMEOUT_THRESHOLD')
+        if timeout_threshold is '':
+            timeout_threshold = ConfigUtils.read_cfg_var('container')['timeout_threshold']
+        return remaining_time - int(timeout_threshold)
