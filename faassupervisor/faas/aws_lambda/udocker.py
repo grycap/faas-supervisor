@@ -151,12 +151,21 @@ class Udocker():
         self.cont_cmd.extend(_parse_cont_env_var("REQUEST_ID",
                                                  self.lambda_instance.get_request_id()))
 
+    def _add_aws_access_keys(self):
+        self.cont_cmd.extend(_parse_cont_env_var("AWS_ACCESS_KEY_ID",
+                                                 SysUtils.get_env_var("AWS_ACCESS_KEY_ID")))
+        self.cont_cmd.extend(_parse_cont_env_var("AWS_SECRET_ACCESS_KEY",
+                                                 SysUtils.get_env_var("AWS_SECRET_ACCESS_KEY")))
+        self.cont_cmd.extend(_parse_cont_env_var("AWS_SESSION_TOKEN",
+                                                 SysUtils.get_env_var("AWS_SESSION_TOKEN")))
+
     def _add_function_ip(self):
         self.cont_cmd.extend(_parse_cont_env_var("INSTANCE_IP", get_function_ip()))
 
     def _add_container_environment_variables(self):
         self._add_function_request_id()
         self._add_function_ip()
+        self._add_aws_access_keys()
         self._add_cont_env_vars()
         self._add_input_file()
         self._add_output_dir()
