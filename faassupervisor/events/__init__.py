@@ -41,6 +41,7 @@ from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import exception, UnknowStorageEventWarning
+from faassupervisor.utils import SysUtils
 
 _S3_EVENT = "aws:s3"
 _MINIO_EVENT = "minio:s3"
@@ -97,4 +98,6 @@ def parse_event(event):
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
         parsed_event = _parse_storage_event(event)
+        # Store 'object_key' in environment variable
+        SysUtils.set_env_var("STORAGE_OBJECT_KEY", parsed_event.object_key)
     return parsed_event if parsed_event else UnknownEvent(event)
