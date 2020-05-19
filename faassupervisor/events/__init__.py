@@ -53,9 +53,13 @@ def _is_api_gateway_event(event_info):
 
 
 def _is_storage_event(event_info):
-    return 'Records' in event_info \
+    if 'Records' in event_info \
            and event_info['Records'] \
-           and 'eventSource' in event_info['Records'][0]
+           and 'eventSource' in event_info['Records'][0]:
+        return event_info['Records'][0]['eventSource'] == _S3_EVENT \
+            or event_info['Records'][0]['eventSource'] == _MINIO_EVENT \
+            or event_info['Records'][0]['eventSource'] == _ONEDATA_EVENT
+    return False
 
 
 @exception()
