@@ -189,6 +189,7 @@ class ConfigUtils():
 
     _LAMBDA_STORAGE_CONFIG_PATH = '/var/task/function_config.yaml'
     _BINARY_STORAGE_CONFIG_ENV = 'FUNCTION_CONFIG'
+    _BINARY_OSCAR_STORAGE_CONFIG_PATH = '/oscar/config/function_config.yaml'
     _CUSTOM_VARIABLES = [
         'log_level',
         'execution_mode',
@@ -208,10 +209,16 @@ class ConfigUtils():
             with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
                 config = yaml.safe_load(file)
         else:
-            # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
-            encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
-            decoded = StrUtils.base64_to_str(encoded)
-            config = yaml.safe_load(decoded)
+            # Check if config file exsits in '_BINARY_OSCAR_STORAGE_CONFIG_PATH'
+            if FileUtils.is_file(cls._BINARY_OSCAR_STORAGE_CONFIG_PATH):
+                # Read config file
+                with open(cls._BINARY_OSCAR_STORAGE_CONFIG_PATH) as file:
+                    config = yaml.safe_load(file)
+            else: 
+                # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
+                encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
+                decoded = StrUtils.base64_to_str(encoded)
+                config = yaml.safe_load(decoded)
         # Manage variables that could be defined in environment
         if variable in cls._CUSTOM_VARIABLES:
             value = SysUtils.get_env_var(variable.upper())
