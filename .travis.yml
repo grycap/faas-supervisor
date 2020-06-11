@@ -12,8 +12,8 @@ services:
   - docker
 
 install:
-  - pip3 install -U pyinstaller
-  - pip3 install -U -r requirements.txt
+  - pip install -U pyinstaller
+  - pip install -U -r requirements.txt
 
 jobs:
   include:
