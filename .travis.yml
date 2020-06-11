@@ -1,4 +1,4 @@
-sudo: required
+os: linux
 dist: bionic
 language: python
 python:
@@ -8,41 +8,38 @@ arch:
 - amd64
 - arm64
 
-services:
-  - docker
-
 install:
-  - pip install -U pyinstaller
-  - pip install -U -r requirements.txt
+- pip install -U pyinstaller
+- pip install -U -r requirements.txt
+
+before_script:
+- if [ $TRAVIS_CPU_ARCH == 'arm64' ]; then
+    export BINARY_NAME=supervisor-arm64;
+  else
+    export BINARY_NAME=supervisor;
+  fi;
+
+script:
+- python -m unittest discover -s test/unit/faassupervisor -p '*.py'
+- pyinstaller --onefile -n $BINARY_NAME faassupervisor/supervisor.py
+
+deploy:
+  - provider: releases
+    token: $GITHUB_OAUTH_TOKEN
+    file: dist/$BINARY_NAME
+    skip_cleanup: true
+    on:
+      tags: true
 
 jobs:
   include:
-  - stage: Run unit tests
-    script: python -m unittest discover -s test/unit/faasupervisor -p '*.py'
-
-  - stage: Build binary and deploy to github on new releases
-    before_script:
-    - if [ $TRAVIS_CPU_ARCH == 'arm64' ]; then
-        export BINARY_NAME=supervisor-arm64;
-      else
-        export BINARY_NAME=supervisor;
-      fi;
-    script: pyinstaller --onefile -n $BINARY_NAME faassupervisor/supervisor.py
-    deploy:
-      - provider: releases
-        api_key: $GITHUB_OAUTH_TOKEN
-        file: dist/$BINARY_NAME
-        skip_cleanup: true
-        on:
-          tags: true
-    if: tag IS present
-
   - stage: Deploy to PyPi on new releases
     script: skip
+    arch: amd64
     deploy:
       - provider: pypi
-        user: $PYPI_USER
+        username: $PYPI_USER
         password: $PYPI_PASS
         on:
           tags: true
-    if: arch = amd64
+    if: tag IS present
