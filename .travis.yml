@@ -1,16 +1,16 @@
 os: linux
-dist: bionic
+dist: xenial
 language: python
 python:
-- "3.8.3"
+- "3.8.1"
 
 arch:
 - amd64
 - arm64
 
 install:
-- pip install -U pyinstaller
 - pip install -U -r requirements.txt
+- pip install -U pyinstaller
 
 before_script:
 - if [ $TRAVIS_CPU_ARCH == 'arm64' ]; then
