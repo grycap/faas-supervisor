@@ -183,6 +183,29 @@ class StrUtils():
         the encoded value as a string."""
         return StrUtils.bytes_to_base64str(value.encode('utf-8'))
 
+    @staticmethod
+    def get_storage_id(io_storage):
+        """Return the identifier of the storage provider or 'default'
+        if it is not set.
+        
+        Format: <PROVIDER_TYPE>.<ID>"""
+        if isinstance(io_storage, str):
+            split = io_storage.split('.', maxsplit=1)
+            if len(split) == 2:
+                return split[1]
+            return 'default'
+        return 'default'
+
+    @staticmethod
+    def get_storage_type(io_storage):
+        """Return the provider type of the storage provider.
+        
+        Format: <PROVIDER_TYPE>.<ID>"""
+        if isinstance(io_storage, str):
+            split = io_storage.split('.', maxsplit=1)
+            return split[0].upper()
+        return None
+
 
 class ConfigUtils():
     """Common methods for configuration file management."""
