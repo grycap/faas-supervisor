@@ -20,7 +20,7 @@ from faassupervisor.utils import ConfigUtils
 def _get_log_level():
     loglevel = logging.INFO
     config_level = ConfigUtils.read_cfg_var('log_level')
-    if config_level is not '':
+    if config_level != '':
         loglevel = logging.getLevelName(config_level)
     return loglevel
 

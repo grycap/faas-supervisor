@@ -8,10 +8,6 @@ arch:
 - amd64
 - arm64
 
-before_install:
-# work around cache dir owned by root (see https://travis-ci.community/t/7822/6)
-- sudo chown -fR $USER:$GROUP ~/.cache/pip/wheels
-
 install:
 - pip install -U -r requirements.txt
 - pip install -U pyinstaller
