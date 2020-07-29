@@ -186,20 +186,17 @@ class StrUtils():
     @staticmethod
     def get_storage_id(io_storage):
         """Return the identifier of the storage provider or 'default'
-        if it is not set.
-        
+        if it is not set. 
         Format: <PROVIDER_TYPE>.<ID>"""
         if isinstance(io_storage, str):
             split = io_storage.split('.', maxsplit=1)
             if len(split) == 2:
                 return split[1]
-            return 'default'
         return 'default'
 
     @staticmethod
     def get_storage_type(io_storage):
         """Return the provider type of the storage provider.
-        
         Format: <PROVIDER_TYPE>.<ID>"""
         if isinstance(io_storage, str):
             split = io_storage.split('.', maxsplit=1)

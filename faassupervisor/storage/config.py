@@ -82,7 +82,7 @@ class StorageConfig():
         # Read storage_providers dict
         storage_providers = ConfigUtils.read_cfg_var('storage_providers')
         if (storage_providers and
-                storage_providers is not ''):
+                storage_providers != ''):
             # s3 storage provider auth
             if ('s3' in storage_providers
                     and storage_providers['s3']):

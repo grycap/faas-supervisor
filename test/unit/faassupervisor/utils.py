@@ -172,6 +172,13 @@ class StrUtilsTest(unittest.TestCase):
     def test_utf8_to_base64_string(self):
         self.assertEqual(StrUtils.utf8_to_base64_string("testing\nencode."), "dGVzdGluZwplbmNvZGUu")
 
+    def test_get_storage_id(self):
+        self.assertEqual(StrUtils.get_storage_id('bad.good'), 'good')
+        self.assertEqual(StrUtils.get_storage_id('bad.good.with.dots'), 'good.with.dots')
+
+    def test_get_storage_type(self):
+        self.assertEqual(StrUtils.get_storage_type('good.bad.asdf'), 'GOOD')
+
 
 class ConfigUtilsTest(unittest.TestCase):
 
