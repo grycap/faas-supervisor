@@ -52,6 +52,8 @@ class BinarySupervisor(DefaultSupervisor):
                 orig_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH_ORIG')
                 if orig_library_path:
                     SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
+                else:
+                    SysUtils.delete_env_var('LD_LIBRARY_PATH')
                 self.output = subprocess.check_output(['/bin/sh', script_path],
                                                       stderr=subprocess.STDOUT).decode("latin-1")
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)

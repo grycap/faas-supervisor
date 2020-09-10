@@ -59,6 +59,11 @@ class SysUtils():
         return os.environ.get(variable, "")
 
     @staticmethod
+    def delete_env_var(variable):
+        """Deletes the specified variable from the environment."""
+        os.environ.pop(variable)
+
+    @staticmethod
     def get_cont_env_vars():
         """Returns the defined container environment variables."""
         container = ConfigUtils.read_cfg_var('container')
