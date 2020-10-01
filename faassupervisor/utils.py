@@ -61,7 +61,8 @@ class SysUtils():
     @staticmethod
     def delete_env_var(variable):
         """Deletes the specified variable from the environment."""
-        os.environ.pop(variable)
+        if variable in os.environ:
+            os.environ.pop(variable)
 
     @staticmethod
     def get_cont_env_vars():
