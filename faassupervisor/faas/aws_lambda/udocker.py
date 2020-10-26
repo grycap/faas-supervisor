@@ -58,7 +58,7 @@ class Udocker():
         return self.udocker_exec + ["ps"]
 
     def _create_udocker_container_cmd(self):
-        return self.udocker_exec + ["create", f"--name={self._CONTAINER_NAME}", self.cont_img_id]
+        return self.udocker_exec + ["-D", "create", f"--name={self._CONTAINER_NAME}", self.cont_img_id]
 
     def _set_udocker_container_execution_mode_cmd(self):
         return self.udocker_exec + ["setup", "--execmode=F1", self._CONTAINER_NAME]
