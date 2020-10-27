@@ -1,4 +1,5 @@
 boto3
 requests
 setuptools>=40.8.0
+wheel
 pyyaml

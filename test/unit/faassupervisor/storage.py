@@ -23,6 +23,7 @@ from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
 from faassupervisor.storage.providers.s3 import S3
+from faassupervisor.events import parse_event
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.s3 import S3Event
@@ -35,29 +36,41 @@ from faassupervisor.utils import StrUtils
 
 CONFIG_FILE_OK = """
 name: test-func
+input:
+- storage_provider: onedata.test_onedata
+  path: files
+- storage_provider: onedata.test_onedata2
+  path: files
 output:
 - storage_provider: s3
   path: bucket/folder
-- storage_provider: minio
+- storage_provider: minio.test_minio
   path: bucket
   suffix: ['txt', 'jpg']
   prefix: ['result-']
 storage_providers:
   minio:
-    access_key: test_minio_access
-    secret_key: test_minio_secret
+    test_minio:
+        access_key: test_minio_access
+        secret_key: test_minio_secret
   onedata:
-    oneprovider_host: test_oneprovider.host
-    token: test_onedata_token
-    space: test_onedata_space
+    test_onedata:
+        oneprovider_host: test_oneprovider.host
+        token: test_onedata_token
+        space: test_onedata_space
+    test_onedata2:
+        oneprovider_host: test_oneprovider.host
+        token: test_onedata_token
+        space: space_ok
 """
 
 CONFIG_FILE_NO_OUTPUT = """
 name: test-func
 storage_providers:
   minio:
-    access_key: test_minio_access
-    secret_key: test_minio_secret
+    test_minio:
+        access_key: test_minio_access
+        secret_key: test_minio_secret
 """
 
 CONFIG_FILE_NO_STORAGE_PROVIDER = """
@@ -89,6 +102,20 @@ storage_providers:
     user: test
 """
 
+ONEDATA_EVENT = """
+{
+    "Key": "/space_ok/files/file.txt",
+    "Records": [
+        {
+            "objectKey": "file.txt",
+            "objectId": "1234",
+            "eventTime": "2019-02-07T09:51:04.347823",
+            "eventSource": "OneTrigger"
+        }
+    ]
+}
+"""
+
 class AuthDataTest(unittest.TestCase):
 
     def test_create_auth_data(self):
@@ -114,21 +141,21 @@ class StorageConfigTest(unittest.TestCase):
                     'storage_provider': 's3',
                     'path': 'bucket/folder'
                 }, {
-                    'storage_provider': 'minio',
+                    'storage_provider': 'minio.test_minio',
                     'path': 'bucket',
                     'suffix': ['txt', 'jpg'],
                     'prefix': ['result-']
                 }
             ]
             self.assertEqual(config.output, expected_output)
-            self.assertEqual(config.minio_auth.type, 'MINIO')
-            self.assertEqual(config.minio_auth.get_credential('access_key'), 'test_minio_access')
-            self.assertEqual(config.minio_auth.get_credential('secret_key'), 'test_minio_secret')
-            self.assertEqual(config.onedata_auth.type, 'ONEDATA')
-            self.assertEqual(config.onedata_auth.get_credential('oneprovider_host'), 'test_oneprovider.host')
-            self.assertEqual(config.onedata_auth.get_credential('token'), 'test_onedata_token')
-            self.assertEqual(config.onedata_auth.get_credential('space'), 'test_onedata_space')
-            self.assertEqual(config.s3_auth.type, 'S3')
+            self.assertEqual(config.minio_auth['test_minio'].type, 'MINIO')
+            self.assertEqual(config.minio_auth['test_minio'].get_credential('access_key'), 'test_minio_access')
+            self.assertEqual(config.minio_auth['test_minio'].get_credential('secret_key'), 'test_minio_secret')
+            self.assertEqual(config.onedata_auth['test_onedata'].type, 'ONEDATA')
+            self.assertEqual(config.onedata_auth['test_onedata'].get_credential('oneprovider_host'), 'test_oneprovider.host')
+            self.assertEqual(config.onedata_auth['test_onedata'].get_credential('token'), 'test_onedata_token')
+            self.assertEqual(config.onedata_auth['test_onedata'].get_credential('space'), 'test_onedata_space')
+            self.assertEqual(config.s3_auth['default'].type, 'S3')
 
     def test_parse_config_no_output(self):
         with mock.patch.dict('os.environ',
@@ -177,7 +204,7 @@ class StorageConfigTest(unittest.TestCase):
         with mock.patch.dict('os.environ',
                              {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
-            minio_auth = StorageConfig().get_auth_data_by_stg_type('MINIO')
+            minio_auth = StorageConfig()._get_auth_data('MINIO', 'test_minio')
             self.assertEqual(minio_auth.type, 'MINIO')
             self.assertEqual(minio_auth.get_credential('access_key'),
                              'test_minio_access')
@@ -188,14 +215,15 @@ class StorageConfigTest(unittest.TestCase):
         with mock.patch.dict('os.environ',
                              {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
-            s3_auth = StorageConfig().get_auth_data_by_stg_type('S3')
+            s3_auth = StorageConfig()._get_auth_data('S3')
             self.assertEqual(s3_auth.type, 'S3')
 
     def test_get_onedata_auth(self):
+        # TODO: check _get_input_auth_data() with custom Onedata event
         with mock.patch.dict('os.environ',
                              {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
-            onedata_auth = StorageConfig().get_auth_data_by_stg_type('ONEDATA')
+            onedata_auth = StorageConfig()._get_auth_data('ONEDATA', 'test_onedata')
             self.assertEqual(onedata_auth.type, 'ONEDATA')
             self.assertEqual(onedata_auth.get_credential('oneprovider_host'),
                              'test_oneprovider.host')
@@ -203,9 +231,14 @@ class StorageConfigTest(unittest.TestCase):
                              'test_onedata_token')
             self.assertEqual(onedata_auth.get_credential('space'),
                              'test_onedata_space')
+            # Test _get_input_auth_data() for getting the proper auth data from an event
+            parsed_event = parse_event(ONEDATA_EVENT)
+            onedata2_auth = StorageConfig()._get_input_auth_data(parsed_event)
+            self.assertEqual(onedata2_auth.get_credential('space'), 'space_ok')
+
 
     def test_get_invalid_auth(self):
-        invalid_auth = StorageConfig().get_auth_data_by_stg_type('INVALID_TYPE')
+        invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
         self.assertIsNone(invalid_auth)
 
     @mock.patch('faassupervisor.storage.providers.local.Local.download_file')

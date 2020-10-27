@@ -25,25 +25,35 @@ class BinarySupervisor(DefaultSupervisor):
     """Supervisor class used in the Binary environment."""
 
     _SCRIPT_FILE_NAME = 'script.sh'
+    _OSCAR_SCRIPT_PATH = '/oscar/config/script.sh'
 
     def __init__(self):
         self.output = ''
         get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
-    def execute_function(self):
+    def _get_script_path(self):
+        script_path = None
         if SysUtils.is_var_in_env('SCRIPT'):
             script_path = SysUtils.join_paths(SysUtils.get_env_var("TMP_INPUT_DIR"),
                                               self._SCRIPT_FILE_NAME)
             script_content = StrUtils.base64_to_str(SysUtils.get_env_var('SCRIPT'))
             FileUtils.create_file_with_content(script_path, script_content)
             get_logger().info("Script file created in '%s'", script_path)
-            FileUtils.set_file_execution_rights(script_path)
-            get_logger().info("Executing user defined script: '%s'", script_path)
+        elif FileUtils.is_file(self._OSCAR_SCRIPT_PATH):
+            script_path = self._OSCAR_SCRIPT_PATH
+            get_logger().info("Script file found in '%s'", script_path)
+        return script_path
+
+    def execute_function(self):
+        script_path = self._get_script_path()
+        if script_path:
             try:
                 pyinstaller_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH')
                 orig_library_path = SysUtils.get_env_var('LD_LIBRARY_PATH_ORIG')
                 if orig_library_path:
                     SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
+                else:
+                    SysUtils.delete_env_var('LD_LIBRARY_PATH')
                 self.output = subprocess.check_output(['/bin/sh', script_path],
                                                       stderr=subprocess.STDOUT).decode("latin-1")
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)

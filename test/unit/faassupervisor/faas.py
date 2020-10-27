@@ -30,17 +30,14 @@ from faassupervisor.exceptions import NoLambdaContextError
 class BinarySupervisorTest(unittest.TestCase):
 
     @mock.patch('subprocess.check_output')
-    @mock.patch('faassupervisor.utils.FileUtils.set_file_execution_rights')
     @mock.patch('faassupervisor.utils.FileUtils.create_file_with_content')
-    def test_execute_function(self, mock_create, mock_set, mock_subp):
+    def test_execute_function(self, mock_create, mock_subp):
         supervisor = BinarySupervisor()
         with mock.patch.dict('os.environ', {'SCRIPT':'ZmFrZSBzY3JpcHQh',
                                             'TMP_INPUT_DIR': '/tmp/input'}, clear=True):
             supervisor.execute_function()
             # Check script file creation
             mock_create.assert_called_once_with('/tmp/input/script.sh', 'fake script!')
-            # Check script file properties
-            mock_set.assert_called_once_with('/tmp/input/script.sh')
             # Check process execution
             mock_subp.assert_called_once_with(['/bin/sh', '/tmp/input/script.sh'],
                                               stderr=subprocess.STDOUT)

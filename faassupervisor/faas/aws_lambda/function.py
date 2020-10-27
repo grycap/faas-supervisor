@@ -49,7 +49,7 @@ class LambdaInstance():
             # Add args
             self.cmd_args = json.loads(self.raw_event['cmd_args'])
         # Script to be executed every time (if defined)
-        elif ConfigUtils.read_cfg_var('init_script') is not '':
+        elif ConfigUtils.read_cfg_var('init_script') != '':
             # Add init script
             self.init_script_path = f"{self.input_folder}/init_script.sh"
             FileUtils.cp_file(ConfigUtils.read_cfg_var('init_script'), self.init_script_path)
@@ -85,6 +85,6 @@ class LambdaInstance():
         """Returns the amount of time remaining for the invocation in seconds."""
         remaining_time = int(self.context.get_remaining_time_in_millis() / 1000)
         timeout_threshold = SysUtils.get_env_var('TIMEOUT_THRESHOLD')
-        if timeout_threshold is '':
+        if timeout_threshold == '':
             timeout_threshold = ConfigUtils.read_cfg_var('container')['timeout_threshold']
         return remaining_time - int(timeout_threshold)
