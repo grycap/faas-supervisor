@@ -64,21 +64,18 @@ class Batch():
     def _get_overrides(self):
         batch = ConfigUtils.read_cfg_var("batch")
         if batch.get("multi_node_parallel").get("enabled") == True:
-            num_nodes = batch.get("multi_node_parallel").get("number_nodes")
-            target_nodes = num_nodes - 1
             return {
                 "nodeOverrides": {
-                        "nodePropertyOverrides": [
-                            {
-                                "containerOverrides": {
-                                    "environment": self.batch_job_env_vars
-                                },
-                                "targetNodes": "0:" + str(target_nodes)
-                            }
-                        ],
-                        "numNodes": num_nodes
-                    }
+                    "nodePropertyOverrides": [
+                        {
+                            "containerOverrides": {
+                                "environment": self.batch_job_env_vars
+                            },
+                            "targetNodes": "0:"
+                        }
+                    ]
                 }
+            }
         else:
             return {
                 "containerOverrides": {
