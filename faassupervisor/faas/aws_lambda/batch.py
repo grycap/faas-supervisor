@@ -16,6 +16,7 @@ used to manage the batch jobs from the lambda environment."""
 
 import json
 import boto3
+from faassupervisor.utils import ConfigUtils
 
 
 class Batch():
@@ -59,6 +60,31 @@ class Batch():
         if 'script' in self.lambda_instance.raw_event:
             script = self.lambda_instance.raw_event['script']
         return script
+    
+    def _get_overrides(self):
+        batch = ConfigUtils.read_cfg_var(self.context, "batch")
+        if batch.get("multi_node_parallel").get("enabled") == True:
+            num_nodes = batch.get("multi_node_parallel").get("number_nodes")
+            target_nodes = num_nodes - 1
+            return {
+                "nodeOverrides": {
+                        "nodePropertyOverrides": [
+                                {
+                                    "containerOverrides": {
+                                        "environment": self.batch_job_env_vars
+                                    },
+                                    "targetNodes": "0:" + str(target_nodes)
+                                }
+                            ],
+                        "numNodes": num_nodes
+                    }
+                }
+        else:
+            return {
+                "containerOverrides": {
+                    "environment": self.batch_job_env_vars
+                }
+            }
 
     def _get_job_args(self):
         job_name = self.context.get("function_name")
@@ -66,11 +92,9 @@ class Batch():
             "jobDefinition": job_name,
             "jobName": job_name,
             "jobQueue": job_name,
-            "containerOverrides": {
-                "environment": self.batch_job_env_vars
-            }
+            
         }
-        return job_def
+        return {**job_def, **self._get_overrides()}
 
     def _submit_batch_job(self, job_args):
         return self.client.submit_job(**job_args)["jobId"]
