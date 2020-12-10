@@ -62,20 +62,20 @@ class Batch():
         return script
     
     def _get_overrides(self):
-        batch = ConfigUtils.read_cfg_var(self.context, "batch")
+        batch = ConfigUtils.read_cfg_var("batch")
         if batch.get("multi_node_parallel").get("enabled") == True:
             num_nodes = batch.get("multi_node_parallel").get("number_nodes")
             target_nodes = num_nodes - 1
             return {
                 "nodeOverrides": {
                         "nodePropertyOverrides": [
-                                {
-                                    "containerOverrides": {
-                                        "environment": self.batch_job_env_vars
-                                    },
-                                    "targetNodes": "0:" + str(target_nodes)
-                                }
-                            ],
+                            {
+                                "containerOverrides": {
+                                    "environment": self.batch_job_env_vars
+                                },
+                                "targetNodes": "0:" + str(target_nodes)
+                            }
+                        ],
                         "numNodes": num_nodes
                     }
                 }
@@ -88,13 +88,13 @@ class Batch():
 
     def _get_job_args(self):
         job_name = self.context.get("function_name")
+        overrides = self._get_overrides()
         job_def = {
             "jobDefinition": job_name,
             "jobName": job_name,
-            "jobQueue": job_name,
-            
+            "jobQueue": job_name,          
         }
-        return {**job_def, **self._get_overrides()}
+        return {**job_def, **overrides}
 
     def _submit_batch_job(self, job_args):
         return self.client.submit_job(**job_args)["jobId"]
