@@ -54,14 +54,20 @@ class BinarySupervisor(DefaultSupervisor):
                     SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
                 else:
                     SysUtils.delete_env_var('LD_LIBRARY_PATH')
-                self.output = subprocess.check_output(['/bin/sh', script_path],
-                                                      stderr=subprocess.STDOUT).decode("latin-1")
+                proc = subprocess.Popen(['/bin/sh', script_path],
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.STDOUT,
+                                                encoding='utf-8',
+                                                errors='ignore')
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)
                 get_logger().debug("CONTAINER OUTPUT:\n %s", self.output)
+                for line in proc.stdout:
+                    get_logger.debug(line.strip())
+                    self.output = self.output + line
             except subprocess.CalledProcessError as cpe:
                 # Exit with user script return code if an
                 # error occurs (Kubernetes handles the error)
-                get_logger().error(cpe.output.decode('latin-1'))
+                get_logger().error(cpe.output.decode(encoding='utf-8', errors='ignore'))
                 sys.exit(cpe.returncode)
         else:
             get_logger().error('No user script found!')
