@@ -62,7 +62,7 @@ class BinarySupervisor(DefaultSupervisor):
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)
                 get_logger().debug("CONTAINER OUTPUT:\n %s", self.output)
                 for line in proc.stdout:
-                    get_logger.debug(line.strip())
+                    get_logger().debug(line.strip())
                     self.output = self.output + line
             except subprocess.CalledProcessError as cpe:
                 # Exit with user script return code if an
