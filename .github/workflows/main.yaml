@@ -95,15 +95,15 @@ jobs:
         shell: /bin/sh
         install: |
           apt update
-          apt install -y software-properties-common
+          apt install -y software-properties-common build-essential zlib1g-dev
           add-apt-repository -y ppa:deadsnakes/ppa
           apt update
-          apt install -y python3.8-dev python3-pip
-          python3.8 -m pip install pip
+          apt install -y python3.8-dev python3.8-venv
+          python3.8 -m ensurepip
           python3.8 -m pip install pyinstaller
-          python3.8 -m pip install -r requirements
         run: |
           cd /repo
+          python3.8 -m pip install -r requirements.txt
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
     - name: Deploy to release
       env:
