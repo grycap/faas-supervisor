@@ -58,7 +58,7 @@ class LambdaSupervisor(DefaultSupervisor):
             udocker = Udocker(self.lambda_instance)
             udocker.prepare_container()
             self.body["udocker_output"] = udocker.launch_udocker_container()
-            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"].decode("latin-1"))
+            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["udocker_output"].decode(encoding='utf-8', errors='ignore'))
         except (subprocess.TimeoutExpired, ContainerTimeoutExpiredWarning):
             get_logger().warning("Container execution timed out")
             if _is_lambda_batch_execution():
