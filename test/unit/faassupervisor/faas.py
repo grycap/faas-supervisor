@@ -39,7 +39,7 @@ class BinarySupervisorTest(unittest.TestCase):
             # Check script file creation
             mock_create.assert_called_once_with('/tmp/input/script.sh', 'fake script!')
             # Check process execution
-            mock_popen.assert_called_once_with(['/bin/sh', '/tmp/input/script.sh'],
+            mock_popen.assert_called_once_with(['/bin/bash', '/tmp/input/script.sh'],
                                                stdout=subprocess.PIPE,
                                                stderr=subprocess.STDOUT,
                                                encoding='utf-8',

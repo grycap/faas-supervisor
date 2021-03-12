@@ -54,7 +54,7 @@ class BinarySupervisor(DefaultSupervisor):
                     SysUtils.set_env_var('LD_LIBRARY_PATH', orig_library_path)
                 else:
                     SysUtils.delete_env_var('LD_LIBRARY_PATH')
-                proc = subprocess.Popen(['/bin/sh', script_path],
+                proc = subprocess.Popen(['/bin/bash', script_path],
                                                 stdout=subprocess.PIPE,
                                                 stderr=subprocess.STDOUT,
                                                 encoding='utf-8',
