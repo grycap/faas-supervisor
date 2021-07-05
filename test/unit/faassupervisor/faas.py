@@ -32,7 +32,7 @@ class BinarySupervisorTest(unittest.TestCase):
     @mock.patch('subprocess.Popen')
     @mock.patch('faassupervisor.utils.FileUtils.create_file_with_content')
     def test_execute_function(self, mock_create, mock_popen):
-        supervisor = BinarySupervisor()
+        supervisor = BinarySupervisor('UNKNOWN')
         with mock.patch.dict('os.environ', {'SCRIPT':'ZmFrZSBzY3JpcHQh',
                                             'TMP_INPUT_DIR': '/tmp/input'}, clear=True):
             supervisor.execute_function()
