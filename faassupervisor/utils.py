@@ -21,6 +21,7 @@ import sys
 import tempfile
 import shutil
 import yaml
+from zipfile import ZipFile
 
 
 class SysUtils():
@@ -163,6 +164,13 @@ class FileUtils():
     def get_dir_name(file_path):
         """Returns the directory name."""
         return os.path.dirname(file_path)
+
+    @staticmethod
+    def zip_file_list(file_list, zip_path):
+        """Generate a zip in zip_path from a list of files"""
+        with ZipFile(zip_path, 'w') as zip:
+            for file in file_list:
+                zip.write(file)
 
 
 class StrUtils():
