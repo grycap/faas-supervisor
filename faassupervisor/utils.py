@@ -168,9 +168,10 @@ class FileUtils():
     @staticmethod
     def zip_file_list(file_list, zip_path):
         """Generate a zip in zip_path from a list of files"""
+        dir_name = os.path.dirname(zip_path)
         with ZipFile(zip_path, 'w') as zip:
             for file in file_list:
-                zip.write(file)
+                zip.write(file, file.removeprefix(dir_name))
 
 
 class StrUtils():
