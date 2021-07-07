@@ -171,7 +171,7 @@ class FileUtils():
         dir_name = os.path.dirname(zip_path)
         with ZipFile(zip_path, 'w') as zip:
             for file in file_list:
-                zip.write(file, file.removeprefix(dir_name))
+                zip.write(file, StrUtils.remove_prefix(file, '{}/'.format(dir_name)))
 
 
 class StrUtils():
@@ -217,6 +217,14 @@ class StrUtils():
             split = io_storage.split('.', maxsplit=1)
             return split[0].upper()
         return None
+
+    @staticmethod
+    def remove_prefix(text, prefix):
+        """Return a substring without the specified prefix
+        or the same text if the prefix is not found."""
+        if text.startswith(prefix):
+            text = text.replace(prefix, '', 1)
+        return text
 
 
 class ConfigUtils():
