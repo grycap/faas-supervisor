@@ -16,6 +16,7 @@ related with the binary supervisor."""
 
 import subprocess
 import sys
+import uuid
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
 from faassupervisor.utils import SysUtils, FileUtils, StrUtils
@@ -27,8 +28,9 @@ class BinarySupervisor(DefaultSupervisor):
     _SCRIPT_FILE_NAME = 'script.sh'
     _OSCAR_SCRIPT_PATH = '/oscar/config/script.sh'
 
-    def __init__(self):
+    def __init__(self, event_type):
         self.output = ''
+        self.event_type = event_type
         get_logger().info('SUPERVISOR: Initializing Binary supervisor')
 
     def _get_script_path(self):
@@ -73,6 +75,20 @@ class BinarySupervisor(DefaultSupervisor):
             get_logger().error('No user script found!')
 
     def create_response(self):
+        if self.event_type and self.event_type == 'UNKNOWN':
+            # Check if there are files in $TMP_OUTPUT_DIR
+            output_dir = SysUtils.get_env_var('TMP_OUTPUT_DIR')
+            files = FileUtils.get_all_files_in_dir(output_dir)
+            if len(files) == 1:
+                # Return the file encoded in base64
+                file_content = FileUtils.read_file(files[0], 'rb')
+                return StrUtils.bytes_to_base64str(file_content)
+            if len(files) > 1:
+                # Generate a zip with all files and return it encoded in base64
+                zip_path = SysUtils.join_paths(output_dir, str(uuid.uuid4()))
+                FileUtils.zip_file_list(files, zip_path)
+                file_content = FileUtils.read_file(zip_path, 'rb')
+                return StrUtils.bytes_to_base64str(file_content)
         return self.output
 
     def create_error_response(self):

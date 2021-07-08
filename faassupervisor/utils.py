@@ -21,6 +21,7 @@ import sys
 import tempfile
 import shutil
 import yaml
+from zipfile import ZipFile
 
 
 class SysUtils():
@@ -164,6 +165,14 @@ class FileUtils():
         """Returns the directory name."""
         return os.path.dirname(file_path)
 
+    @staticmethod
+    def zip_file_list(file_list, zip_path):
+        """Generate a zip in zip_path from a list of files"""
+        dir_name = os.path.dirname(zip_path)
+        with ZipFile(zip_path, 'w') as zip:
+            for file in file_list:
+                zip.write(file, StrUtils.remove_prefix(file, '{}/'.format(dir_name)))
+
 
 class StrUtils():
     """Common methods for string management."""
@@ -208,6 +217,14 @@ class StrUtils():
             split = io_storage.split('.', maxsplit=1)
             return split[0].upper()
         return None
+
+    @staticmethod
+    def remove_prefix(text, prefix):
+        """Return a substring without the specified prefix
+        or the same text if the prefix is not found."""
+        if text.startswith(prefix):
+            text = text.replace(prefix, '', 1)
+        return text
 
 
 class ConfigUtils():

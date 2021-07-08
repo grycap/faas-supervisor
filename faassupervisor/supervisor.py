@@ -37,7 +37,7 @@ class Supervisor():
         # Read storage config
         self._read_storage_config()
         # Create the supervisor
-        self.supervisor = _create_supervisor(event, context)
+        self.supervisor = _create_supervisor(event, context, self.parsed_event.get_type())
 
     def _create_tmp_dirs(self):
         """Creates the temporal directories where the
@@ -94,7 +94,7 @@ class Supervisor():
 
 
 @exception()
-def _create_supervisor(event, context=None):
+def _create_supervisor(event, context=None, event_type=None):
     """Returns a new supervisor based on the
     environment.
     Binary mode by default"""
@@ -102,7 +102,7 @@ def _create_supervisor(event, context=None):
     if SysUtils.is_lambda_environment():
         supervisor = LambdaSupervisor(event, context)
     else:
-        supervisor = BinarySupervisor()
+        supervisor = BinarySupervisor(event_type)
     return supervisor
 
 
