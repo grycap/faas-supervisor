@@ -240,7 +240,8 @@ class ConfigUtils():
         'udocker_exec',
         'udocker_dir',
         'udocker_bin',
-        'udocker_lib'
+        'udocker_lib',
+        'download_input'
     ]
 
     @classmethod
