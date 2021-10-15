@@ -104,4 +104,8 @@ def parse_event(event):
         parsed_event = _parse_storage_event(event)
         # Store 'object_key' in environment variable
         SysUtils.set_env_var("STORAGE_OBJECT_KEY", parsed_event.object_key)
+        # Store 'event_time' in environment variable
+        SysUtils.set_env_var("EVENT_TIME", parsed_event.event_time)
+        # Store the raw event in environment variable
+        SysUtils.set_env_var("EVENT", json.dumps(event))
     return parsed_event if parsed_event else UnknownEvent(event)
