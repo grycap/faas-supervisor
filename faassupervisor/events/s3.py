@@ -50,3 +50,4 @@ class S3Event(UnknownEvent):
         self.bucket_name = self.event_records['s3']['bucket']['name']
         self.object_key = unquote_plus(self.event_records['s3']['object']['key'])
         self.file_name = FileUtils.get_file_name(self.object_key)
+        self.event_time = self.event_records['eventTime']

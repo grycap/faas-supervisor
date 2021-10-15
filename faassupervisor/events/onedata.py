@@ -34,3 +34,4 @@ class OnedataEvent(UnknownEvent):
     def _set_event_params(self):
         self.object_key = self.event['Key']
         self.file_name = self.event_records['objectKey']
+        self.event_time = self.event_records['eventTime']
