@@ -32,14 +32,17 @@ MINIO_EVENT = {"Key": "images/nature-wallpaper-229.jpg",
                "Records": [{"s3": {"object": {"key": "nature-wallpaper-229.jpg"},
                                    "bucket": {"name": "images",
                                               "arn": "arn:aws:s3:::images"}},
-                            "eventSource": "minio:s3"}]}
+                            "eventSource": "minio:s3",
+                            "eventTime": "2018-06-29T10:23:44Z"}]}
 
 ONEDATA_EVENT = {"Key": "/my-onedata-space/files/file.txt",
                  "Records": [{"objectKey": "file.txt",
-                              "eventSource": "OneTrigger"}]}
+                              "eventSource": "OneTrigger",
+                              "eventTime": "2018-06-29T10:23:44Z"}]}
 
 S3_EVENT = {'Records': [{'awsRegion': 'us-east-1',
                          'eventSource': 'aws:s3',
+                         "eventTime": "2018-06-29T10:23:44Z",
                          's3': {'bucket': {'arn': 'arn:aws:s3:::darknet-bucket',
                                            'name': 'darknet-bucket'},
                                 'object': {'key': 'darknet-s3/input/dog.jpg'}}}]}
