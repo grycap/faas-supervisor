@@ -15,10 +15,11 @@
 """ Module with all the generic supervisor classes and methods.
 Also entry point of the faassupervisor package."""
 
+import distutils.util
 from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig
-from faassupervisor.utils import SysUtils, FileUtils
+from faassupervisor.utils import SysUtils, FileUtils, ConfigUtils
 from faassupervisor.logger import configure_logger, get_logger
 from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor, is_batch_execution
 from faassupervisor.faas.binary.supervisor import BinarySupervisor
@@ -64,11 +65,24 @@ class Supervisor():
         but one event always represents only one file (so far), so only
         one provider is going to be used for each event received.
         """
-        input_file_path = self.stg_config.download_input(self.parsed_event,
-                                                         self.input_tmp_dir.name)
-        if input_file_path and FileUtils.is_file(input_file_path):
-            SysUtils.set_env_var('INPUT_FILE_PATH', input_file_path)
-            get_logger().info('INPUT_FILE_PATH variable set to \'%s\'', input_file_path)
+        # Parse the 'download_input' config var
+        download_input = ConfigUtils.read_cfg_var('download_input')
+        if download_input == '':
+            download_input = True
+        else:
+            try:
+                download_input = bool(distutils.util.strtobool(download_input))
+            except ValueError:
+                download_input = True
+        # Parse input file
+        if download_input is False:
+            get_logger().info('Skipping download of input file.')
+        else:
+            input_file_path = self.stg_config.download_input(self.parsed_event,
+                                                             self.input_tmp_dir.name)
+            if input_file_path and FileUtils.is_file(input_file_path):
+                SysUtils.set_env_var('INPUT_FILE_PATH', input_file_path)
+                get_logger().info('INPUT_FILE_PATH variable set to \'%s\'', input_file_path)
 
     @exception()
     def _parse_output(self):

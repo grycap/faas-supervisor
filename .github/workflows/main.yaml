@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
   pypi:
     needs: test
     if: github.event_name == 'release'
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -52,7 +52,7 @@ jobs:
   build-amd64:
     needs: test
     if: github.event_name == 'release'
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -80,7 +80,7 @@ jobs:
   build-aarch64:
     needs: test
     if: github.event_name == 'release'
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -88,7 +88,7 @@ jobs:
       uses: uraimo/run-on-arch-action@v2.0.7
       with:
         arch: aarch64
-        distro: ubuntu16.04
+        distro: ubuntu18.04
         githubToken: ${{ secrets.GITHUB_TOKEN }}
         dockerRunArgs: |
           --volume  "${PWD}:/repo"

@@ -139,9 +139,13 @@ class Udocker():
         self.cont_cmd.extend(_parse_cont_env_var("TMP_OUTPUT_DIR",
                                                  SysUtils.get_env_var("TMP_OUTPUT_DIR")))
 
-    def _add_storage_object_key(self):
+    def _add_event_vars(self):
         self.cont_cmd.extend(_parse_cont_env_var("STORAGE_OBJECT_KEY",
                                                  SysUtils.get_env_var("STORAGE_OBJECT_KEY")))
+        self.cont_cmd.extend(_parse_cont_env_var("EVENT_TIME",
+                                                 SysUtils.get_env_var("EVENT_TIME")))
+        self.cont_cmd.extend(_parse_cont_env_var("EVENT",
+                                                 SysUtils.get_env_var("EVENT")))
 
     def _add_extra_payload_path(self):
         self.cont_cmd.extend(_parse_cont_env_var("EXTRA_PAYLOAD",
@@ -169,7 +173,7 @@ class Udocker():
         self._add_cont_env_vars()
         self._add_input_file()
         self._add_output_dir()
-        self._add_storage_object_key()
+        self._add_event_vars()
         self._add_extra_payload_path()
 
     def prepare_container(self):
