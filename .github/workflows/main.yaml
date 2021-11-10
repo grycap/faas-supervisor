@@ -65,17 +65,21 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pyinstaller
         python -m pip install -r requirements.txt
+        apt update
+        apt install -y zip
     - name: Build binary
-      run: pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
+      run: |
+        pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
+        pyinstaller faassupervisor/supervisor.py
+        cd dist
+        zip -r supervisor.zip supervisor
     - name: Deploy to release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: actions/upload-release-asset@v1
+      uses: softprops/action-gh-release@v1
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: dist/supervisor
-        asset_name: supervisor
-        asset_content_type: application/octet-stream
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/supervisor
+          dist/supervisor.zip
 
   build-aarch64:
     needs: test
@@ -98,19 +102,20 @@ jobs:
           apt install -y software-properties-common build-essential zlib1g-dev
           add-apt-repository -y ppa:deadsnakes/ppa
           apt update
-          apt install -y python3.8-dev python3.8-venv
+          apt install -y python3.8-dev python3.8-venv zip
           python3.8 -m ensurepip
           python3.8 -m pip install pyinstaller
         run: |
           cd /repo
           python3.8 -m pip install -r requirements.txt
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
+          pyinstaller faassupervisor/supervisor.py
+          cd dist
+          zip -r supervisor-arm64.zip supervisor
     - name: Deploy to release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: actions/upload-release-asset@v1
+      uses: softprops/action-gh-release@v1
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: dist/supervisor-arm64
-        asset_name: supervisor-arm64
-        asset_content_type: application/octet-stream
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/supervisor-arm64
+          dist/supervisor-arm64.zip
