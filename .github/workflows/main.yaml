@@ -65,14 +65,16 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pyinstaller
         python -m pip install -r requirements.txt
-        apt update
-        apt install -y zip
+        sudo apt update
+        sudo apt install -y zip
     - name: Build binary
       run: |
-        pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
+        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
         cd dist
         zip -r supervisor.zip supervisor
+        rm -r supervisor
+        mv supervisor-bin supervisor
     - name: Deploy to release
       uses: softprops/action-gh-release@v1
       with:
