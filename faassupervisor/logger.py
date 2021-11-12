@@ -46,9 +46,3 @@ def configure_logger():
 def get_logger():
     """Returns the configured logger."""
     return logging.getLogger('supervisor')
-
-
-def disable_logger():
-    """Disable the logger"""
-    logger = logging.getLogger('supervisor')
-    logger.propagate = False

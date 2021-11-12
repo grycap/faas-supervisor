@@ -16,7 +16,6 @@
 import json
 import base64
 import uuid
-from faassupervisor.logger import disable_logger
 from faassupervisor.utils import SysUtils, FileUtils
 
 
@@ -28,7 +27,6 @@ class UnknownEvent():
     def __init__(self, event):
         self._file_name = 'event-file-{}'.format(str(uuid.uuid4()))
         self.event = event
-        disable_logger()
         if isinstance(event, dict):
             records = event.get('Records')
             if records:
