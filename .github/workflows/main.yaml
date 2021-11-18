@@ -51,7 +51,6 @@ jobs:
 
   build-amd64:
     needs: test
-    if: github.event_name == 'release'
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
@@ -65,21 +64,29 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pyinstaller
         python -m pip install -r requirements.txt
+        sudo apt update
+        sudo apt install -y zip
     - name: Build binary
-      run: pyinstaller --onefile -n supervisor faassupervisor/supervisor.py
-    - name: Deploy to release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: actions/upload-release-asset@v1
+      run: |
+        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
+        pyinstaller faassupervisor/supervisor.py
+        cd dist
+        zip -r supervisor.zip supervisor
+        rm -r supervisor
+        mv supervisor-bin supervisor
+    - name: Upload amd64 binary
+      uses: actions/upload-artifact@v2
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: dist/supervisor
-        asset_name: supervisor
-        asset_content_type: application/octet-stream
+        name: supervisor
+        path: dist/supervisor
+    - name: Upload amd64 zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor.zip
+        path: dist/supervisor.zip
 
   build-aarch64:
     needs: test
-    if: github.event_name == 'release'
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
@@ -98,19 +105,43 @@ jobs:
           apt install -y software-properties-common build-essential zlib1g-dev
           add-apt-repository -y ppa:deadsnakes/ppa
           apt update
-          apt install -y python3.8-dev python3.8-venv
+          apt install -y python3.8-dev python3.8-venv zip
           python3.8 -m ensurepip
           python3.8 -m pip install pyinstaller
         run: |
           cd /repo
           python3.8 -m pip install -r requirements.txt
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
-    - name: Deploy to release
+          pyinstaller faassupervisor/supervisor.py
+          cd dist
+          zip -r supervisor-arm64.zip supervisor
+    - name: Upload arm64 binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor-arm64
+        path: dist/supervisor-arm64
+    - name: Upload arm64 zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor-arm64.zip
+        path: dist/supervisor-arm64.zip
+
+  release-assets:
+    needs:
+    - build-amd64
+    - build-aarch64
+    if: github.event_name == 'release'
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download jobs' artifacts
+      uses: actions/download-artifact@v2
+    - name: Upload artifacts to release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          supervisor.zip/supervisor.zip
+          supervisor/supervisor
+          supervisor-arm64/supervisor-arm64
+          supervisor-arm64.zip/supervisor-arm64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: dist/supervisor-arm64
-        asset_name: supervisor-arm64
-        asset_content_type: application/octet-stream
