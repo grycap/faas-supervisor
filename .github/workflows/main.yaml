@@ -51,7 +51,6 @@ jobs:
 
   build-amd64:
     needs: test
-    if: github.event_name == 'release'
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
@@ -75,17 +74,19 @@ jobs:
         zip -r supervisor.zip supervisor
         rm -r supervisor
         mv supervisor-bin supervisor
-    - name: Deploy to release
-      uses: softprops/action-gh-release@v1
+    - name: Upload amd64 binary
+      uses: actions/upload-artifact@v2
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        files: |
-          dist/supervisor
-          dist/supervisor.zip
+        name: supervisor
+        path: dist/supervisor
+    - name: Upload amd64 zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor.zip
+        path: dist/supervisor.zip
 
   build-aarch64:
     needs: test
-    if: github.event_name == 'release'
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
@@ -114,10 +115,33 @@ jobs:
           pyinstaller faassupervisor/supervisor.py
           cd dist
           zip -r supervisor-arm64.zip supervisor
-    - name: Deploy to release
+    - name: Upload arm64 binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor-arm64
+        path: dist/supervisor-arm64
+    - name: Upload arm64 zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor-arm64.zip
+        path: dist/supervisor-arm64.zip
+
+  release-assets:
+    needs:
+    - build-amd64
+    - build-aarch64
+    if: github.event_name == 'release'
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download jobs' artifacts
+      uses: actions/download-artifact@v2
+    - name: Upload artifacts to release
       uses: softprops/action-gh-release@v1
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          dist/supervisor-arm64
-          dist/supervisor-arm64.zip
+          supervisor.zip/supervisor.zip
+          supervisor/supervisor
+          supervisor-arm64/supervisor-arm64
+          supervisor-arm64.zip/supervisor-arm64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
