@@ -10,14 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.8.9
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -28,14 +28,14 @@ jobs:
   pypi:
     needs: test
     if: github.event_name == 'release'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.8.9
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -51,22 +51,21 @@ jobs:
 
   build-amd64:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container: ubuntu:16.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install pyinstaller
-        python -m pip install -r requirements.txt
-        sudo apt update
-        sudo apt install -y zip
+        apt update
+        apt install -y software-properties-common build-essential zlib1g-dev
+        add-apt-repository -y ppa:deadsnakes/ppa
+        apt update
+        apt install -y python3.8-dev python3.8-venv zip
+        python3.8 -m ensurepip
+        python3.8 -m pip install pyinstaller
+        python3.8 -m pip install -r requirements.txt
     - name: Build binary
       run: |
         pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
@@ -88,7 +87,7 @@ jobs:
 
   build-aarch64:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -106,12 +105,12 @@ jobs:
           apt install -y software-properties-common build-essential zlib1g-dev
           add-apt-repository -y ppa:deadsnakes/ppa
           apt update
-          apt install -y python3.7-dev python3.7-venv zip
-          python3.7 -m ensurepip
-          python3.7 -m pip install pyinstaller
+          apt install -y python3.8-dev python3.8-venv zip
+          python3.8 -m ensurepip
+          python3.8 -m pip install pyinstaller
         run: |
           cd /repo
-          python3.7 -m pip install -r requirements.txt
+          python3.8 -m pip install -r requirements.txt
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
           pyinstaller faassupervisor/supervisor.py
           cd dist
@@ -132,7 +131,7 @@ jobs:
     - build-amd64
     - build-aarch64
     if: github.event_name == 'release'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Download jobs' artifacts
       uses: actions/download-artifact@v2
