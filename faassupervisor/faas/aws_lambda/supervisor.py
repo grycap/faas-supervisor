@@ -16,6 +16,7 @@ related with the AWS Lambda supervisor."""
 
 import subprocess
 import traceback
+from faassupervisor.faas.aws_lambda.container import Container
 from faassupervisor.faas.aws_lambda.batch import Batch
 from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
@@ -69,8 +70,9 @@ class LambdaSupervisor(DefaultSupervisor):
                 self._execute_batch()
 
     def _execute_container(self):
-        get_logger().info("EXECUTING CONTAINER!.")
-        self.body["container_output"] = ""
+        get_logger().debug("EXECUTING CONTAINER!.")
+        container = Container(self.lambda_instance)
+        self.body["container_output"] = container.invoke_function()
 
     def execute_function(self):
         if _is_lambda_container_execution():
@@ -108,5 +110,5 @@ class LambdaSupervisor(DefaultSupervisor):
         if "udocker_output" in self.body:
             res["body"] = StrUtils.bytes_to_base64str(self.body["udocker_output"])
         elif "container_output" in self.body:
-            res["body"] = StrUtils.bytes_to_base64str(self.body["container_output"])
+            res["body"] = self.body["container_output"]
         return res
