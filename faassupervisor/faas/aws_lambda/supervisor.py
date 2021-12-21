@@ -34,6 +34,10 @@ def _is_lambda_batch_execution():
     return ConfigUtils.read_cfg_var("execution_mode") == "lambda-batch"
 
 
+def _is_lambda_container_execution():
+    return ConfigUtils.read_cfg_var("execution_mode") == "container"
+
+
 class LambdaSupervisor(DefaultSupervisor):
     """Supervisor class used in the Lambda environment."""
 
@@ -64,8 +68,14 @@ class LambdaSupervisor(DefaultSupervisor):
             if _is_lambda_batch_execution():
                 self._execute_batch()
 
+    def _execute_container(self):
+        get_logger().info("EXECUTING CONTAINER!.")
+        self.body["container_output"] = ""
+
     def execute_function(self):
-        if is_batch_execution():
+        if _is_lambda_container_execution():
+            self._execute_container()
+        elif is_batch_execution():
             self._execute_batch()
         else:
             self._execute_udocker()
@@ -85,13 +95,18 @@ class LambdaSupervisor(DefaultSupervisor):
         }
 
     def create_response(self):
-        return {
+        res = {
             "statusCode": 200,
             "headers": {
                 "amz-lambda-request-id": self.lambda_instance.get_request_id(),
                 "amz-log-group-name": self.lambda_instance.get_log_group_name(),
                 "amz-log-stream-name": self.lambda_instance.get_log_stream_name()
             },
-            "body": StrUtils.bytes_to_base64str(self.body["udocker_output"]),
+            "body": "",
             "isBase64Encoded": True,
         }
+        if "udocker_output" in self.body:
+            res["body"] = StrUtils.bytes_to_base64str(self.body["udocker_output"])
+        elif "container_output" in self.body:
+            res["body"] = StrUtils.bytes_to_base64str(self.body["container_output"])
+        return res
