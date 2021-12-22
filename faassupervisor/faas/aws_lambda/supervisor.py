@@ -113,6 +113,5 @@ class LambdaSupervisor(DefaultSupervisor):
         if "udocker_output" in self.body:
             res["body"] = StrUtils.bytes_to_base64str(self.body["udocker_output"])
         elif "container_output" in self.body:
-            res["body"] = self.body["container_output"]
-            res["isBase64Encoded"] = False
+            res["body"] = StrUtils.bytes_to_base64str(self.body["container_output"])
         return res
