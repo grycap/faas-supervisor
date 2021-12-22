@@ -17,7 +17,7 @@ used to manage the container runtime jobs from the lambda environment."""
 import subprocess
 import os.path
 
-from faassupervisor.utils import FileUtils, SysUtils, ConfigUtils
+from faassupervisor.utils import FileUtils, SysUtils
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import ContainerTimeoutExpiredWarning, FaasSupervisorError
 
@@ -29,17 +29,21 @@ class Container():
     def __init__(self, lambda_instance):
         self.lambda_instance = lambda_instance
 
+        if hasattr(self.lambda_instance, 'script_path'):
+            self.script = self.lambda_instance.script_path
+        # Script to be executed every time (if defined)
+        elif hasattr(self.lambda_instance, 'init_script_path'):
+            self.script = self.lambda_instance.init_script_path
+        if not os.path.isfile(self.script):
+            raise FaasSupervisorError("Init: Script %s does not exist." % self.script)
+
     def invoke_function(self):
-        script = "%s/%s" % (self.lambda_instance.PERMANENT_FOLDER, ConfigUtils.read_cfg_var('init_script'))
-        if script:
+        if self.script:
             remaining_seconds = self.lambda_instance.get_remaining_time_in_seconds()
-            cmd = "/bin/sh %s %s %s" % (script,
-                                        self.lambda_instance.input_folder,
-                                        self.lambda_instance.output_folder)
-            get_logger().debug("Executing command: %s" % cmd)
+            get_logger().debug("Executing command: %s" % self.script)
 
             with open(self._CONTAINER_OUTPUT_FILE, "wb") as out:
-                with subprocess.Popen(cmd,
+                with subprocess.Popen(['/bin/sh', self.script],
                                     stderr=subprocess.STDOUT,
                                     stdout=out,
                                     start_new_session=True) as process:
