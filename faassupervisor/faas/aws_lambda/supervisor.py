@@ -71,8 +71,11 @@ class LambdaSupervisor(DefaultSupervisor):
 
     def _execute_container(self):
         get_logger().debug("EXECUTING CONTAINER!.")
-        container = Container(self.lambda_instance)
-        self.body["container_output"] = container.invoke_function()
+        try:
+            container = Container(self.lambda_instance)
+            self.body["container_output"] = container.invoke_function()
+        except (subprocess.TimeoutExpired, ContainerTimeoutExpiredWarning):
+            get_logger().warning("Container execution timed out")
 
     def execute_function(self):
         if _is_lambda_container_execution():
@@ -111,4 +114,5 @@ class LambdaSupervisor(DefaultSupervisor):
             res["body"] = StrUtils.bytes_to_base64str(self.body["udocker_output"])
         elif "container_output" in self.body:
             res["body"] = self.body["container_output"]
+            res["isBase64Encoded"] = False
         return res
