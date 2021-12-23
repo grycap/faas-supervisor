@@ -134,7 +134,7 @@ jobs:
     - name: Install dependencies
       run: |
         apk add libexecinfo-dev libcurl unzip make curl-dev libtool autoconf gcc zlib-dev musl-dev py3-pip python3
-        python -m ensurepip
+        python3 -m ensurepip
         pip install pyinstaller
         pip install faas-supervisor
         pip install awslambdaric

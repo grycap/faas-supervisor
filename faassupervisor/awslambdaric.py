@@ -19,12 +19,7 @@ from awslambdaric import bootstrap
 import faassupervisor.supervisor as supervisor
 
 
-def main():
-    app_root = os.getcwd()
-    handler = "faassupervisor.supervisor.main"
-    lambda_runtime_api_addr = os.environ["AWS_LAMBDA_RUNTIME_API"]
-    bootstrap.run(app_root, handler, lambda_runtime_api_addr)
-
-
 if __name__ == "__main__":
-    main()
+    bootstrap.run(os.getcwd(),
+                  "faassupervisor.supervisor.main",
+                  os.environ["AWS_LAMBDA_RUNTIME_API"])
