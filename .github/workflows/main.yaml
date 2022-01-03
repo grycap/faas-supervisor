@@ -85,46 +85,7 @@ jobs:
         name: supervisor.zip
         path: dist/supervisor.zip
 
-  buil-awslambdaric-amd64:
-    needs: test
-    runs-on: ubuntu-20.04
-    container: ubuntu:16.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Install dependencies
-      run: |
-        apt update
-        apt install -y software-properties-common build-essential zlib1g-dev
-        add-apt-repository -y ppa:deadsnakes/ppa
-        apt update
-        apt install -y python3.8-dev python3.8-venv zip
-        python3.8 -m ensurepip
-        python3.8 -m pip install pyinstaller
-        python3.8 -m pip install faas-supervisor
-        python3.8 -m pip install awslambdaric
-    - name: Build binary
-      run: |
-        pyinstaller --onefile -n awslambdaric-bin faassupervisor/awslambdaric.py
-        pyinstaller faassupervisor/awslambdaric.py
-        cd dist/awslambdaric
-        zip -r awslambdaric.zip *
-        mv awslambdaric.zip ..
-        cd ..
-        rm -r awslambdaric
-        mv awslambdaric-bin awslambdaric
-    - name: Upload amd64 binary
-      uses: actions/upload-artifact@v2
-      with:
-        name: awslambdaric
-        path: dist/awslambdaric
-    - name: Upload amd64 zip
-      uses: actions/upload-artifact@v2
-      with:
-        name: awslambdaric.zip
-        path: dist/awslambdaric.zip
-
-  buil-awslambdaric-alpine-amd64:
+  buil-alpine-amd64:
     needs: test
     runs-on: ubuntu-20.04
     container: alpine:3.12
@@ -136,28 +97,27 @@ jobs:
         apk add libexecinfo-dev libcurl zip unzip cmake automake make curl-dev libtool autoconf gcc g++ zlib-dev musl-dev py3-pip python3 python3-dev
         python3 -m ensurepip
         pip install pyinstaller
-        pip install faas-supervisor
-        pip install awslambdaric
+        pip install -r requirements.txt
     - name: Build binary
       run: |
-        pyinstaller --onefile -n awslambdaric-bin faassupervisor/awslambdaric.py
-        pyinstaller faassupervisor/awslambdaric.py
-        cd dist/awslambdaric
-        zip -r awslambdaric-alpine.zip *
-        mv awslambdaric-alpine.zip ..
+        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
+        pyinstaller faassupervisor/supervisor.py
+        cd dist
+        zip -r supervisor-alpine.zip *
+        mv supervisor-alpine.zip ..
         cd ..
-        rm -r awslambdaric
-        mv awslambdaric-bin awslambdaric-alpine
+        rm -r supervisor
+        mv supervisor-bin supervisor-alpine
     - name: Upload amd64 binary
       uses: actions/upload-artifact@v2
       with:
-        name: awslambdaric-alpine
-        path: dist/awslambdaric-alpine
+        name: supervisor-alpine
+        path: dist/supervisor-alpine
     - name: Upload amd64 zip
       uses: actions/upload-artifact@v2
       with:
-        name: awslambdaric-alpine.zip
-        path: dist/awslambdaric-alpine.zip
+        name: supervisor-alpine.zip
+        path: dist/supervisor-alpine.zip
 
   build-aarch64:
     needs: test

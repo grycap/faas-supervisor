@@ -15,7 +15,9 @@
 """ Module with all the generic supervisor classes and methods.
 Also entry point of the faassupervisor package."""
 
+import os
 import distutils.util
+from awslambdaric import bootstrap
 from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig
@@ -132,8 +134,17 @@ def main(event, context=None):
 
 
 if __name__ == "__main__":
-    # If supervisor is running as a binary
-    # receive the input from stdin.
-    ret = main(SysUtils.get_stdin())
-    if ret is not None:
-        print(ret)
+
+    if "AWS_EXECUTION_ENV" in os.environ and os.environ["AWS_EXECUTION_ENV"] == "AWS_Lambda_Image":
+        # If supervisor is executed in AWS Lambda container runtime
+        # call awslambdaric module
+        import faassupervisor.supervisor
+        bootstrap.run(os.getcwd(),
+                    "faassupervisor.supervisor.main",
+                    os.environ["AWS_LAMBDA_RUNTIME_API"])
+    else:
+        # If supervisor is running as a binary
+        # receive the input from stdin.
+        ret = main(SysUtils.get_stdin())
+        if ret is not None:
+            print(ret)
