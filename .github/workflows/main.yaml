@@ -103,9 +103,7 @@ jobs:
         pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
         cd dist
-        zip -r supervisor-alpine.zip *
-        mv supervisor-alpine.zip ..
-        cd ..
+        zip -r supervisor-alpine.zip supervisor
         rm -r supervisor
         mv supervisor-bin supervisor-alpine
     - name: Upload amd64 binary
