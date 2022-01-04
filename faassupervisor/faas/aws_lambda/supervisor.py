@@ -14,6 +14,7 @@
 """Module with all the classes and methods
 related with the AWS Lambda supervisor."""
 
+import os
 import subprocess
 import traceback
 from faassupervisor.faas.aws_lambda.container import Container
@@ -36,7 +37,7 @@ def _is_lambda_batch_execution():
 
 
 def _is_lambda_container_execution():
-    return ConfigUtils.read_cfg_var("execution_mode") == "container"
+    return "AWS_EXECUTION_ENV" in os.environ and os.environ["AWS_EXECUTION_ENV"] == "AWS_Lambda_Image"
 
 
 class LambdaSupervisor(DefaultSupervisor):
