@@ -81,7 +81,7 @@ class LambdaSupervisorTest(unittest.TestCase):
     @mock.patch('faassupervisor.utils.SysUtils.execute_cmd_and_return_output')
     @mock.patch('faassupervisor.faas.aws_lambda.function.get_function_ip')
     @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
-    def test_execute_function(self, mock_get_function_ip, mock_read_cfg_var, mock_execute_out,
+    def test_execute_function(self, mock_read_cfg_var, mock_get_function_ip, mock_execute_out,
                               mock_execute, mock_cp_file, mock_popen):
         mock_read_cfg_var.side_effect = ["1", "init_script.sh", "3", {"image": "image"},
                                          {"image": "image"}, {"timeout_threshold": 10}]
