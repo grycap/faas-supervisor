@@ -16,6 +16,7 @@ used to manage the container runtime jobs from the lambda environment."""
 
 import subprocess
 import os.path
+import os
 
 from faassupervisor.utils import FileUtils, SysUtils
 from faassupervisor.logger import get_logger
@@ -42,10 +43,14 @@ class Container():
             remaining_seconds = self.lambda_instance.get_remaining_time_in_seconds()
             get_logger().debug("Executing command: %s" % self.script)
 
+            new_env = os.environ.copy()
+            new_env.update(SysUtils.get_cont_env_vars())
+
             with open(self._CONTAINER_OUTPUT_FILE, "wb") as out:
                 with subprocess.Popen(['/bin/sh', self.script],
                                     stderr=subprocess.STDOUT,
                                     stdout=out,
+                                    env=new_env,
                                     start_new_session=True) as process:
                     try:
                         process.wait(timeout=remaining_seconds)
