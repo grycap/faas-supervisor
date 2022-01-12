@@ -23,7 +23,7 @@ from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
-from faassupervisor.utils import ConfigUtils, StrUtils
+from faassupervisor.utils import ConfigUtils, StrUtils, SysUtils
 from faassupervisor.exceptions import NoLambdaContextError, \
     ContainerTimeoutExpiredWarning
 
@@ -34,10 +34,6 @@ def is_batch_execution():
 
 def _is_lambda_batch_execution():
     return ConfigUtils.read_cfg_var("execution_mode") == "lambda-batch"
-
-
-def _is_lambda_container_execution():
-    return "AWS_EXECUTION_ENV" in os.environ and os.environ["AWS_EXECUTION_ENV"] == "AWS_Lambda_Image"
 
 
 class LambdaSupervisor(DefaultSupervisor):
@@ -79,7 +75,7 @@ class LambdaSupervisor(DefaultSupervisor):
             get_logger().warning("Container execution timed out")
 
     def execute_function(self):
-        if _is_lambda_container_execution():
+        if SysUtils.is_lambda_image_environment():
             self._execute_container()
         elif is_batch_execution():
             self._execute_batch()
