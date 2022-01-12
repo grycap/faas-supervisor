@@ -79,14 +79,14 @@ class LambdaSupervisorTest(unittest.TestCase):
     @mock.patch('faassupervisor.utils.FileUtils.cp_file')
     @mock.patch('faassupervisor.utils.SysUtils.execute_cmd')
     @mock.patch('faassupervisor.utils.SysUtils.execute_cmd_and_return_output')
-    @mock.patch('faassupervisor.faas.aws_lambda.function.get_function_ip')
+    @mock.patch('faassupervisor.faas.aws_lambda.udocker.get_function_ip')
     @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
     def test_execute_function(self, mock_read_cfg_var, mock_get_function_ip, mock_execute_out,
                               mock_execute, mock_cp_file, mock_popen):
         mock_read_cfg_var.side_effect = ["1", "init_script.sh", "3", {"image": "image"},
                                          {"image": "image"}, {"timeout_threshold": 10}]
         mock_execute_out.return_value = "22"
-        mock_get_function_ip.return_value = "127.0.1.1"
+        mock_get_function_ip.return_value = "127.0.0.1"
         with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'lambda-batch',
                                             'TMP_INPUT_DIR': '/tmp/input',
                                             'UDOCKER_DIR': '/tmp/udocker',
@@ -97,7 +97,7 @@ class LambdaSupervisorTest(unittest.TestCase):
 
         res = ['/udocker.py', '--quiet', 'run', '-v', '/tmp/input', '-v', '/tmp/output', '-v',
                '/dev', '-v', '/proc', '-v', '/etc/hosts', '--nosysdirs', '--env', 'REQUEST_ID=123',
-               '--env', 'INSTANCE_IP=127.0.1.1', '--env', 'TMP_OUTPUT_DIR=/tmp/output',
+               '--env', 'INSTANCE_IP=127.0.0.1', '--env', 'TMP_OUTPUT_DIR=/tmp/output',
                '--entrypoint=/bin/sh /tmp/input/init_script.sh', 'udocker_container']
         self.assertEqual(mock_popen.call_args_list[0][0][0], res)
 
