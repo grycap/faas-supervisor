@@ -19,7 +19,8 @@ import subprocess
 from faassupervisor.faas.binary.supervisor import BinarySupervisor
 from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor, \
                                                       is_batch_execution, \
-                                                      _is_lambda_batch_execution
+                                                      _is_lambda_batch_execution, \
+                                                      _is_lambda_container_execution
 from faassupervisor.exceptions import NoLambdaContextError
 
 # pylint: disable=missing-docstring
@@ -33,7 +34,7 @@ class BinarySupervisorTest(unittest.TestCase):
     @mock.patch('faassupervisor.utils.FileUtils.create_file_with_content')
     def test_execute_function(self, mock_create, mock_popen):
         supervisor = BinarySupervisor('UNKNOWN')
-        with mock.patch.dict('os.environ', {'SCRIPT':'ZmFrZSBzY3JpcHQh',
+        with mock.patch.dict('os.environ', {'SCRIPT': 'ZmFrZSBzY3JpcHQh',
                                             'TMP_INPUT_DIR': '/tmp/input'}, clear=True):
             supervisor.execute_function()
             # Check script file creation
@@ -46,13 +47,13 @@ class BinarySupervisorTest(unittest.TestCase):
                                                errors='ignore')
 
 
-
 class LambdaSupervisorTest(unittest.TestCase):
 
     def _get_context(self):
         mock_context = mock.Mock()
         type(mock_context).aws_request_id = mock.PropertyMock(return_value='123')
-        return  mock_context
+        mock_context.get_remaining_time_in_millis.return_value = 123
+        return mock_context
 
     def test_is_batch_execution(self):
         with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'batch'}, clear=True):
@@ -66,6 +67,12 @@ class LambdaSupervisorTest(unittest.TestCase):
         with mock.patch.dict('os.environ', {}, clear=True):
             self.assertFalse(_is_lambda_batch_execution())
 
+    def test_is_lambda_container_execution(self):
+        with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'container'}, clear=True):
+            self.assertTrue(_is_lambda_container_execution())
+        with mock.patch.dict('os.environ', {}, clear=True):
+            self.assertFalse(_is_lambda_container_execution())
+
     def test_create_lambda_supervisor(self):
         with self.assertRaises(NoLambdaContextError):
             LambdaSupervisor(None, None)
@@ -74,3 +81,42 @@ class LambdaSupervisorTest(unittest.TestCase):
                                             'TMP_OUTPUT_DIR': '/tmp/output'}, clear=True):
 
             LambdaSupervisor('event', self._get_context())
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch('faassupervisor.utils.FileUtils.cp_file')
+    @mock.patch('faassupervisor.utils.SysUtils.execute_cmd')
+    @mock.patch('faassupervisor.utils.SysUtils.execute_cmd_and_return_output')
+    @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
+    def test_execute_function(self, mock_read_cfg_var, mock_execute_out,
+                              mock_execute, mock_cp_file, mock_popen):
+        mock_read_cfg_var.side_effect = ["1", "init_script.sh", "3", "4", {"image": "image"},
+                                         {"image": "image"}, {"timeout_threshold": 10}]
+        mock_execute_out.return_value = "22"
+        with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'lambda-batch',
+                                            'TMP_INPUT_DIR': '/tmp/input',
+                                            'UDOCKER_DIR': '/tmp/udocker',
+                                            'UDOCKER_EXEC': '/udocker.py',
+                                            'TMP_OUTPUT_DIR': '/tmp/output'}, clear=True):
+            supervisor = LambdaSupervisor('event', self._get_context())
+            supervisor.execute_function()
+
+        res = ['/udocker.py', '--quiet', 'run', '-v', '/tmp/input', '-v', '/tmp/output', '-v',
+               '/dev', '-v', '/proc', '-v', '/etc/hosts', '--nosysdirs', '--env', 'REQUEST_ID=123',
+               '--env', 'INSTANCE_IP=127.0.1.1', '--env', 'TMP_OUTPUT_DIR=/tmp/output',
+               '--entrypoint=/bin/sh /tmp/input/init_script.sh', 'udocker_container']
+        self.assertEqual(mock_popen.call_args_list[0][0][0], res)
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch('os.path.isfile')
+    @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
+    @mock.patch('faassupervisor.utils.FileUtils.cp_file')
+    def test_execute_function_container(self, mock_cp_file, mock_read_cfg_var, mock_is_file, mock_popen):
+        mock_read_cfg_var.side_effect = ["1", "init_script.sh", "container", {"timeout_threshold": 10}]
+        with mock.patch.dict('os.environ', {'EXECUTION_MODE': 'lambda-batch',
+                                            'TMP_INPUT_DIR': '/tmp/input',
+                                            'TMP_OUTPUT_DIR': '/tmp/output'}, clear=True):
+            supervisor = LambdaSupervisor('event', self._get_context())
+            supervisor.execute_function()
+
+        res = ['/bin/sh', '/tmp/input/init_script.sh']
+        self.assertEqual(mock_popen.call_args_list[0][0][0], res)

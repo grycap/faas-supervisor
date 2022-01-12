@@ -135,7 +135,7 @@ def main(event, context=None):
 
 if __name__ == "__main__":
 
-    if "AWS_EXECUTION_ENV" in os.environ and os.environ["AWS_EXECUTION_ENV"] == "AWS_Lambda_Image":
+    if SysUtils.is_lambda_image_environment():
         # If supervisor is executed in AWS Lambda container runtime
         # call awslambdaric module
         import faassupervisor.supervisor

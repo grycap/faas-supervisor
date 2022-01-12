@@ -87,6 +87,12 @@ class SysUtils():
         return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
                 SysUtils.get_env_var('AWS_EXECUTION_ENV').startswith('AWS_Lambda_'))
 
+    @staticmethod
+    def is_lambda_image_environment():
+        """Checks if supervisor is running in AWS Lambda Imagen runtime."""
+        return (SysUtils.is_var_in_env('AWS_EXECUTION_ENV') and
+                SysUtils.get_env_var('AWS_EXECUTION_ENV') == 'AWS_Lambda_Image')
+
 
 class FileUtils():
     """Common methods for file and directory management."""

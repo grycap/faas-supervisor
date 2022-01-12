@@ -19,7 +19,7 @@ import os.path
 
 from faassupervisor.utils import FileUtils, SysUtils
 from faassupervisor.logger import get_logger
-from faassupervisor.exceptions import ContainerTimeoutExpiredWarning, FaasSupervisorError
+from faassupervisor.exceptions import ContainerTimeoutExpiredWarning
 
 class Container():
     """Used for defining Container jobs in the Lambda container runtime."""
@@ -35,7 +35,7 @@ class Container():
         elif hasattr(self.lambda_instance, 'init_script_path'):
             self.script = self.lambda_instance.init_script_path
         if not os.path.isfile(self.script):
-            raise FaasSupervisorError("Init: Script %s does not exist." % self.script)
+            raise Exception("Init: Script %s does not exist." % self.script)
 
     def invoke_function(self):
         if self.script:
