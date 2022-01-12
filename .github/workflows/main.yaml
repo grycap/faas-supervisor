@@ -134,14 +134,13 @@ jobs:
         shell: /bin/sh
         install: |
           apt update
-          apt install -y software-properties-common build-essential zlib1g-dev autoconf automake libtool apt-transport-https wget
+          apt install -y software-properties-common build-essential zlib1g-dev apt-transport-https wget
           add-apt-repository -y ppa:deadsnakes/ppa
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor - > /usr/share/keyrings/kitware-archive-keyring.gpg 
+          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ xenial main' > /etc/apt/sources.list.d/kitware.list
           apt update
+          apt install -y cmake autoconf automake libtool
           apt install -y python3.8-dev python3.8-venv zip
-          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ xenial main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
-          apt update
-          apt install -y cmake
           python3.8 -m ensurepip
           python3.8 -m pip install pyinstaller
         run: |
