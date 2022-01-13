@@ -85,7 +85,7 @@ jobs:
         name: supervisor.zip
         path: dist/supervisor.zip
 
-  buil-alpine-amd64:
+  build-alpine-amd64:
     needs: test
     runs-on: ubuntu-20.04
     container: alpine:3.12
@@ -162,6 +162,7 @@ jobs:
     needs:
     - build-amd64
     - build-aarch64
+    - build-alpine-amd64
     if: github.event_name == 'release'
     runs-on: ubuntu-20.04
     steps:
@@ -175,5 +176,7 @@ jobs:
           supervisor/supervisor
           supervisor-arm64/supervisor-arm64
           supervisor-arm64.zip/supervisor-arm64.zip
+          supervisor-alpine.zip/supervisor-alpine.zip
+          supervisor-alpine/supervisor-alpine
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
