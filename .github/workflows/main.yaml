@@ -142,7 +142,7 @@ jobs:
           python3.8 -m pip install pyinstaller
         run: |
           cd /repo
-          python3.8 -m pip install -r $(grep -v '^ *#\|^awslambdaric' requirements.txt | grep .)
+          python3.8 -m pip install $(grep -ivE "awslambdaric" requirements.txt)
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
           pyinstaller faassupervisor/supervisor.py
           cd dist
