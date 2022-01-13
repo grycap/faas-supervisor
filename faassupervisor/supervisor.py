@@ -17,7 +17,6 @@ Also entry point of the faassupervisor package."""
 
 import os
 import distutils.util
-from awslambdaric import bootstrap
 from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig
@@ -138,6 +137,7 @@ if __name__ == "__main__":
     if SysUtils.is_lambda_image_environment():
         # If supervisor is executed in AWS Lambda container runtime
         # call awslambdaric module
+        from awslambdaric import bootstrap
         import faassupervisor.supervisor
         bootstrap.run(os.getcwd(),
                     "faassupervisor.supervisor.main",
