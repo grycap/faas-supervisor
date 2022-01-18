@@ -134,15 +134,20 @@ jobs:
         shell: /bin/sh
         install: |
           apt update
-          apt install -y software-properties-common build-essential zlib1g-dev
+          apt install -y software-properties-common build-essential zlib1g-dev autoconf automake libtool apt-transport-https wget
           add-apt-repository -y ppa:deadsnakes/ppa
           apt update
           apt install -y python3.8-dev python3.8-venv zip
+          wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-aarch64.sh
+          chmod +x cmake-3.22.1-linux-aarch64.sh
+          mkdir /opt/cmake
+          ./cmake-3.22.1-linux-aarch64.sh --skip-license --exclude-subdir --prefix=/opt/cmake
+          ln -s /opt/cmake/bin/* /usr/local/bin
           python3.8 -m ensurepip
           python3.8 -m pip install pyinstaller
         run: |
           cd /repo
-          python3.8 -m pip install $(grep -ivE "awslambdaric" requirements.txt)
+          python3.8 -m pip install requirements.txt
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
           pyinstaller faassupervisor/supervisor.py
           cd dist
