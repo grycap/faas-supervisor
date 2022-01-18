@@ -59,7 +59,7 @@ jobs:
     - name: Install dependencies
       run: |
         apt update
-        apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget
+        apt install -y zip build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget
         wget https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz
         tar -xzf Python-3.8.12.tgz
         cd Python-3.8.12
@@ -139,7 +139,7 @@ jobs:
         shell: /bin/sh
         install: |
           apt update
-          apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget
+          apt install -y zip build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget
           wget https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz
           tar -xzf Python-3.8.12.tgz
           cd Python-3.8.12
