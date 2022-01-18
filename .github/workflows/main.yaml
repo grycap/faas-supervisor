@@ -66,6 +66,7 @@ jobs:
         ./configure --enable-optimizations --enable-shared
         make altinstall
         cd ..
+        export LD_LIBRARY_PATH=/usr/local/lib
         python3.8 -m ensurepip
         python3.8 -m pip install pyinstaller
         python3.8 -m pip install -r requirements.txt
@@ -143,6 +144,7 @@ jobs:
           cd Python-3.8.12
           ./configure --enable-optimizations --enable-shared
           make altinstall
+          export LD_LIBRARY_PATH=/usr/local/lib
           cd ..
           wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-aarch64.sh
           chmod +x cmake-3.22.1-linux-aarch64.sh
