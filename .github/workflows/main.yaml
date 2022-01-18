@@ -72,6 +72,7 @@ jobs:
         python3.8 -m pip install -r requirements.txt
     - name: Build binary
       run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
         pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
         cd dist
@@ -155,6 +156,7 @@ jobs:
           python3.8 -m pip install pyinstaller
         run: |
           cd /repo
+          export LD_LIBRARY_PATH=/usr/local/lib
           python3.8 -m pip install requirements.txt
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
           pyinstaller faassupervisor/supervisor.py
