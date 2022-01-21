@@ -113,7 +113,7 @@ jobs:
       uses: docker/setup-buildx-action@v1
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-latest /bin/bash -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-latest /bin/sh -c " \
           cd /repo && \
           python3.8 -m pip install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
@@ -144,7 +144,7 @@ jobs:
       uses: docker/setup-buildx-action@v1
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-latest /bin/bash -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-latest /bin/sh -c " \
           cd /repo && \
           python3.8 -m pip install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-alpine-arm64 faassupervisor/supervisor.py && \
