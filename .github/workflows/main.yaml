@@ -58,6 +58,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Build binary
       run: |
+        python3.8 -m pip install -r requirements.txt
         pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
         cd dist
@@ -84,12 +85,11 @@ jobs:
       uses: actions/checkout@v2
     - name: Build binary
       run: |
-        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
+        python3.8 -m pip install -r requirements.txt
+        pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
         cd dist
         zip -r supervisor-alpine.zip supervisor
-        rm -r supervisor
-        mv supervisor-bin supervisor-alpine
     - name: Upload amd64 binary
       uses: actions/upload-artifact@v2
       with:
@@ -107,40 +107,20 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
     - name: Build binary on emulated aarch64
-      uses: uraimo/run-on-arch-action@v2.0.7
-      with:
-        arch: aarch64
-        distro: ubuntu16.04
-        githubToken: ${{ secrets.GITHUB_TOKEN }}
-        dockerRunArgs: |
-          --volume  "${PWD}:/repo"
-        shell: /bin/sh
-        install: |
-          apt update
-          apt install -y zip build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev wget
-          wget https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz
-          tar -xzf Python-3.8.12.tgz
-          cd Python-3.8.12
-          ./configure --enable-optimizations --enable-shared
-          make altinstall
-          export LD_LIBRARY_PATH=/usr/local/lib
-          cd ..
-          wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-aarch64.sh
-          chmod +x cmake-3.22.1-linux-aarch64.sh
-          mkdir /opt/cmake
-          ./cmake-3.22.1-linux-aarch64.sh --skip-license --exclude-subdir --prefix=/opt/cmake
-          ln -s /opt/cmake/bin/* /usr/local/bin
-          python3.8 -m ensurepip
-          python3.8 -m pip install pyinstaller
-        run: |
-          cd /repo
-          export LD_LIBRARY_PATH=/usr/local/lib
-          python3.8 -m pip install -r requirements.txt
-          pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py
-          pyinstaller faassupervisor/supervisor.py
-          cd dist
-          zip -r supervisor-arm64.zip supervisor
+      run: |
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-latest /bin/bash -c " \
+          cd /repo && \
+          python3.8 -m pip install -r requirements.txt && \
+          pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
+          pyinstaller faassupervisor/supervisor.py && \
+          cd dist && \
+          zip -r supervisor-arm64.zip supervisor \
+        "
     - name: Upload arm64 binary
       uses: actions/upload-artifact@v2
       with:
@@ -152,11 +132,43 @@ jobs:
         name: supervisor-arm64.zip
         path: dist/supervisor-arm64.zip
 
+  build-alpine-aarch64:
+    needs: test
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Build binary on emulated aarch64
+      run: |
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-latest /bin/bash -c " \
+          cd /repo && \
+          python3.8 -m pip install -r requirements.txt && \
+          pyinstaller --onefile -n supervisor-alpine-arm64 faassupervisor/supervisor.py && \
+          pyinstaller faassupervisor/supervisor.py && \
+          cd dist && \
+          zip -r supervisor-alpine-arm64.zip supervisor \
+        "
+    - name: Upload arm64 binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor-alpine-arm64
+        path: dist/supervisor-alpine-arm64
+    - name: Upload arm64 zip
+      uses: actions/upload-artifact@v2
+      with:
+        name: supervisor-alpine-arm64.zip
+        path: dist/supervisor-alpine-arm64.zip
+
   release-assets:
     needs:
     - build-amd64
     - build-aarch64
     - build-alpine-amd64
+    - build-alpine-aarch64
     if: github.event_name == 'release'
     runs-on: ubuntu-20.04
     steps:
@@ -166,11 +178,13 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          supervisor.zip/supervisor.zip
           supervisor/supervisor
+          supervisor.zip/supervisor.zip
           supervisor-arm64/supervisor-arm64
           supervisor-arm64.zip/supervisor-arm64.zip
           supervisor-alpine.zip/supervisor-alpine.zip
           supervisor-alpine/supervisor-alpine
+          supervisor-alpine-arm64.zip/supervisor-alpine-arm64.zip
+          supervisor-alpine-arm64/supervisor-alpine-arm64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
