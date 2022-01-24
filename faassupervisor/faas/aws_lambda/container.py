@@ -53,7 +53,9 @@ class Container():
                                     env=new_env,
                                     start_new_session=True) as process:
                     try:
-                        process.wait(timeout=remaining_seconds)
+                        rc = process.wait(timeout=remaining_seconds)
+                        if rc != 0:
+                            get_logger().warn("User script exited with code %s!" % rc)
                     except subprocess.TimeoutExpired:
                         get_logger().info("Stopping process '%s'", process)
                         process.kill()
