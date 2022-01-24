@@ -71,6 +71,7 @@ class LambdaSupervisor(DefaultSupervisor):
         try:
             container = Container(self.lambda_instance)
             self.body["container_output"] = container.invoke_function()
+            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["container_output"].decode(encoding='utf-8', errors='ignore'))
         except (subprocess.TimeoutExpired, ContainerTimeoutExpiredWarning):
             get_logger().warning("Container execution timed out")
 
