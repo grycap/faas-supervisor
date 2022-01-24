@@ -14,14 +14,16 @@
 """Module with all the classes and methods
 related with the AWS Lambda supervisor."""
 
+import os
 import subprocess
 import traceback
+from faassupervisor.faas.aws_lambda.container import Container
 from faassupervisor.faas.aws_lambda.batch import Batch
 from faassupervisor.faas.aws_lambda.function import LambdaInstance
 from faassupervisor.faas.aws_lambda.udocker import Udocker
 from faassupervisor.faas import DefaultSupervisor
 from faassupervisor.logger import get_logger
-from faassupervisor.utils import ConfigUtils, StrUtils
+from faassupervisor.utils import ConfigUtils, StrUtils, SysUtils
 from faassupervisor.exceptions import NoLambdaContextError, \
     ContainerTimeoutExpiredWarning
 
@@ -64,8 +66,19 @@ class LambdaSupervisor(DefaultSupervisor):
             if _is_lambda_batch_execution():
                 self._execute_batch()
 
+    def _execute_container(self):
+        get_logger().debug("EXECUTING CONTAINER!.")
+        try:
+            container = Container(self.lambda_instance)
+            self.body["container_output"] = container.invoke_function()
+            get_logger().debug("CONTAINER OUTPUT:\n %s", self.body["container_output"].decode(encoding='utf-8', errors='ignore'))
+        except (subprocess.TimeoutExpired, ContainerTimeoutExpiredWarning):
+            get_logger().warning("Container execution timed out")
+
     def execute_function(self):
-        if is_batch_execution():
+        if SysUtils.is_lambda_image_environment():
+            self._execute_container()
+        elif is_batch_execution():
             self._execute_batch()
         else:
             self._execute_udocker()
@@ -85,13 +98,18 @@ class LambdaSupervisor(DefaultSupervisor):
         }
 
     def create_response(self):
-        return {
+        res = {
             "statusCode": 200,
             "headers": {
                 "amz-lambda-request-id": self.lambda_instance.get_request_id(),
                 "amz-log-group-name": self.lambda_instance.get_log_group_name(),
                 "amz-log-stream-name": self.lambda_instance.get_log_stream_name()
             },
-            "body": StrUtils.bytes_to_base64str(self.body["udocker_output"]),
+            "body": "",
             "isBase64Encoded": True,
         }
+        if "udocker_output" in self.body:
+            res["body"] = StrUtils.bytes_to_base64str(self.body["udocker_output"])
+        elif "container_output" in self.body:
+            res["body"] = StrUtils.bytes_to_base64str(self.body["container_output"])
+        return res
