@@ -45,6 +45,11 @@ class Container():
 
             new_env = os.environ.copy()
             new_env.update(SysUtils.get_cont_env_vars())
+            # Remove the library path set by Pyinstaller
+            if 'LD_LIBRARY_PATH_ORIG' in new_env:
+                new_env['LD_LIBRARY_PATH'] = new_env['LD_LIBRARY_PATH']
+            elif 'LD_LIBRARY_PATH' in new_env:
+                del new_env['LD_LIBRARY_PATH']
 
             with open(self._CONTAINER_OUTPUT_FILE, "wb") as out:
                 with subprocess.Popen(['/bin/sh', self.script],
