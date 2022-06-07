@@ -45,6 +45,10 @@ class S3Event(UnknownEvent):
 
     _TYPE = 'S3'
 
+    def __init__(self, event, provider_id='default'):
+        super().__init__(event.get('event') or event)
+        self.provider_id = provider_id 
+
     def _set_event_params(self):
         self.bucket_arn = self.event_records['s3']['bucket']['arn']
         self.bucket_name = self.event_records['s3']['bucket']['name']

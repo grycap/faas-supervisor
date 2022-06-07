@@ -173,8 +173,10 @@ class StorageConfig():
                     if self.onedata_auth[provider_id].get_credential('space') == event_space:
                         return self._get_auth_data(storage_type, provider_id)
             raise StorageAuthError(auth_type='ONEDATA')
-        else:
+        elif storage_type == 'UNKNOWN':
             return self._get_auth_data(storage_type)
+        else:
+            return (self._get_auth_data(storage_type),self._get_auth_data(storage_type, parsed_event.provider_id))[parsed_event.provider_id != 'default']
 
     def download_input(self, parsed_event, input_dir_path):
         """Receives the event where the file information is and

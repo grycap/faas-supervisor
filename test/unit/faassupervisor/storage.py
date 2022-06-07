@@ -236,7 +236,6 @@ class StorageConfigTest(unittest.TestCase):
             onedata2_auth = StorageConfig()._get_input_auth_data(parsed_event)
             self.assertEqual(onedata2_auth.get_credential('space'), 'space_ok')
 
-
     def test_get_invalid_auth(self):
         invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
         self.assertIsNone(invalid_auth)
