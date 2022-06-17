@@ -109,12 +109,14 @@ def parse_event(event):
             if not isinstance(parsed_event.body, dict):
                 event = json.loads(parsed_event.body)
 
-    if _is_delegated_event(event) and _is_storage_event(event['event']):
-        # Retreive the provider id and the original event from delegated event
-        provider_id = event['storage_provider']
-        event = event['event']
-        parsed_event = _parse_storage_event(event, provider_id)
-        _set_storage_env_vars(parsed_event, event)
+    if _is_delegated_event(event):
+        original_event = json.loads(event['event'])
+        if _is_storage_event(original_event):
+            get_logger().info("Delegated event found.")
+            # Retreive the provider id and the original event from delegated event
+            provider_id = event['storage_provider']
+            parsed_event = _parse_storage_event(original_event, provider_id)
+            _set_storage_env_vars(parsed_event, original_event)
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
         parsed_event = _parse_storage_event(event)
