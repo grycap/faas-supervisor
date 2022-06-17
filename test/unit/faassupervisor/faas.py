@@ -156,28 +156,28 @@ class LambdaSupervisorTest(unittest.TestCase):
                 'AWS_LAMBDA_REQUEST_ID': '123'}
         self.assertEqual(mock_popen.call_args_list[0][1]['env'], res)
 
-class SupervisorTest(unittest.TestCase):
-    @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
-    @mock.patch('faassupervisor.supervisor._create_supervisor')
-    @mock.patch('faassupervisor.supervisor.Supervisor._parse_input')
-    @mock.patch('faassupervisor.storage.config.StorageConfig._parse_config')
-    @mock.patch('faassupervisor.storage.config.StorageConfig.download_input')
-    def test_parse_input(self, mock_download_input, mock_parse_config , mock_parse_input, mock_create_supervisor, mock_read_cfg_var):
-            with mock.patch.dict('os.environ', {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK),
-                                            'DOWNLOAD_INPUT': ''}, clear=True):
+# class SupervisorTest(unittest.TestCase):
+#     @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
+#     @mock.patch('faassupervisor.supervisor._create_supervisor')
+#     @mock.patch('faassupervisor.supervisor.Supervisor._parse_input')
+#     @mock.patch('faassupervisor.storage.config.StorageConfig._parse_config')
+#     @mock.patch('faassupervisor.storage.config.StorageConfig.download_input')
+#     def test_parse_input(self, mock_download_input, mock_parse_config , mock_parse_input, mock_create_supervisor, mock_read_cfg_var):
+#             with mock.patch.dict('os.environ', {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK),
+#                                             'DOWNLOAD_INPUT': ''}, clear=True):
 
-                supervisor = Supervisor(DELEGATED_MINIO_EVENT)
-                parsed_event = MinioEvent(MINIO_EVENT, provider_id = 'cluster2')
-                supervisor._parse_input()
-                mock_create_supervisor.assert_called_with(DELEGATED_MINIO_EVENT, None, 'MINIO')
-                mock_parse_config.assert_called()
-                mock_read_cfg_var.assert_called_with('output')
-                mock_parse_input.assert_called()
-                self.assertEqual(supervisor.parsed_event.get_type(), parsed_event.get_type())
-                mock_download_input.assert_called_with(parsed_event, '/tmp/input')
-                #mock_read_cfg_var.assert_called_with('storage_providers')
-"""             minio_auth = StorageConfig()._get_auth_data('MINIO', 'cluster2')
-                self.assertEqual(minio_auth['test_minio'].type, 'MINIO') """
+#                 supervisor = Supervisor(DELEGATED_MINIO_EVENT)
+#                 parsed_event = MinioEvent(MINIO_EVENT, provider_id = 'cluster2')
+#                 supervisor._parse_input()
+#                 mock_create_supervisor.assert_called_with(DELEGATED_MINIO_EVENT, None, 'MINIO')
+#                 mock_parse_config.assert_called()
+#                 mock_read_cfg_var.assert_called_with('output')
+#                 mock_parse_input.assert_called()
+#                 self.assertEqual(supervisor.parsed_event.get_type(), parsed_event.get_type())
+#                 mock_download_input.assert_called_with(parsed_event, '/tmp/input')
+#                 #mock_read_cfg_var.assert_called_with('storage_providers')
+# """             minio_auth = StorageConfig()._get_auth_data('MINIO', 'cluster2')
+#                 self.assertEqual(minio_auth['test_minio'].type, 'MINIO') """
                 
 
                
