@@ -65,13 +65,13 @@ def _is_delegated_event(event_info):
     return 'event' in event_info
 
 @exception()
-def _parse_storage_event(event, storage_id=''):
+def _parse_storage_event(event, storage_provider='default'):
     record = event['Records'][0]['eventSource']
     if record == _S3_EVENT:
-        parsed_event = S3Event(event) if storage_id == '' else S3Event(event, storage_id)
+        parsed_event = S3Event(event, storage_provider)
         get_logger().info("S3 event created")
     elif record == _MINIO_EVENT:
-        parsed_event = MinioEvent(event) if storage_id == '' else MinioEvent(event, storage_id)
+        parsed_event = MinioEvent(event, storage_provider)
         get_logger().info("MINIO event created")
     elif record == _ONEDATA_EVENT:
         parsed_event = OnedataEvent(event)
@@ -88,7 +88,7 @@ def _set_storage_env_vars(parsed_event, event):
     # Store the raw event in environment variable
     SysUtils.set_env_var("EVENT", json.dumps(event))
 
-def parse_event(event):
+def parse_event(event, storage_provider="default"):
     """Parses the received event and
     returns the appropriate event class."""
     # Make sure the event is always stored
@@ -108,17 +108,12 @@ def parse_event(event):
             event = parsed_event.body
             if not isinstance(parsed_event.body, dict):
                 event = json.loads(parsed_event.body)
-
     if _is_delegated_event(event):
-        original_event = json.loads(event['event'])
-        if _is_storage_event(original_event):
-            get_logger().info("Delegated event found.")
-            # Retreive the provider id and the original event from delegated event
-            provider_id = event['storage_provider']
-            parsed_event = _parse_storage_event(original_event, provider_id)
-            _set_storage_env_vars(parsed_event, original_event)
+        if 'storage_provider' in event:
+            return  parse_event(event['event'], event['storage_provider'])
+        return  parse_event(event['event'])
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
-        parsed_event = _parse_storage_event(event)
+        parsed_event = _parse_storage_event(event, storage_provider)
         _set_storage_env_vars(parsed_event, event) 
     return parsed_event if parsed_event else UnknownEvent(event)
