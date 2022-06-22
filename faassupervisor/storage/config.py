@@ -13,6 +13,7 @@
 # limitations under the License.
 """Class to parse, store and manage storage information."""
 
+from faassupervisor.storage.providers.dCache import DCache
 from faassupervisor.utils import ConfigUtils, FileUtils, StrUtils
 from faassupervisor.exceptions import StorageAuthError, \
     InvalidStorageProviderError, exception
@@ -36,6 +37,8 @@ def create_provider(storage_auth):
         provider = Onedata(storage_auth)
     elif storage_auth.type == 'S3':
         provider = S3(storage_auth)
+    elif storage_auth.type == 'DCACHE':
+        provider = DCache(storage_auth)
     else:
         raise InvalidStorageProviderError(storage_type=storage_auth.type)
     return provider
@@ -61,6 +64,7 @@ class StorageConfig():
         self.s3_auth = {'default': AuthData('S3', None)}
         self.minio_auth = {}
         self.onedata_auth = {}
+        self.dcache_auth = {}
         self.input = []
         self.output = []
         self._parse_config()
@@ -95,6 +99,10 @@ class StorageConfig():
             if ('onedata' in storage_providers
                     and storage_providers['onedata']):
                 self._validate_onedata_creds(storage_providers['onedata'])
+            # dCache storage provider auth
+            if ('dcache' in storage_providers
+                    and storage_providers['dcache']):
+                self._validate_dcache_creds(storage_providers['dcache'])
         else:
             get_logger().warning('There is no storage provider defined for this function.')
 
@@ -145,6 +153,24 @@ class StorageConfig():
                     raise StorageAuthError(auth_type='ONEDATA')
         else:
             raise StorageAuthError(auth_type='ONEDATA')
+   
+    def _validate_dcache_creds(self, dcache_creds):
+        if isinstance(dcache_creds, dict):
+            for provider_id in dcache_creds:
+                if ('hostname' in dcache_creds[provider_id]
+                    and dcache_creds[provider_id]['hostname'] is not None
+                    and dcache_creds[provider_id]['hostname'] != ''
+                    and 'login' in dcache_creds[provider_id]
+                    and dcache_creds[provider_id]['login'] is not None
+                    and dcache_creds[provider_id]['login'] != ''
+                    and 'password' in dcache_creds[provider_id]
+                    and dcache_creds[provider_id]['password'] is not None
+                    and dcache_creds[provider_id]['password'] != ''):
+                    self.dcache_auth[provider_id] = AuthData('DCACHE', dcache_creds[provider_id])
+                else:
+                    raise StorageAuthError(auth_type='DCACHE')
+        else:
+            raise StorageAuthError(auth_type='DCACHE')
 
     def _get_auth_data(self, storage_type, provider_id='default'):
         """Returns the authentication credentials by its type and id."""
@@ -154,6 +180,8 @@ class StorageConfig():
             return self.minio_auth.get(provider_id, None)
         elif storage_type == 'ONEDATA':
             return self.onedata_auth.get(provider_id, None)
+        elif storage_type == 'DCACHE':
+            return self.dcache_auth.get(provider_id, None)
         return None
 
     def _get_input_auth_data(self, parsed_event):

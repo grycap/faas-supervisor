@@ -19,6 +19,7 @@ from unittest.mock import call
 from collections import namedtuple
 from faassupervisor.storage.providers import get_bucket_name, get_file_key
 from faassupervisor.storage.config import StorageConfig, AuthData, create_provider
+from faassupervisor.storage.providers.dCache import DCache
 from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
@@ -48,6 +49,8 @@ output:
   path: bucket
   suffix: ['txt', 'jpg']
   prefix: ['result-']
+- storage_provider: dcache.test_dcache
+    path: /Users/user/folder
 storage_providers:
   minio:
     test_minio:
@@ -62,6 +65,11 @@ storage_providers:
         oneprovider_host: test_oneprovider.host
         token: test_onedata_token
         space: space_ok
+  dcache:
+    test_dcache:
+        hostname: prometheus.desy.de
+        login: user
+        password: passw
 """
 
 CONFIG_FILE_NO_OUTPUT = """
@@ -235,6 +243,16 @@ class StorageConfigTest(unittest.TestCase):
             parsed_event = parse_event(ONEDATA_EVENT)
             onedata2_auth = StorageConfig()._get_input_auth_data(parsed_event)
             self.assertEqual(onedata2_auth.get_credential('space'), 'space_ok')
+    
+    def test_get_dcache_auth(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            dcache_auth = StorageConfig()._get_auth_data('DCACHE','test_dcache')
+            self.assertEqual(dcache_auth.type, 'DCACHE')
+            self.assertEqual(dcache_auth.get_credential('hostname'),'prometheus.desy.de')
+            self.assertEqual(dcache_auth.get_credential('login'),'user')
+            self.assertEqual(dcache_auth.get_credential('password'),'passw')
 
     def test_get_invalid_auth(self):
         invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
@@ -494,3 +512,22 @@ class S3ProviderTest(unittest.TestCase):
                              call().upload_fileobj(mopen.return_value,
                                                    's3_bucket',
                                                    's3_folder/processed.jpg'))
+    
+class DCacheProviderTest(unittest.TestCase):
+    dCache_creds = {
+        'hostname' : 'test_hostname',
+        'login': 'test_user',
+        'password': 'test_password'
+    }
+
+    def test_create_dCache_provider(self):
+        dCacheAuth = AuthData('DCACHE', self.dCache_creds)
+        provider = create_provider(dCacheAuth)
+        self.assertEqual(provider.get_type(), 'DCACHE')
+        self.assertEqual(provider.stg_auth.creds, self.dCache_creds)
+    
+    def test_webdav_client(self):
+        dcache_provider = DCache(AuthData('DCACHE',self.dCache_creds))
+        self.assertIsNotNone(dcache_provider)
+        self.assertEqual(dcache_provider.stg_auth.creds, self.dCache_creds)
+    
