@@ -67,9 +67,9 @@ storage_providers:
         space: space_ok
   dcache:
     test_dcache:
-        hostname: prometheus.desy.de
-        login: user
-        password: passw
+        hostname: test_hostname
+        login: test_user
+        password: test_password
 """
 
 CONFIG_FILE_NO_OUTPUT = """
