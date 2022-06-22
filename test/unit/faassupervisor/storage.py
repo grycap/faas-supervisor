@@ -50,7 +50,7 @@ output:
   suffix: ['txt', 'jpg']
   prefix: ['result-']
 - storage_provider: dcache.test_dcache
-    path: /Users/user/folder
+  path: Users/user/folder
 storage_providers:
   minio:
     test_minio:
@@ -153,6 +153,9 @@ class StorageConfigTest(unittest.TestCase):
                     'path': 'bucket',
                     'suffix': ['txt', 'jpg'],
                     'prefix': ['result-']
+                }, {
+                    'storage_provider': 'dcache.test_dcache',
+                    'path': 'Users/user/folder'
                 }
             ]
             self.assertEqual(config.output, expected_output)
@@ -250,9 +253,9 @@ class StorageConfigTest(unittest.TestCase):
                              clear=True):
             dcache_auth = StorageConfig()._get_auth_data('DCACHE','test_dcache')
             self.assertEqual(dcache_auth.type, 'DCACHE')
-            self.assertEqual(dcache_auth.get_credential('hostname'),'prometheus.desy.de')
-            self.assertEqual(dcache_auth.get_credential('login'),'user')
-            self.assertEqual(dcache_auth.get_credential('password'),'passw')
+            self.assertEqual(dcache_auth.get_credential('hostname'),'test_hostname')
+            self.assertEqual(dcache_auth.get_credential('login'),'test_user')
+            self.assertEqual(dcache_auth.get_credential('password'),'test_password')
 
     def test_get_invalid_auth(self):
         invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
@@ -264,10 +267,11 @@ class StorageConfigTest(unittest.TestCase):
         StorageConfig().download_input(event, '/tmp/test')
         mock_download_file.assert_called_once_with(event, '/tmp/test')
 
+    @mock.patch('faassupervisor.storage.providers.dCache.DCache.upload_file')
     @mock.patch('faassupervisor.utils.FileUtils.get_all_files_in_dir')
     @mock.patch('faassupervisor.storage.providers.s3.S3.upload_file')
     @mock.patch('faassupervisor.storage.providers.minio.Minio.upload_file')
-    def test_upload_output(self, mock_minio, mock_s3, mock_get_files):
+    def test_upload_output(self, mock_minio, mock_s3, mock_get_files, mock_dcache):
         with mock.patch.dict('os.environ',
                              {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
@@ -286,6 +290,10 @@ class StorageConfigTest(unittest.TestCase):
                              call('/tmp/test/result-file.txt',
                                   'result-file.txt',
                                   'bucket'))
+            self.assertEqual(mock_dcache.call_count, 6)
+            for i, f in enumerate(files):
+                self.assertEqual(mock_dcache.call_args_list[i],
+                                 call(f, f.split('/')[3], 'Users/user/folder'))          
             self.assertEqual(mock_s3.call_count, 6)
             for i, f in enumerate(files):
                 self.assertEqual(mock_s3.call_args_list[i],
