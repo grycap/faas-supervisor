@@ -109,6 +109,7 @@ def parse_event(event, storage_provider="default"):
             if not isinstance(parsed_event.body, dict):
                 event = json.loads(parsed_event.body)
     if _is_delegated_event(event):
+        get_logger().info("Delegated event found.")
         if 'storage_provider' in event:
             return  parse_event(event['event'], event['storage_provider'])
         return  parse_event(event['event'])
