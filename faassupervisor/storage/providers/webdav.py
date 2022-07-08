@@ -1,15 +1,15 @@
 from faassupervisor.storage.providers import DefaultStorageProvider
 from webdav3.client import Client
 
-class DCache(DefaultStorageProvider):
-    _TYPE = "DCACHE"
+class WebDav(DefaultStorageProvider):
+    _TYPE = "WEBDAV"
 
     def __init__(self, stg_auth):
         super().__init__(stg_auth)
         self.client = self._get_client()
 
     def _get_client(self):
-        """Returns a WebDav client to connect to the http dCache endpoint"""
+        """Returns a WebDav client to connect to the https endpoint of the storage provider"""
         options = {
         'webdav_hostname': 'https://'+self.stg_auth.get_credential('hostname'),
         'webdav_login':    self.stg_auth.get_credential('login'),
@@ -17,7 +17,7 @@ class DCache(DefaultStorageProvider):
         }
         return Client(options=options)
 
-    # dCache as input is not suported but the method has to be created
+    # a webdav storage provider as input is not suported but the method has to be created
     def download_file(self, parsed_event, input_dir_path):
         pass
 
