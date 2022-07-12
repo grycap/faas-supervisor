@@ -19,7 +19,6 @@ from unittest.mock import call
 from collections import namedtuple
 from faassupervisor.storage.providers import get_bucket_name, get_file_key
 from faassupervisor.storage.config import StorageConfig, AuthData, create_provider
-from faassupervisor.storage.providers.webdav import WebDav
 from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
@@ -49,8 +48,6 @@ output:
   path: bucket
   suffix: ['txt', 'jpg']
   prefix: ['result-']
-- storage_provider: webdav.nextcloud
-  path: Users/user/folder
 storage_providers:
   minio:
     test_minio:
@@ -148,9 +145,6 @@ class StorageConfigTest(unittest.TestCase):
                     'path': 'bucket',
                     'suffix': ['txt', 'jpg'],
                     'prefix': ['result-']
-                }, {
-                    'storage_provider': 'webdav.nextcloud',
-                    'path': 'Users/user/folder'
                 }
             ]
             self.assertEqual(config.output, expected_output)
@@ -241,16 +235,6 @@ class StorageConfigTest(unittest.TestCase):
             parsed_event = parse_event(ONEDATA_EVENT)
             onedata2_auth = StorageConfig()._get_input_auth_data(parsed_event)
             self.assertEqual(onedata2_auth.get_credential('space'), 'space_ok')
-    
-    def test_get_webdav_auth(self):
-        with mock.patch.dict('os.environ',
-                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
-                             clear=True):
-            webdav_auth = StorageConfig()._get_auth_data('WEBDAV','nextcloud')
-            self.assertEqual(webdav_auth.type, 'WEBDAV')
-            self.assertEqual(webdav_auth.get_credential('hostname'),'asdf.com/remote.php/dav/files')
-            self.assertEqual(webdav_auth.get_credential('login'),'test_user')
-            self.assertEqual(webdav_auth.get_credential('password'),'test_password')
 
     def test_get_invalid_auth(self):
         invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
