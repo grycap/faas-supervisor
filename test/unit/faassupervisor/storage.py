@@ -19,7 +19,7 @@ from unittest.mock import call
 from collections import namedtuple
 from faassupervisor.storage.providers import get_bucket_name, get_file_key
 from faassupervisor.storage.config import StorageConfig, AuthData, create_provider
-from faassupervisor.storage.providers.dCache import DCache
+from faassupervisor.storage.providers.webdav import WebDav
 from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
@@ -49,7 +49,7 @@ output:
   path: bucket
   suffix: ['txt', 'jpg']
   prefix: ['result-']
-- storage_provider: dcache.test_dcache
+- storage_provider: webdav.nextcloud
   path: Users/user/folder
 storage_providers:
   minio:
@@ -65,11 +65,6 @@ storage_providers:
         oneprovider_host: test_oneprovider.host
         token: test_onedata_token
         space: space_ok
-  dcache:
-    test_dcache:
-        hostname: test_hostname
-        login: test_user
-        password: test_password
 """
 
 CONFIG_FILE_NO_OUTPUT = """
@@ -154,7 +149,7 @@ class StorageConfigTest(unittest.TestCase):
                     'suffix': ['txt', 'jpg'],
                     'prefix': ['result-']
                 }, {
-                    'storage_provider': 'dcache.test_dcache',
+                    'storage_provider': 'webdav.nextcloud',
                     'path': 'Users/user/folder'
                 }
             ]
@@ -247,15 +242,15 @@ class StorageConfigTest(unittest.TestCase):
             onedata2_auth = StorageConfig()._get_input_auth_data(parsed_event)
             self.assertEqual(onedata2_auth.get_credential('space'), 'space_ok')
     
-    def test_get_dcache_auth(self):
+    def test_get_webdav_auth(self):
         with mock.patch.dict('os.environ',
                              {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
-            dcache_auth = StorageConfig()._get_auth_data('DCACHE','test_dcache')
-            self.assertEqual(dcache_auth.type, 'DCACHE')
-            self.assertEqual(dcache_auth.get_credential('hostname'),'test_hostname')
-            self.assertEqual(dcache_auth.get_credential('login'),'test_user')
-            self.assertEqual(dcache_auth.get_credential('password'),'test_password')
+            webdav_auth = StorageConfig()._get_auth_data('WEBDAV','nextcloud')
+            self.assertEqual(webdav_auth.type, 'WEBDAV')
+            self.assertEqual(webdav_auth.get_credential('hostname'),'asdf.com/remote.php/dav/files')
+            self.assertEqual(webdav_auth.get_credential('login'),'test_user')
+            self.assertEqual(webdav_auth.get_credential('password'),'test_password')
 
     def test_get_invalid_auth(self):
         invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
@@ -267,11 +262,10 @@ class StorageConfigTest(unittest.TestCase):
         StorageConfig().download_input(event, '/tmp/test')
         mock_download_file.assert_called_once_with(event, '/tmp/test')
 
-    @mock.patch('faassupervisor.storage.providers.dCache.DCache.upload_file')
     @mock.patch('faassupervisor.utils.FileUtils.get_all_files_in_dir')
     @mock.patch('faassupervisor.storage.providers.s3.S3.upload_file')
     @mock.patch('faassupervisor.storage.providers.minio.Minio.upload_file')
-    def test_upload_output(self, mock_minio, mock_s3, mock_get_files, mock_dcache):
+    def test_upload_output(self, mock_minio, mock_s3, mock_get_files):
         with mock.patch.dict('os.environ',
                              {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
                              clear=True):
@@ -289,15 +283,22 @@ class StorageConfigTest(unittest.TestCase):
             self.assertEqual(mock_minio.call_args,
                              call('/tmp/test/result-file.txt',
                                   'result-file.txt',
-                                  'bucket'))
-            self.assertEqual(mock_dcache.call_count, 6)
-            for i, f in enumerate(files):
-                self.assertEqual(mock_dcache.call_args_list[i],
-                                 call(f, f.split('/')[3], 'Users/user/folder'))          
+                                  'bucket'))       
             self.assertEqual(mock_s3.call_count, 6)
             for i, f in enumerate(files):
                 self.assertEqual(mock_s3.call_args_list[i],
                                  call(f, f.split('/')[3], 'bucket/folder'))
+
+    def test_upload_real_output(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            files = [
+                '/home/caterina/Documentos/test/y1',
+                '/home/caterina/Documentos/test/y2',
+            ]
+     
+            StorageConfig().upload_output('/home/caterina/Documentos/test')
 
 
 class ProvidersModuleTest(unittest.TestCase):
@@ -521,21 +522,4 @@ class S3ProviderTest(unittest.TestCase):
                                                    's3_bucket',
                                                    's3_folder/processed.jpg'))
     
-class DCacheProviderTest(unittest.TestCase):
-    dCache_creds = {
-        'hostname' : 'test_hostname',
-        'login': 'test_user',
-        'password': 'test_password'
-    }
-
-    def test_create_dCache_provider(self):
-        dCacheAuth = AuthData('DCACHE', self.dCache_creds)
-        provider = create_provider(dCacheAuth)
-        self.assertEqual(provider.get_type(), 'DCACHE')
-        self.assertEqual(provider.stg_auth.creds, self.dCache_creds)
-    
-    def test_webdav_client(self):
-        dcache_provider = DCache(AuthData('DCACHE',self.dCache_creds))
-        self.assertIsNotNone(dcache_provider)
-        self.assertEqual(dcache_provider.stg_auth.creds, self.dCache_creds)
     
