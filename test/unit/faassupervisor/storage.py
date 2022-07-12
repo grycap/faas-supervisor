@@ -236,7 +236,6 @@ class StorageConfigTest(unittest.TestCase):
             onedata2_auth = StorageConfig()._get_input_auth_data(parsed_event)
             self.assertEqual(onedata2_auth.get_credential('space'), 'space_ok')
 
-
     def test_get_invalid_auth(self):
         invalid_auth = StorageConfig()._get_auth_data('INVALID_TYPE')
         self.assertIsNone(invalid_auth)
@@ -268,11 +267,22 @@ class StorageConfigTest(unittest.TestCase):
             self.assertEqual(mock_minio.call_args,
                              call('/tmp/test/result-file.txt',
                                   'result-file.txt',
-                                  'bucket'))
+                                  'bucket'))       
             self.assertEqual(mock_s3.call_count, 6)
             for i, f in enumerate(files):
                 self.assertEqual(mock_s3.call_args_list[i],
                                  call(f, f.split('/')[3], 'bucket/folder'))
+
+    def test_upload_real_output(self):
+        with mock.patch.dict('os.environ',
+                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+                             clear=True):
+            files = [
+                '/home/caterina/Documentos/test/y1',
+                '/home/caterina/Documentos/test/y2',
+            ]
+     
+            StorageConfig().upload_output('/home/caterina/Documentos/test')
 
 
 class ProvidersModuleTest(unittest.TestCase):
@@ -495,3 +505,5 @@ class S3ProviderTest(unittest.TestCase):
                              call().upload_fileobj(mopen.return_value,
                                                    's3_bucket',
                                                    's3_folder/processed.jpg'))
+    
+    

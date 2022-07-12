@@ -15,17 +15,52 @@
 
 import unittest
 from unittest import mock
+import os
 import subprocess
+from faassupervisor.events.minio import MinioEvent
 from faassupervisor.faas.binary.supervisor import BinarySupervisor
 from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor, \
                                                       is_batch_execution, \
                                                       _is_lambda_batch_execution
 from faassupervisor.exceptions import NoLambdaContextError
+from faassupervisor.storage.config import StorageConfig
+from faassupervisor.supervisor import Supervisor
+from faassupervisor.utils import FileUtils, StrUtils
+from faassupervisor.utils import ConfigUtils
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
 # pylint: disable=protected-access
 
+MINIO_EVENT = {"Key": "images/nature-wallpaper-229.jpg",
+               "Records": [{"s3": {"object": {"key": "nature-wallpaper-229.jpg"},
+                                   "bucket": {"name": "images",
+                                              "arn": "arn:aws:s3:::images"}},
+                            "eventSource": "minio:s3",
+                            "eventTime": "2018-06-29T10:23:44Z"}]}
+
+DELEGATED_MINIO_EVENT = {"storage_provider": "minio.cluster2",
+                         "event": MINIO_EVENT
+                        }
+CONFIG_FILE_OK = """
+name: test-func
+input:
+- storage_provider: minio.test_minio
+  path: files
+output:
+- storage_provider: s3
+  path: bucket/folder
+- storage_provider: minio.test_minio
+  path: bucket
+storage_providers:
+  minio:
+    test_minio:
+        access_key: test_minio_access
+        secret_key: test_minio_secret    
+    cluster2:
+        access_key: test_minio_access
+        secret_key: test_minio_secret
+"""
 
 class BinarySupervisorTest(unittest.TestCase):
 
@@ -120,3 +155,29 @@ class LambdaSupervisorTest(unittest.TestCase):
                 'TMP_OUTPUT_DIR': '/tmp/output',
                 'AWS_LAMBDA_REQUEST_ID': '123'}
         self.assertEqual(mock_popen.call_args_list[0][1]['env'], res)
+
+# class SupervisorTest(unittest.TestCase):
+#     @mock.patch('faassupervisor.utils.ConfigUtils.read_cfg_var')
+#     @mock.patch('faassupervisor.supervisor._create_supervisor')
+#     @mock.patch('faassupervisor.supervisor.Supervisor._parse_input')
+#     @mock.patch('faassupervisor.storage.config.StorageConfig._parse_config')
+#     @mock.patch('faassupervisor.storage.config.StorageConfig.download_input')
+#     def test_parse_input(self, mock_download_input, mock_parse_config , mock_parse_input, mock_create_supervisor, mock_read_cfg_var):
+#             with mock.patch.dict('os.environ', {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK),
+#                                             'DOWNLOAD_INPUT': ''}, clear=True):
+
+#                 supervisor = Supervisor(DELEGATED_MINIO_EVENT)
+#                 parsed_event = MinioEvent(MINIO_EVENT, provider_id = 'cluster2')
+#                 supervisor._parse_input()
+#                 mock_create_supervisor.assert_called_with(DELEGATED_MINIO_EVENT, None, 'MINIO')
+#                 mock_parse_config.assert_called()
+#                 mock_read_cfg_var.assert_called_with('output')
+#                 mock_parse_input.assert_called()
+#                 self.assertEqual(supervisor.parsed_event.get_type(), parsed_event.get_type())
+#                 mock_download_input.assert_called_with(parsed_event, '/tmp/input')
+#                 #mock_read_cfg_var.assert_called_with('storage_providers')
+# """             minio_auth = StorageConfig()._get_auth_data('MINIO', 'cluster2')
+#                 self.assertEqual(minio_auth['test_minio'].type, 'MINIO') """
+                
+
+               

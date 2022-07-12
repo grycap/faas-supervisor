@@ -13,6 +13,7 @@
 # limitations under the License.
 """Class to parse, store and manage storage information."""
 
+from faassupervisor.storage.providers.webdav import WebDav
 from faassupervisor.utils import ConfigUtils, FileUtils, StrUtils
 from faassupervisor.exceptions import StorageAuthError, \
     InvalidStorageProviderError, exception
@@ -36,6 +37,8 @@ def create_provider(storage_auth):
         provider = Onedata(storage_auth)
     elif storage_auth.type == 'S3':
         provider = S3(storage_auth)
+    elif storage_auth.type == 'WEBDAV':
+        provider = WebDav(storage_auth)
     else:
         raise InvalidStorageProviderError(storage_type=storage_auth.type)
     return provider
@@ -61,6 +64,7 @@ class StorageConfig():
         self.s3_auth = {'default': AuthData('S3', None)}
         self.minio_auth = {}
         self.onedata_auth = {}
+        self.webdav_auth = {}
         self.input = []
         self.output = []
         self._parse_config()
@@ -95,6 +99,10 @@ class StorageConfig():
             if ('onedata' in storage_providers
                     and storage_providers['onedata']):
                 self._validate_onedata_creds(storage_providers['onedata'])
+            # webdav storage providers auth
+            if ('webdav' in storage_providers
+                    and storage_providers['webdav']):
+                self._validate_webdav_creds(storage_providers['webdav'])
         else:
             get_logger().warning('There is no storage provider defined for this function.')
 
@@ -145,6 +153,24 @@ class StorageConfig():
                     raise StorageAuthError(auth_type='ONEDATA')
         else:
             raise StorageAuthError(auth_type='ONEDATA')
+   
+    def _validate_webdav_creds(self, webdav_creds):
+        if isinstance(webdav_creds, dict):
+            for provider_id in webdav_creds:
+                if ('hostname' in webdav_creds[provider_id]
+                    and webdav_creds[provider_id]['hostname'] is not None
+                    and webdav_creds[provider_id]['hostname'] != ''
+                    and 'login' in webdav_creds[provider_id]
+                    and webdav_creds[provider_id]['login'] is not None
+                    and webdav_creds[provider_id]['login'] != ''
+                    and 'password' in webdav_creds[provider_id]
+                    and webdav_creds[provider_id]['password'] is not None
+                    and webdav_creds[provider_id]['password'] != ''):
+                    self.webdav_auth[provider_id] = AuthData('WEBDAV', webdav_creds[provider_id])
+                else:
+                    raise StorageAuthError(auth_type='WEBDAV')
+        else:
+            raise StorageAuthError(auth_type='WEBDAV')
 
     def _get_auth_data(self, storage_type, provider_id='default'):
         """Returns the authentication credentials by its type and id."""
@@ -154,6 +180,8 @@ class StorageConfig():
             return self.minio_auth.get(provider_id, None)
         elif storage_type == 'ONEDATA':
             return self.onedata_auth.get(provider_id, None)
+        elif storage_type == 'WEBDAV':
+            return self.webdav_auth.get(provider_id, None)
         return None
 
     def _get_input_auth_data(self, parsed_event):
@@ -173,8 +201,10 @@ class StorageConfig():
                     if self.onedata_auth[provider_id].get_credential('space') == event_space:
                         return self._get_auth_data(storage_type, provider_id)
             raise StorageAuthError(auth_type='ONEDATA')
-        else:
+        elif storage_type == 'UNKNOWN':
             return self._get_auth_data(storage_type)
+        else:
+            return (self._get_auth_data(storage_type),self._get_auth_data(storage_type, parsed_event.provider_id))[parsed_event.provider_id != 'default']
 
     def download_input(self, parsed_event, input_dir_path):
         """Receives the event where the file information is and

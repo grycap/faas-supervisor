@@ -52,7 +52,7 @@ jobs:
   build-amd64:
     needs: test
     runs-on: ubuntu-20.04
-    container: ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.0
+    container: ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -79,7 +79,7 @@ jobs:
   build-alpine-amd64:
     needs: test
     runs-on: ubuntu-20.04
-    container: ghcr.io/grycap/faas-supervisor-build:alpine-1.0
+    container: ghcr.io/grycap/faas-supervisor-build:alpine-1.1
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -113,7 +113,7 @@ jobs:
       uses: docker/setup-buildx-action@v1
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.0 /bin/sh -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1 /bin/sh -c " \
           cd /repo && \
           python3.8 -m pip install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
@@ -144,7 +144,7 @@ jobs:
       uses: docker/setup-buildx-action@v1
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.0 /bin/sh -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
           python3.8 -m pip install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-alpine-arm64 faassupervisor/supervisor.py && \
