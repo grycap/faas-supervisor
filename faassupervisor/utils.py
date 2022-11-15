@@ -237,6 +237,7 @@ class ConfigUtils():
     """Common methods for configuration file management."""
 
     _LAMBDA_STORAGE_CONFIG_PATH = '/var/task/function_config.yaml'
+    _LAMBDA_STORAGE_CONFIG_ENV = 'FDL'
     _BINARY_STORAGE_CONFIG_ENV = 'FUNCTION_CONFIG'
     _BINARY_OSCAR_STORAGE_CONFIG_PATH = '/oscar/config/function_config.yaml'
     _CUSTOM_VARIABLES = [
@@ -255,9 +256,16 @@ class ConfigUtils():
         """Returns the value of a config variable or an empty
         string if not found."""
         if SysUtils.is_lambda_environment():
-            # Read config file
-            with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
-                config = yaml.safe_load(file)
+            # Check if config file exsits in '_LAMBDA_STORAGE_CONFIG_PATH'
+            if FileUtils.is_file(cls._LAMBDA_STORAGE_CONFIG_PATH):
+                # Read config file
+                with open(cls._LAMBDA_STORAGE_CONFIG_PATH) as file:
+                    config = yaml.safe_load(file)
+            else:
+                # Get and decode content of '_LAMBDA_STORAGE_CONFIG_ENV'
+                encoded = SysUtils.get_env_var(cls._LAMBDA_STORAGE_CONFIG_ENV)
+                decoded = StrUtils.base64_to_str(encoded)
+                config = yaml.safe_load(decoded)
         else:
             # Check if config file exsits in '_BINARY_OSCAR_STORAGE_CONFIG_PATH'
             if FileUtils.is_file(cls._BINARY_OSCAR_STORAGE_CONFIG_PATH):

@@ -35,6 +35,10 @@ MINIO_EVENT = {"Key": "images/nature-wallpaper-229.jpg",
                             "eventSource": "minio:s3",
                             "eventTime": "2018-06-29T10:23:44Z"}]}
 
+DELEGATED_MINIO_EVENT = {"storage_provider": "minio.cluster2",
+                         "event": MINIO_EVENT
+                        }
+
 ONEDATA_EVENT = {"Key": "/my-onedata-space/files/file.txt",
                  "Records": [{"objectKey": "file.txt",
                               "eventSource": "OneTrigger",
@@ -152,7 +156,6 @@ class ApiGatewayEventTest(unittest.TestCase):
         self.assertEqual(result, '/tmp/test/file')
         mock_create.assert_called_once_with('/tmp/test/file', b'it works!', mode='wb')
 
-
 class MinioEventTest(unittest.TestCase):
 
     def test_minio_event_creation(self):
@@ -163,6 +166,14 @@ class MinioEventTest(unittest.TestCase):
         self.assertEqual(event.file_name, "nature-wallpaper-229.jpg")
         self.assertEqual(event.get_type(), "MINIO")
 
+    def test_delegated_minio_event(self):
+        event = MinioEvent(DELEGATED_MINIO_EVENT, 'minio.cluster2')
+        self.assertEqual(event.object_key, "nature-wallpaper-229.jpg")
+        self.assertEqual(event.bucket_arn, "arn:aws:s3:::images")
+        self.assertEqual(event.bucket_name, "images")
+        self.assertEqual(event.file_name, "nature-wallpaper-229.jpg")
+        self.assertEqual(event.get_type(), "MINIO")
+        self.assertEqual(event.provider_id, 'minio.cluster2')
 
 class OnedataEventTest(unittest.TestCase):
 

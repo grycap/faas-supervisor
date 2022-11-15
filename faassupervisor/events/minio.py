@@ -53,9 +53,14 @@ class MinioEvent(UnknownEvent):
 
     _TYPE = 'MINIO'
 
+    def __init__(self, event, provider_id='default'):
+        super().__init__(event.get('event') or event)
+        self.provider_id = provider_id 
+
     def _set_event_params(self):
         self.bucket_arn = self.event_records['s3']['bucket']['arn']
         self.bucket_name = self.event_records['s3']['bucket']['name']
         self.object_key = unquote_plus(self.event_records['s3']['object']['key'])
         self.file_name = FileUtils.get_file_name(self.object_key)
         self.event_time = self.event_records['eventTime']
+
