@@ -29,12 +29,15 @@ class Container():
 
     def __init__(self, lambda_instance):
         self.lambda_instance = lambda_instance
+        self.script = None
 
         if hasattr(self.lambda_instance, 'script_path'):
             self.script = self.lambda_instance.script_path
         # Script to be executed every time (if defined)
         elif hasattr(self.lambda_instance, 'init_script_path'):
             self.script = self.lambda_instance.init_script_path
+        else:
+            raise Exception("Init: Script not defined.")
         if not os.path.isfile(self.script):
             raise Exception("Init: Script %s does not exist." % self.script)
 

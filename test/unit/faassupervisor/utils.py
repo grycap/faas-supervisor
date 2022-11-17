@@ -186,10 +186,12 @@ class ConfigUtilsTest(unittest.TestCase):
         with mock.patch.dict('os.environ', {'LOG_LEVEL': 'TEST'}, clear=True):
             self.assertEqual(ConfigUtils.read_cfg_var('log_level'), 'TEST')
 
-    def test_read_cfg_var_config_file(self):
+    @mock.patch('faassupervisor.utils.FileUtils.is_file')
+    def test_read_cfg_var_config_file(self, is_file):
         with mock.patch.dict('os.environ',
                              {'AWS_EXECUTION_ENV': 'AWS_Lambda_'},
                              clear=True):
+            is_file.return_value = True
             mopen = mock.mock_open(read_data=CONFIG_FILE)
             with mock.patch('builtins.open', mopen, create=True):
                 var = ConfigUtils.read_cfg_var('name')
