@@ -18,9 +18,11 @@ import json
 import socket
 from faassupervisor.utils import ConfigUtils, FileUtils, StrUtils, SysUtils
 
+
 def get_function_ip():
     """Returns the IP of the invoked function."""
     return socket.gethostbyname(socket.gethostname())
+
 
 class LambdaInstance():
     """Stores and manages the Lambda invocation information."""

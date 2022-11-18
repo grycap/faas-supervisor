@@ -22,6 +22,7 @@ from faassupervisor.utils import FileUtils, SysUtils
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import ContainerTimeoutExpiredWarning
 
+
 class Container():
     """Used for defining Container jobs in the Lambda container runtime."""
 
@@ -56,10 +57,10 @@ class Container():
 
             with open(self._CONTAINER_OUTPUT_FILE, "wb") as out:
                 with subprocess.Popen(['/bin/sh', self.script],
-                                    stderr=subprocess.STDOUT,
-                                    stdout=out,
-                                    env=new_env,
-                                    start_new_session=True) as process:
+                                      stderr=subprocess.STDOUT,
+                                      stdout=out,
+                                      env=new_env,
+                                      start_new_session=True) as process:
                     try:
                         rc = process.wait(timeout=remaining_seconds)
                         if rc != 0:

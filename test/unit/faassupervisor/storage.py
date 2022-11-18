@@ -267,7 +267,7 @@ class StorageConfigTest(unittest.TestCase):
             self.assertEqual(mock_minio.call_args,
                              call('/tmp/test/result-file.txt',
                                   'result-file.txt',
-                                  'bucket'))       
+                                  'bucket'))
             self.assertEqual(mock_s3.call_count, 6)
             for i, f in enumerate(files):
                 self.assertEqual(mock_s3.call_args_list[i],
@@ -504,5 +504,3 @@ class S3ProviderTest(unittest.TestCase):
                              call().upload_fileobj(mopen.return_value,
                                                    's3_bucket',
                                                    's3_folder/processed.jpg'))
-    
-    

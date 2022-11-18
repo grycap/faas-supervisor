@@ -63,7 +63,7 @@ class SysUtilsTest(unittest.TestCase):
 #                              clear=True):
 #             # Variables without the prefix
 #             self.assertEqual(SysUtils.get_cont_env_vars(), {"C1":"VC1", "C2":"VC2"})
-#  
+#
 #         with mock.patch.dict('os.environ', {"K1":"V1"}, clear=True):
 #             self.assertEqual(SysUtils.get_cont_env_vars(), {})
 

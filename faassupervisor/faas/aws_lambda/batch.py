@@ -60,10 +60,10 @@ class Batch():
         if 'script' in self.lambda_instance.raw_event:
             script = self.lambda_instance.raw_event['script']
         return script
-    
+
     def _get_overrides(self):
         batch = ConfigUtils.read_cfg_var("batch")
-        if batch.get("multi_node_parallel").get("enabled") == True:
+        if batch.get("multi_node_parallel").get("enabled") is True:
             return {
                 "nodeOverrides": {
                     "nodePropertyOverrides": [
@@ -89,7 +89,7 @@ class Batch():
         job_def = {
             "jobDefinition": job_name,
             "jobName": job_name,
-            "jobQueue": job_name,          
+            "jobQueue": job_name,
         }
         return {**job_def, **overrides}
 

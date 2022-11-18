@@ -57,10 +57,10 @@ class BinarySupervisor(DefaultSupervisor):
                 else:
                     SysUtils.delete_env_var('LD_LIBRARY_PATH')
                 proc = subprocess.Popen(['/bin/sh', script_path],
-                                                stdout=subprocess.PIPE,
-                                                stderr=subprocess.STDOUT,
-                                                encoding='utf-8',
-                                                errors='ignore')
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT,
+                                        encoding='utf-8',
+                                        errors='ignore')
                 SysUtils.set_env_var('LD_LIBRARY_PATH', pyinstaller_library_path)
                 get_logger().debug("CONTAINER OUTPUT:\n %s", self.output)
                 for line in proc.stdout:
