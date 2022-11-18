@@ -61,8 +61,10 @@ def _is_storage_event(event_info):
             or event_info['Records'][0]['eventSource'] == _ONEDATA_EVENT
     return False
 
+
 def _is_delegated_event(event_info):
     return 'event' in event_info
+
 
 @exception()
 def _parse_storage_event(event, storage_provider='default'):
@@ -80,6 +82,7 @@ def _parse_storage_event(event, storage_provider='default'):
         raise UnknowStorageEventWarning()
     return parsed_event
 
+
 def _set_storage_env_vars(parsed_event, event):
     # Store 'object_key' in environment variable
     SysUtils.set_env_var("STORAGE_OBJECT_KEY", parsed_event.object_key)
@@ -87,6 +90,7 @@ def _set_storage_env_vars(parsed_event, event):
     SysUtils.set_env_var("EVENT_TIME", parsed_event.event_time)
     # Store the raw event in environment variable
     SysUtils.set_env_var("EVENT", json.dumps(event))
+
 
 def parse_event(event, storage_provider="default"):
     """Parses the received event and
@@ -111,8 +115,8 @@ def parse_event(event, storage_provider="default"):
     if _is_delegated_event(event):
         get_logger().info("Delegated event found.")
         if 'storage_provider' in event:
-            return  parse_event(event['event'], event['storage_provider'])
-        return  parse_event(event['event'])
+            return parse_event(event['event'], event['storage_provider'])
+        return parse_event(event['event'])
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
         parsed_event = _parse_storage_event(event, storage_provider)

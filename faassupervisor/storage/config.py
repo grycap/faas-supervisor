@@ -153,7 +153,7 @@ class StorageConfig():
                     raise StorageAuthError(auth_type='ONEDATA')
         else:
             raise StorageAuthError(auth_type='ONEDATA')
-   
+
     def _validate_webdav_creds(self, webdav_creds):
         if isinstance(webdav_creds, dict):
             for provider_id in webdav_creds:
@@ -194,17 +194,17 @@ class StorageConfig():
             if hasattr(parsed_event, 'object_key'):
                 # Get the onedata space from the event object_key
                 event_space = parsed_event.object_key.strip('/').split('/', maxsplit=1)[0]
-            for input in self.input:
-                provider_type = StrUtils.get_storage_type(input.get('storage_provider'))
+            for input_value in self.input:
+                provider_type = StrUtils.get_storage_type(input_value.get('storage_provider'))
                 if provider_type == storage_type:
-                    provider_id = StrUtils.get_storage_id(input.get('storage_provider'))
+                    provider_id = StrUtils.get_storage_id(input_value.get('storage_provider'))
                     if self.onedata_auth[provider_id].get_credential('space') == event_space:
                         return self._get_auth_data(storage_type, provider_id)
             raise StorageAuthError(auth_type='ONEDATA')
         elif storage_type == 'UNKNOWN':
             return self._get_auth_data(storage_type)
         else:
-            return (self._get_auth_data(storage_type),self._get_auth_data(storage_type, parsed_event.provider_id))[parsed_event.provider_id != 'default']
+            return (self._get_auth_data(storage_type), self._get_auth_data(storage_type, parsed_event.provider_id))[parsed_event.provider_id != 'default']
 
     def download_input(self, parsed_event, input_dir_path):
         """Receives the event where the file information is and

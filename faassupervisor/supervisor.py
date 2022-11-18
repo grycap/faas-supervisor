@@ -140,8 +140,8 @@ if __name__ == "__main__":
         from awslambdaric import bootstrap
         import faassupervisor.supervisor
         bootstrap.run(os.getcwd(),
-                    "faassupervisor.supervisor.main",
-                    os.environ["AWS_LAMBDA_RUNTIME_API"])
+                      "faassupervisor.supervisor.main",
+                      os.environ["AWS_LAMBDA_RUNTIME_API"])
     else:
         # If supervisor is running as a binary
         # receive the input from stdin.

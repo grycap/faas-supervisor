@@ -175,9 +175,9 @@ class FileUtils():
     def zip_file_list(file_list, zip_path):
         """Generate a zip in zip_path from a list of files"""
         dir_name = os.path.dirname(zip_path)
-        with ZipFile(zip_path, 'w') as zip:
+        with ZipFile(zip_path, 'w') as zip_file:
             for file in file_list:
-                zip.write(file, StrUtils.remove_prefix(file, '{}/'.format(dir_name)))
+                zip_file.write(file, StrUtils.remove_prefix(file, '{}/'.format(dir_name)))
 
 
 class StrUtils():
@@ -207,7 +207,7 @@ class StrUtils():
     @staticmethod
     def get_storage_id(io_storage):
         """Return the identifier of the storage provider or 'default'
-        if it is not set. 
+        if it is not set.
         Format: <PROVIDER_TYPE>.<ID>"""
         if isinstance(io_storage, str):
             split = io_storage.split('.', maxsplit=1)
