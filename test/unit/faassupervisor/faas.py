@@ -178,6 +178,3 @@ class LambdaSupervisorTest(unittest.TestCase):
 #                 #mock_read_cfg_var.assert_called_with('storage_providers')
 # """             minio_auth = StorageConfig()._get_auth_data('MINIO', 'cluster2')
 #                 self.assertEqual(minio_auth['test_minio'].type, 'MINIO') """
-                
-
-               
