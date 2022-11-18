@@ -18,7 +18,7 @@ import boto3
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider, \
     get_bucket_name, get_file_key
-from faassupervisor.utils import FileUtils, SysUtils
+from faassupervisor.utils import SysUtils
 
 
 class S3(DefaultStorageProvider):

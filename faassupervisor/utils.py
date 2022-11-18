@@ -272,7 +272,7 @@ class ConfigUtils():
                 # Read config file
                 with open(cls._BINARY_OSCAR_STORAGE_CONFIG_PATH) as file:
                     config = yaml.safe_load(file)
-            else: 
+            else:
                 # Get and decode content of '_BINARY_STORAGE_CONFIG_ENV'
                 encoded = SysUtils.get_env_var(cls._BINARY_STORAGE_CONFIG_ENV)
                 decoded = StrUtils.base64_to_str(encoded)

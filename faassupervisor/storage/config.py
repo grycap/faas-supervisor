@@ -78,9 +78,9 @@ class StorageConfig():
         else:
             get_logger().warning('There is no output defined for this function.')
         # Read input list
-        input = ConfigUtils.read_cfg_var('input')
-        if input != '':
-            self.input = input
+        input_value = ConfigUtils.read_cfg_var('input')
+        if input_value != '':
+            self.input = input_value
         else:
             get_logger().warning('There is no input defined for this function.')
         # Read storage_providers dict

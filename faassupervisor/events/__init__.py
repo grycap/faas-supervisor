@@ -116,5 +116,5 @@ def parse_event(event, storage_provider="default"):
     if _is_storage_event(event):
         get_logger().info("Storage event found.")
         parsed_event = _parse_storage_event(event, storage_provider)
-        _set_storage_env_vars(parsed_event, event) 
+        _set_storage_env_vars(parsed_event, event)
     return parsed_event if parsed_event else UnknownEvent(event)

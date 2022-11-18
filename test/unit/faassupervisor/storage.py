@@ -273,16 +273,16 @@ class StorageConfigTest(unittest.TestCase):
                 self.assertEqual(mock_s3.call_args_list[i],
                                  call(f, f.split('/')[3], 'bucket/folder'))
 
-    def test_upload_real_output(self):
-        with mock.patch.dict('os.environ',
-                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
-                             clear=True):
-            files = [
-                '/home/caterina/Documentos/test/y1',
-                '/home/caterina/Documentos/test/y2',
-            ]
-     
-            StorageConfig().upload_output('/home/caterina/Documentos/test')
+#    def test_upload_real_output(self):
+#        with mock.patch.dict('os.environ',
+#                             {'FUNCTION_CONFIG': StrUtils.utf8_to_base64_string(CONFIG_FILE_OK)},
+#                             clear=True):
+#            files = [
+#                '/home/caterina/Documentos/test/y1',
+#                '/home/caterina/Documentos/test/y2',
+#            ]
+#     
+#            StorageConfig().upload_output('/home/caterina/Documentos/test')
 
 
 class ProvidersModuleTest(unittest.TestCase):
