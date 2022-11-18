@@ -281,7 +281,6 @@ class StorageConfigTest(unittest.TestCase):
 #                '/home/caterina/Documentos/test/y1',
 #                '/home/caterina/Documentos/test/y2',
 #            ]
-#     
 #            StorageConfig().upload_output('/home/caterina/Documentos/test')
 
 
