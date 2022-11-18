@@ -24,7 +24,7 @@ jobs:
         python -m pip install coverage
         python -m pip install -r requirements.txt
     - name: Test with unittest
-      run: python -m coverage run --source=. -m unittest discover -s test/unit/faassupervisor -p '*.py'
+      run: python -m coverage run --source=. -m unittest discover -v -s test/unit/faassupervisor -p '*.py'
     - name: Generate XML coverage report
       run: python -m coverage xml
     - name: Report coverage

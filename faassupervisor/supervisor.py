@@ -17,7 +17,7 @@ Also entry point of the faassupervisor package."""
 
 import os
 import distutils.util
-from faassupervisor.events import parse_event, _is_delegated_event
+from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig
 from faassupervisor.utils import SysUtils, FileUtils, ConfigUtils
@@ -36,7 +36,7 @@ class Supervisor():
         self._create_tmp_dirs()
         # Parse the event_info data
         self.parsed_event = parse_event(event)
-        # Read storage config 
+        # Read storage config
         self._read_storage_config()
         # Create the supervisor
         self.supervisor = _create_supervisor(event, context, self.parsed_event.get_type())

@@ -63,7 +63,7 @@ class Container():
                     try:
                         rc = process.wait(timeout=remaining_seconds)
                         if rc != 0:
-                            get_logger().warn("User script exited with code %s!" % rc)
+                            get_logger().warning("User script exited with code %s!" % rc)
                     except subprocess.TimeoutExpired:
                         get_logger().info("Stopping process '%s'", process)
                         process.kill()

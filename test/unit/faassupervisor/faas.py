@@ -17,16 +17,16 @@ import unittest
 from unittest import mock
 import os
 import subprocess
-from faassupervisor.events.minio import MinioEvent
+# from faassupervisor.events.minio import MinioEvent
 from faassupervisor.faas.binary.supervisor import BinarySupervisor
 from faassupervisor.faas.aws_lambda.supervisor import LambdaSupervisor, \
                                                       is_batch_execution, \
                                                       _is_lambda_batch_execution
 from faassupervisor.exceptions import NoLambdaContextError
-from faassupervisor.storage.config import StorageConfig
-from faassupervisor.supervisor import Supervisor
-from faassupervisor.utils import FileUtils, StrUtils
-from faassupervisor.utils import ConfigUtils
+# from faassupervisor.storage.config import StorageConfig
+# from faassupervisor.supervisor import Supervisor
+# from faassupervisor.utils import FileUtils, StrUtils
+# from faassupervisor.utils import ConfigUtils
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use

@@ -14,7 +14,6 @@
 """Module with all the classes and methods
 related with the AWS Lambda supervisor."""
 
-import os
 import subprocess
 import traceback
 from faassupervisor.faas.aws_lambda.container import Container

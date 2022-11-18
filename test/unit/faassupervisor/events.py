@@ -22,7 +22,6 @@ from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.apigateway import ApiGatewayEvent
-from faassupervisor.exceptions import UnknowStorageEventWarning
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
