@@ -106,14 +106,7 @@ def parse_event(event, storage_provider="default"):
     if _is_api_gateway_event(event):
         get_logger().info("API Gateway event found.")
         parsed_event = ApiGatewayEvent(event)
-        # Update event info with API request event body
-        # to be further processed (if needed)
-        if parsed_event.has_json_body():
-            event = parsed_event.body
-            if not isinstance(parsed_event.body, dict):
-                event = json.loads(parsed_event.body)
-            # recursive call with the storage provider event
-            return parse_event(event)
+        return parse_event(parsed_event.body)
     if _is_delegated_event(event):
         get_logger().info("Delegated event found.")
         if 'storage_provider' in event:
