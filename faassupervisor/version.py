@@ -14,4 +14,4 @@
 """Stores the package version."""
 
 
-__version__ = '1.5.6-beta'
+__version__ = '1.5.6-beta2'
