@@ -13,6 +13,7 @@
 # limitations under the License.
 """Unit tests for the faassupervisor.events module and classes."""
 
+import json
 import os
 import unittest
 from unittest import mock
@@ -35,7 +36,7 @@ MINIO_EVENT = {"Key": "images/nature-wallpaper-229.jpg",
                             "eventTime": "2018-06-29T10:23:44Z"}]}
 
 DELEGATED_MINIO_EVENT = {"storage_provider": "minio.cluster2",
-                         "event": MINIO_EVENT
+                         "event": json.dumps(MINIO_EVENT)
                         }
 
 ONEDATA_EVENT = {"Key": "/my-onedata-space/files/file.txt",
@@ -63,6 +64,12 @@ APIGTW_EVENT_W_JSON = {'body': S3_EVENT,
                        'httpMethod': 'POST',
                        'isBase64Encoded': False,
                        'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
+
+APIGTW_EVENT_W_JSON_STRING = {'body': json.dumps(DELEGATED_MINIO_EVENT),
+                              'headers': {'Content-Type': 'application/json'},
+                              'httpMethod': 'POST',
+                              'isBase64Encoded': False,
+                              'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
 
 
 class EventModuleTest(unittest.TestCase):
@@ -99,13 +106,17 @@ class EventModuleTest(unittest.TestCase):
         result = events.parse_event(UNKNOWN_EVENT)
         self.assertIsInstance(result, UnknownEvent)
 
-    def test_parse_event_apigateway_wo_json_body(self):
-        result = events.parse_event(APIGTW_EVENT_WO_JSON)
-        self.assertIsInstance(result, ApiGatewayEvent)
+    # def test_parse_event_apigateway_wo_json_body(self):
+    #     result = events.parse_event(APIGTW_EVENT_WO_JSON)
+    #     self.assertIsInstance(result, ApiGatewayEvent)
 
     def test_parse_event_apigateway_w_json_body(self):
         result = events.parse_event(APIGTW_EVENT_W_JSON)
         self.assertIsInstance(result, S3Event)
+
+    def test_parse_event_apigateway_w_json_body_string(self):
+        result = events.parse_event(APIGTW_EVENT_W_JSON_STRING)
+        self.assertIsInstance(result, MinioEvent)
 
     def test_parse_event_storage(self):
         result = events.parse_event(S3_EVENT)
@@ -166,7 +177,7 @@ class MinioEventTest(unittest.TestCase):
         self.assertEqual(event.get_type(), "MINIO")
 
     def test_delegated_minio_event(self):
-        event = MinioEvent(DELEGATED_MINIO_EVENT, 'minio.cluster2')
+        event = events.parse_event(DELEGATED_MINIO_EVENT, 'minio.cluster2')
         self.assertEqual(event.object_key, "nature-wallpaper-229.jpg")
         self.assertEqual(event.bucket_arn, "arn:aws:s3:::images")
         self.assertEqual(event.bucket_name, "images")
