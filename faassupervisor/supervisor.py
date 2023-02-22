@@ -67,7 +67,7 @@ class Supervisor():
         one provider is going to be used for each event received.
         """
         # Parse the 'download_input' config var
-        download_input = ConfigUtils.read_cfg_var('download_input')
+        download_input = ConfigUtils.read_cfg_var('file_stage_in')
         if download_input == '':
             download_input = True
         else:
