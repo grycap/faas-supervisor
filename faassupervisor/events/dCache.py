@@ -10,6 +10,6 @@ class DCacheEvent(UnknownEvent):
         self.provider_id = provider_id
 
     def _set_event_params(self):
-        self.object_key = self.event["file_path"]
+        self.object_key = self.event_records["file_path"]
         self.file_name = FileUtils.get_file_name(self.object_key)
-        self.event_time = self.event["timestamp"]
+        self.event_time = self.event_records["timestamp"]
