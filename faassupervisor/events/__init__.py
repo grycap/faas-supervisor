@@ -38,6 +38,7 @@ from faassupervisor.events.apigateway import ApiGatewayEvent
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.s3 import S3Event
+from faassupervisor.events.dCache import DCacheEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import exception, UnknowStorageEventWarning
@@ -46,7 +47,7 @@ from faassupervisor.utils import SysUtils
 _S3_EVENT = "aws:s3"
 _MINIO_EVENT = "minio:s3"
 _ONEDATA_EVENT = "OneTrigger"
-
+_DCACHE_EVENT = "dcacheTrigger"
 
 def _is_api_gateway_event(event_info):
     return 'httpMethod' in event_info
@@ -58,7 +59,8 @@ def _is_storage_event(event_info):
            and 'eventSource' in event_info['Records'][0]:
         return event_info['Records'][0]['eventSource'] == _S3_EVENT \
             or event_info['Records'][0]['eventSource'] == _MINIO_EVENT \
-            or event_info['Records'][0]['eventSource'] == _ONEDATA_EVENT
+            or event_info['Records'][0]['eventSource'] == _ONEDATA_EVENT \
+            or event_info['Records'][0]['eventSource'] == _DCACHE_EVENT
     return False
 
 
@@ -78,6 +80,9 @@ def _parse_storage_event(event, storage_provider='default'):
     elif record == _ONEDATA_EVENT:
         parsed_event = OnedataEvent(event)
         get_logger().info("ONEDATA event created")
+    elif record == _DCACHE_EVENT:
+        parsed_event = DCacheEvent(event, storage_provider)
+        get_logger().info("DCACHE event created")
     else:
         raise UnknowStorageEventWarning()
     return parsed_event

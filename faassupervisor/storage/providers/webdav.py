@@ -1,4 +1,5 @@
 from faassupervisor.storage.providers import DefaultStorageProvider
+from faassupervisor.utils import SysUtils, FileUtils
 from webdav3.client import Client
 
 
@@ -18,9 +19,9 @@ class WebDav(DefaultStorageProvider):
         }
         return Client(options=options)
 
-    # a webdav storage provider as input is not suported but the method has to be created
     def download_file(self, parsed_event, input_dir_path):
-        pass
+        file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
+        self.client.download_sync(remote_path=parsed_event.object_key, local_path=file_download_path)
 
     def upload_file(self, file_path, file_name, output_path):
         if self.client.check(output_path):
