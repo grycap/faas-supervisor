@@ -81,6 +81,7 @@ def _parse_storage_event(event, storage_provider='default'):
         parsed_event = OnedataEvent(event)
         get_logger().info("ONEDATA event created")
     elif record == _DCACHE_EVENT:
+        get_logger().info("DCACHE event detected")
         parsed_event = DCacheEvent(event, storage_provider)
         get_logger().info("DCACHE event created")
     else:
