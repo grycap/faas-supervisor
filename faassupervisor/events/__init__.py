@@ -115,7 +115,6 @@ def parse_event(event, storage_provider="default"):
         return parse_event(parsed_event.body)
     if _is_delegated_event(event):
         get_logger().info("Delegated event found.")
-        get_logger().debug("Event: ", event)
         if 'storage_provider' in event:
             return parse_event(event['event'], event['storage_provider'])
         return parse_event(event['event'])

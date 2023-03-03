@@ -22,7 +22,9 @@ from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.unknown import UnknownEvent
+from faassupervisor.events.dCache import DCacheEvent
 from faassupervisor.events.apigateway import ApiGatewayEvent
+from faassupervisor.logger import get_logger
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
@@ -71,6 +73,9 @@ APIGTW_EVENT_W_JSON_STRING = {'body': json.dumps(DELEGATED_MINIO_EVENT),
                               'isBase64Encoded': False,
                               'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
 
+DCACHE_EVENT = {"Records": [{"file_path": "/Users/calarcon/gray/input/image1.jpg",
+                "timestamp": "1677592091",
+                "eventSource": "dcacheTrigger"}]}
 
 class EventModuleTest(unittest.TestCase):
 
@@ -97,6 +102,11 @@ class EventModuleTest(unittest.TestCase):
     def test_parse_storage_event_onedata(self):
         result = events._parse_storage_event(ONEDATA_EVENT)
         self.assertIsInstance(result, OnedataEvent)
+    
+    def test_parse_storage_event_dcache(self):
+        #result = events._parse_storage_event(DCACHE_EVENT)
+        result = events.parse_event(DCACHE_EVENT)
+        self.assertIsInstance(result, DCacheEvent)
 
     def test_parse_storage_event_unknown(self):
         result = events._parse_storage_event(UNKNOWN_EVENT)
@@ -204,6 +214,13 @@ class S3EventTest(unittest.TestCase):
         self.assertEqual(event.file_name, "dog.jpg")
         self.assertEqual(event.get_type(), "S3")
 
+class DCacheEventTest(unittest.TestCase):
+
+    def test_dcache_event_creation(self):
+        event = DCacheEvent(DCACHE_EVENT)
+        self.assertEqual(event.object_key, "/Users/calarcon/gray/input/image1.jpg")
+        self.assertEqual(event.file_name, "image1.jpg")
+        self.assertEqual(event.get_type(), "DCACHE")
 
 class UnknownEventTest(unittest.TestCase):
 
