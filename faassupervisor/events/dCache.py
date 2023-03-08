@@ -1,11 +1,12 @@
 from faassupervisor.events.unknown import UnknownEvent
-from faassupervisor.utils import FileUtils
-from faassupervisor.logger import get_logger
+from faassupervisor.utils import SysUtils
 
 """ dCache event example:
-{ "Records": [{"file_path": "/Users/calarcon/gray/input/image1.jpg",
-                "timestamp": "1677592091",
-                "eventSource": "dcacheTrigger"}]}
+{"event":
+	{"name":"image2.jpg",
+	"mask":["IN_CREATE"]},
+"subscription":"https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AACvM"
+}
 """
 
 class DCacheEvent(UnknownEvent):
@@ -17,6 +18,8 @@ class DCacheEvent(UnknownEvent):
         self.provider_id = provider_id
 
     def _set_event_params(self):
-        self.object_key = self.event_records['file_path']
-        self.file_name = FileUtils.get_file_name(self.object_key)
-        self.event_time = self.event_records['timestamp']
+        self.file_name = self.event['name']
+        self.event_time = None
+    
+    def set_path(self, path):
+        self.object_key = SysUtils.join_paths(path, self.file_name)

@@ -73,9 +73,9 @@ APIGTW_EVENT_W_JSON_STRING = {'body': json.dumps(DELEGATED_MINIO_EVENT),
                               'isBase64Encoded': False,
                               'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
 
-DCACHE_EVENT = {"Records": [{"file_path": "/Users/calarcon/gray/input/image1.jpg",
-                "timestamp": "1677592091",
-                "eventSource": "dcacheTrigger"}]}
+DCACHE_EVENT = {"event": {"name":"image2.jpg",
+                        "mask":["IN_CREATE"]},
+                "subscription":"https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AAC"}
 
 class EventModuleTest(unittest.TestCase):
 
@@ -103,7 +103,7 @@ class EventModuleTest(unittest.TestCase):
         result = events._parse_storage_event(ONEDATA_EVENT)
         self.assertIsInstance(result, OnedataEvent)
     
-    def test_parse_storage_event_dcache(self):
+    def test_parse_event_dcache(self):
         #result = events._parse_storage_event(DCACHE_EVENT)
         result = events.parse_event(DCACHE_EVENT)
         self.assertIsInstance(result, DCacheEvent)
@@ -218,8 +218,7 @@ class DCacheEventTest(unittest.TestCase):
 
     def test_dcache_event_creation(self):
         event = DCacheEvent(DCACHE_EVENT)
-        self.assertEqual(event.object_key, "/Users/calarcon/gray/input/image1.jpg")
-        self.assertEqual(event.file_name, "image1.jpg")
+        self.assertEqual(event.file_name, "image2.jpg")
         self.assertEqual(event.get_type(), "DCACHE")
 
 class UnknownEventTest(unittest.TestCase):
