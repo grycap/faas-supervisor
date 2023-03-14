@@ -189,6 +189,9 @@ class StorageConfig():
 
         This methods allows to filter ONEDATA provider when multiple inputs are defined."""
         storage_type = parsed_event.get_type()
+        # Change storage type for dCache events to use WebDav
+        if storage_type == 'DCACHE':
+            storage_type = 'WEBDAV'
         if storage_type == 'ONEDATA':
             # Check input path and event object_key
             if hasattr(parsed_event, 'object_key'):
