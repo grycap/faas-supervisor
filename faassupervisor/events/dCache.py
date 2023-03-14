@@ -6,8 +6,7 @@ from faassupervisor.utils import SysUtils
 	{"name":"image2.jpg",
 	"mask":["IN_CREATE"]},
 "subscription":"https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AACvM"
-}
-"""
+}"""
 
 class DCacheEvent(UnknownEvent):
     

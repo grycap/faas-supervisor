@@ -1,7 +1,5 @@
 from faassupervisor.storage.providers import DefaultStorageProvider
-from faassupervisor.utils import SysUtils, FileUtils
 from webdav3.client import Client
-from faassupervisor.logger import get_logger
 
 class WebDav(DefaultStorageProvider):
     _TYPE = "WEBDAV"

@@ -24,7 +24,6 @@ from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.dCache import DCacheEvent
 from faassupervisor.events.apigateway import ApiGatewayEvent
-from faassupervisor.logger import get_logger
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
@@ -104,7 +103,6 @@ class EventModuleTest(unittest.TestCase):
         self.assertIsInstance(result, OnedataEvent)
     
     def test_parse_event_dcache(self):
-        #result = events._parse_storage_event(DCACHE_EVENT)
         result = events.parse_event(DCACHE_EVENT)
         self.assertIsInstance(result, DCacheEvent)
 
