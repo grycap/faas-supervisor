@@ -101,7 +101,7 @@ class EventModuleTest(unittest.TestCase):
     def test_parse_storage_event_onedata(self):
         result = events._parse_storage_event(ONEDATA_EVENT)
         self.assertIsInstance(result, OnedataEvent)
-    
+
     def test_parse_event_dcache(self):
         result = events.parse_event(DCACHE_EVENT)
         self.assertIsInstance(result, DCacheEvent)
