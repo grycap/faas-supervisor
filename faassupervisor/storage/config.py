@@ -234,7 +234,7 @@ class StorageConfig():
             provider_type = StrUtils.get_storage_type(output['storage_provider'])
             provider_id = StrUtils.get_storage_id(output['storage_provider'])
             for file_path in output_files:
-                file_name = file_path.replace(f'{output_dir_path}/', '')
+                file_name = file_path.replace(f'{output_dir_path}/', '').strip()
                 prefix_ok = False
                 suffix_ok = False
                 # Check prefixes

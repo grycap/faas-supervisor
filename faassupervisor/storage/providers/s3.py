@@ -15,7 +15,7 @@
 related with the S3 storage provider. """
 
 import boto3
-from requests.packages import urllib3
+import urllib3
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider, \
     get_bucket_name, get_file_key
