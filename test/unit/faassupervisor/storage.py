@@ -259,7 +259,8 @@ class StorageConfigTest(unittest.TestCase):
                 '/tmp/test/result-file.txt',
                 '/tmp/test/result-file.out',
                 '/tmp/test/file2.txt',
-                '/tmp/test/file2.out'
+                '/tmp/test/file2.out',
+                '/tmp/test/\n/file3.out'
             ]
             mock_get_files.return_value = files
             StorageConfig().upload_output('/tmp/test')
@@ -268,10 +269,12 @@ class StorageConfigTest(unittest.TestCase):
                              call('/tmp/test/result-file.txt',
                                   'result-file.txt',
                                   'bucket'))
-            self.assertEqual(mock_s3.call_count, 6)
-            for i, f in enumerate(files):
+            self.assertEqual(mock_s3.call_count, 7)
+            for i, f in enumerate(files[:-1]):
                 self.assertEqual(mock_s3.call_args_list[i],
                                  call(f, f.split('/')[3], 'bucket/folder'))
+            self.assertEqual(mock_s3.call_args_list[6],
+                             call('/tmp/test/\n/file3.out', 'file3.out', 'bucket/folder'))
 
 #    def test_upload_real_output(self):
 #        with mock.patch.dict('os.environ',
