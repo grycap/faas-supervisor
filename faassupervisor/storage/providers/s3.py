@@ -21,7 +21,7 @@ from faassupervisor.storage.providers import DefaultStorageProvider, \
     get_bucket_name, get_file_key
 from faassupervisor.utils import SysUtils
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class S3(DefaultStorageProvider):
     """Class that manages downloads and uploads from S3."""
