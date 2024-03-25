@@ -35,7 +35,8 @@ class UnknownEvent():
         self._set_event_params()
 
     def _set_event_params(self):
-        """ Generic method to be implemented by all the event parsers. """
+        """ Saves the event as a environment variable of the container """
+        SysUtils.set_env_var("DECODED_EVENT", self.event_records)
 
     def get_type(self):
         """Returns the event type.
