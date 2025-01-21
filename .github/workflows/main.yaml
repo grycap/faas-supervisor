@@ -63,7 +63,7 @@ jobs:
     container: ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
     - name: Build binary
       run: |
         python3.8 -m pip install -r requirements.txt
