@@ -82,7 +82,7 @@ class Supervisor():
 
     @exception()
     def _parse_output(self):
-        self.stg_config.upload_output(self.output_tmp_dir.name)
+        self.stg_config.upload_output(self.output_tmp_dir.name,self.parsed_event)
 
     @exception()
     def run(self):
