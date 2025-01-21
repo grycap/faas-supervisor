@@ -28,7 +28,7 @@ jobs:
     - name: Generate XML coverage report
       run: python -m coverage xml
     - name: Report coverage
-      uses: codacy/codacy-coverage-reporter-action@v4
+      uses: codacy/codacy-coverage-reporter-action@v2
       with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage.xml
