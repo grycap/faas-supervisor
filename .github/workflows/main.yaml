@@ -59,7 +59,7 @@ jobs:
 
   build-amd64:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     container: ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1
     steps:
     - name: Checkout
