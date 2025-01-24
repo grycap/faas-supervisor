@@ -66,6 +66,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Build binary
       run: |
+        pip install "cython<3.0.0" wheel
+        pip install "pyyaml==6.0" --no-build-isolation
         python3.12 -m pip install -r requirements.txt
         pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
