@@ -67,6 +67,7 @@ jobs:
     - name: Build binary
       run: |
         python3.12 -m pip install -r requirements.txt
+        python3.12 -m pip --no-cache-dir install pyinstaller
         pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
         pyinstaller faassupervisor/supervisor.py
         cd dist
