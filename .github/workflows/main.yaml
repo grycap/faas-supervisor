@@ -60,18 +60,21 @@ jobs:
   build-amd64:
     needs: test
     runs-on: ubuntu-24.04
-    container: ghcr.io/grycap/faas-supervisor-build:ubuntu24.10-1.1
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Build binary
       run: |
-        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
-        pyinstaller faassupervisor/supervisor.py --noconfirm
-        cd dist
-        zip -r supervisor.zip supervisor
-        rm -r supervisor
-        mv supervisor-bin supervisor
+        docker run --rm  --volume "${PWD}:/repo"  ghcr.io/grycap/faas-supervisor-build:ubuntu24.10-latest /bin/sh -c " \
+          cd /repo && \
+          python3.12 -m pip install -r requirements.txt  &&\
+          pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py && \
+          pyinstaller faassupervisor/supervisor.py && \
+          cd dist && \
+          zip -r supervisor.zip supervisor \
+          rm -r supervisor
+          mv supervisor-bin supervisor
+        "
     - name: Upload amd64 binary
       uses: actions/upload-artifact@v4
       with:
@@ -86,17 +89,19 @@ jobs:
   build-alpine-amd64:
     needs: test
     runs-on: ubuntu-20.04
-    container: ghcr.io/grycap/faas-supervisor-build:alpine-1.1
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Build binary
       run: |
-        python3.8 -m pip install -r requirements.txt
-        pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py
-        pyinstaller faassupervisor/supervisor.py
-        cd dist
-        zip -r supervisor-alpine.zip supervisor
+        docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
+          cd /repo && \
+          python3.8 -m pip install -r requirements.txt  &&\
+          pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py && \
+          pyinstaller faassupervisor/supervisor.py && \
+          cd dist && \
+          zip -r supervisor-alpine.zip supervisor \
+        "
     - name: Upload amd64 binary
       uses: actions/upload-artifact@v4
       with:
