@@ -147,6 +147,7 @@ jobs:
   build-alpine-aarch64:
     needs: test
     runs-on: ubuntu-20.04
+    container: ghcr.io/grycap/faas-supervisor-build:alpine-1.1
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -156,15 +157,11 @@ jobs:
       uses: docker/setup-buildx-action@v1
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
-          cd /repo && \
-          python3.8 -m  pip --no-cache-dir install  awslambdaric==2.0.12
-          python3.8 -m pip install -r requirements.txt && \
-          pyinstaller --onefile -n supervisor-alpine-arm64 faassupervisor/supervisor.py && \
-          pyinstaller faassupervisor/supervisor.py && \
-          cd dist && \
-          zip -r supervisor-alpine-arm64.zip supervisor \
-        "
+        python3.8 -m pip install -r requirements.txt
+        pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py
+        pyinstaller faassupervisor/supervisor.py
+        cd dist
+        zip -r supervisor-alpine.zip supervisor
     - name: Upload arm64 binary
       uses: actions/upload-artifact@v4
       with:
