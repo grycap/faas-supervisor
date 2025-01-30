@@ -158,6 +158,7 @@ jobs:
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
+          apk add --no-cache --update --repository=https://dl-cdn.alpinelinux.org/alpine/v3.12/main/ libexecinfo-dev
           python3.8 -m pip install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py && \
           pyinstaller faassupervisor/supervisor.py && \
