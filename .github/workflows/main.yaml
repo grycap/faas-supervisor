@@ -160,7 +160,7 @@ jobs:
           cd /repo && \
           echo https://dl-cdn.alpinelinux.org/alpine/v3.12/main >> /etc/apk/repositories && \
           echo https://dl-cdn.alpinelinux.org/alpine/v3.12/community >> /etc/apk/repositories && \
-          apk add autoconf=2.71-r2 automake bash binutils cmake g++ gcc libtool make nodejs && \
+          apk add autoconf=2.69-r2 automake bash binutils cmake g++ gcc libtool make nodejs && \
           apk add --no-cache --update --repository=https://dl-cdn.alpinelinux.org/alpine/v3.12/main/ libexecinfo-dev && \
           python3.8 -m pip install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py && \
