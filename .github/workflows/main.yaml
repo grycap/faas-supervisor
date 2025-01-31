@@ -158,6 +158,7 @@ jobs:
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
+          export CFLAGS="-Din_addr_t=unsigned long"
           echo https://dl-cdn.alpinelinux.org/alpine/v3.12/main >> /etc/apk/repositories && \
           apk add --no-cache --update --repository=https://dl-cdn.alpinelinux.org/alpine/v3.12/main/ libexecinfo-dev=1.1-r1  autoconf=2.69-r2  bash=5.0.17-r0  nodejs=12.22.12-r0  \
           nghttp2-libs=1.41.0-r0 binutils=2.34-r2 libcurl=7.79.1-r1 curl=7.79.1-r1   zip=3.0-r8 unzip=6.0-r9 cmake=3.17.2-r0 automake=1.16.2-r0 make=4.3-r0 curl-dev=7.79.1-r1 libtool=2.4.6-r7 \
