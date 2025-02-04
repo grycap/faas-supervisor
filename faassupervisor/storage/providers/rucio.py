@@ -19,6 +19,7 @@ import tempfile
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
 from faassupervisor.utils import SysUtils
+from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
 
@@ -62,8 +63,9 @@ class Rucio(DefaultStorageProvider):
         temp_file.write(b'oidc_scope = %s\n' % self._OIDC_SCOPE.encode())
         temp_file.close()
         os.environ['RUCIO_CONFIG'] = temp_file.name
-        self.upload_client = UploadClient()
-        self.download_client = DownloadClient()
+        self.client = Client()
+        self.upload_client = UploadClient(self.client)
+        self.download_client = DownloadClient(self.client)
 
     def download_file(self, parsed_event, input_dir_path):
         """Downloads the file from the space of Onedata and

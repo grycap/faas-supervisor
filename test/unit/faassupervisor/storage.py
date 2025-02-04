@@ -538,10 +538,10 @@ class RucioProviderTest(unittest.TestCase):
             cfg_file = f.read()
             self.assertEqual(cfg_file, expected_cfg_file)
 
-    @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
+    @mock.patch('faassupervisor.storage.providers.rucio.Client')
     @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
     @mock.patch('os.rename')
-    def test_download_file(self, mock_rename, mock_download, mock_upload):
+    def test_download_file(self, mock_rename, mock_download, mock_client):
         # Mock download client
         mock_download_client = mock.Mock(["download_dids"])
         mock_download.return_value = mock_download_client
@@ -557,8 +557,8 @@ class RucioProviderTest(unittest.TestCase):
         mock_rename.assert_called_once_with('test_account/rucio_file_key', '/tmp/input/rucio_file')
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
-    @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
-    def test_upload_file(self, mock_download, mock_upload):
+    @mock.patch('faassupervisor.storage.providers.rucio.Client')
+    def test_upload_file(self, mock_client, mock_upload):
         # Mock upload client
         mock_upload_client = mock.Mock(["upload"])
         mock_upload.return_value = mock_upload_client
