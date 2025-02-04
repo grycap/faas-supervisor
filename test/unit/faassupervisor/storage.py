@@ -13,11 +13,6 @@
 # limitations under the License.
 """Unit tests for the faassupervisor.storage module and classes."""
 
-import sys
-sys.path.append('.')
-sys.path.append('..')
-sys.path.append('../..')
-
 import unittest
 from unittest import mock
 from unittest.mock import call
@@ -525,7 +520,8 @@ class RucioProviderTest(unittest.TestCase):
         'token': 'test_token'
     }
 
-    def test_create_rucio_provider(self):
+    @mock.patch('rucio.client.Client')
+    def test_create_rucio_provider(self, mock_rucio):
         rucio_auth = AuthData('RUCIO', self.RUCIO_CREDS)
         provider = create_provider(rucio_auth)
         self.assertEqual(provider.get_type(), 'RUCIO')
@@ -542,27 +538,33 @@ class RucioProviderTest(unittest.TestCase):
             cfg_file = f.read()
             self.assertEqual(cfg_file, expected_cfg_file)
 
-    @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient.download_dids')
+    @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
+    @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
     @mock.patch('os.rename')
-    def test_download_file(self, mock_rename, mock_download_dids):
-        rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
+    def test_download_file(self, mock_rename, mock_download, mock_upload):
         # Mock download client
-        mock_download_dids.return_value = {}
+        mock_download_client = mock.Mock(["download_dids"])
+        mock_download.return_value = mock_download_client
+        mock_download_client.download_dids.return_value = {}
+        rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
         # Create mock event
         event = mock.Mock()
         type(event).file_name = mock.PropertyMock(return_value='rucio_file')
         type(event).object_key = mock.PropertyMock(return_value='rucio_file_key')
 
         rucio_provider.download_file(event, '/tmp/input')
-        mock_download_dids.assert_called_once_with([{'did': 'test_account:rucio_file_key'}])
+        mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account:rucio_file_key'}])
         mock_rename.assert_called_once_with('test_account/rucio_file_key', '/tmp/input/rucio_file')
 
-    @mock.patch('faassupervisor.storage.providers.rucio.UploadClient.upload')
-    def test_upload_file(self, mock_upload):
-        rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
+    @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
+    @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
+    def test_upload_file(self, mock_download, mock_upload):
         # Mock upload client
-        mock_upload.return_value = {}
+        mock_upload_client = mock.Mock(["upload"])
+        mock_upload.return_value = mock_upload_client
+        mock_upload_client.upload.return_value = {}
+        rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
         rucio_provider.upload_file('/tmp/output/rucio_file', 'rucio_file', '')
-        mock_upload.assert_called_once_with([{'path': '/tmp/output/rucio_file',
-                                                     'did_scope': 'test_account',
-                                                     'did_name': 'rucio_file'}])
+        mock_upload_client.upload.assert_called_once_with([{'path': '/tmp/output/rucio_file',
+                                                            'did_scope': 'test_account',
+                                                            'did_name': 'rucio_file'}])
