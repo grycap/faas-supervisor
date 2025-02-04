@@ -21,6 +21,7 @@ from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
 from faassupervisor.storage.providers.s3 import S3
+from faassupervisor.storage.providers.rucio import Rucio
 from faassupervisor.logger import get_logger
 
 
@@ -39,6 +40,8 @@ def create_provider(storage_auth):
         provider = S3(storage_auth)
     elif storage_auth.type == 'WEBDAV':
         provider = WebDav(storage_auth)
+    elif storage_auth.type == 'RUCIO':
+        provider = Rucio(storage_auth)
     else:
         raise InvalidStorageProviderError(storage_type=storage_auth.type)
     return provider
@@ -65,6 +68,7 @@ class StorageConfig():
         self.minio_auth = {}
         self.onedata_auth = {}
         self.webdav_auth = {}
+        self.rucio_auth = {}
         self.input = []
         self.output = []
         self._parse_config()
@@ -103,6 +107,10 @@ class StorageConfig():
             if ('webdav' in storage_providers
                     and storage_providers['webdav']):
                 self._validate_webdav_creds(storage_providers['webdav'])
+            # webdav storage providers auth
+            if ('rucio' in storage_providers
+                    and storage_providers['rucio']):
+                self._validate_rucio_creds(storage_providers['rucio'])
         else:
             get_logger().warning('There is no storage provider defined for this function.')
 
@@ -172,6 +180,30 @@ class StorageConfig():
         else:
             raise StorageAuthError(auth_type='WEBDAV')
 
+    def _validate_rucio_creds(self, rucio_creds):
+        if isinstance(rucio_creds, dict):
+            for provider_id in rucio_creds:
+                if ('host' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['host'] is not None
+                        and rucio_creds[provider_id]['host'] != ''
+                        and 'rse' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['rse'] is not None
+                        and rucio_creds[provider_id]['rse'] != ''
+                        and 'token' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['token'] is not None
+                        and rucio_creds[provider_id]['token'] != ''
+                        and 'account' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['account'] is not None
+                        and rucio_creds[provider_id]['account'] != ''
+                        and 'auth_host' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['auth_host'] is not None
+                        and rucio_creds[provider_id]['auth_host'] != ''):
+                    self.rucio_auth[provider_id] = AuthData('RUCIO', rucio_creds[provider_id])
+                else:
+                    raise StorageAuthError(auth_type='RUCIO')
+        else:
+            raise StorageAuthError(auth_type='RUCIO')
+
     def _get_auth_data(self, storage_type, provider_id='default'):
         """Returns the authentication credentials by its type and id."""
         if storage_type == 'S3':
@@ -182,6 +214,8 @@ class StorageConfig():
             return self.onedata_auth.get(provider_id, None)
         elif storage_type == 'WEBDAV':
             return self.webdav_auth.get(provider_id, None)
+        elif storage_type == 'RUCIO':
+            return self.rucio_auth.get(provider_id, None)
         return None
 
     def _get_input_auth_data(self, parsed_event):
