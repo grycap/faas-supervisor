@@ -553,11 +553,12 @@ class RucioProviderTest(unittest.TestCase):
         event = mock.Mock()
         type(event).file_name = mock.PropertyMock(return_value='rucio_file')
         type(event).object_key = mock.PropertyMock(return_value='folder/rucio_file_key')
+        type(event).scope = mock.PropertyMock(return_value='test_account2')
 
         download_file = rucio_provider.download_file(event, '/tmp/input')
         self.assertEqual(download_file, '/tmp/input/rucio_file')
-        mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account:folder__rucio_file_key'}])
-        mock_rename.assert_called_once_with('test_account/folder__rucio_file_key', '/tmp/input/rucio_file')
+        mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account2:folder__rucio_file_key'}])
+        mock_rename.assert_called_once_with('test_account2/folder__rucio_file_key', '/tmp/input/rucio_file')
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')

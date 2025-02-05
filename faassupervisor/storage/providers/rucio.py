@@ -77,12 +77,12 @@ class Rucio(DefaultStorageProvider):
                           self.rucio_host,
                           parsed_event.object_key)
         did_name = parsed_event.object_key.replace('/', self._FOLDER_SEPARATOR)
-        file = {'did': '%s:%s' % (self.scope, did_name)}
+        file = {'did': '%s:%s' % (parsed_event.scope, did_name)}
 
         download = self.download_client.download_dids([file])
         get_logger().debug('Downloaded file info: %s', download)
         file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
-        os.rename(SysUtils.join_paths(self.scope, did_name), file_download_path)
+        os.rename(SysUtils.join_paths(parsed_event.scope, did_name), file_download_path)
         return file_download_path
 
     def upload_file(self, file_path, file_name, output_path):
