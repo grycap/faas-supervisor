@@ -234,9 +234,12 @@ class StorageConfig():
             provider_type = StrUtils.get_storage_type(output['storage_provider'])
             provider_id = StrUtils.get_storage_id(output['storage_provider'])
             #Change the output to a private bucket
-            if provider_type == 'MINIO' and ConfigUtils.read_cfg_var('isolation_level') == 'USER' and  \
-            parsed_event != None and  parsed_event.bucket_name in ConfigUtils.read_cfg_var('bucket_list'):
-                output['path']=parsed_event.bucket_name+"/out"
+            try:
+                if provider_type == 'MINIO' and ConfigUtils.read_cfg_var('isolation_level') == 'USER' and  \
+                parsed_event != None and  parsed_event.bucket_name in ConfigUtils.read_cfg_var('bucket_list'):
+                    output['path']=parsed_event.bucket_name+"/out"
+            except:
+                pass
             for file_path in output_files:
                 # Make sure the file name does not contain new lines or starting slashes
                 file_name = file_path.replace(f'{output_dir_path}/', '').strip().lstrip('/')
