@@ -24,6 +24,7 @@ from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.dCache import DCacheEvent
 from faassupervisor.events.apigateway import ApiGatewayEvent
+from faassupervisor.events.rucio import RucioEvent
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
@@ -37,8 +38,7 @@ MINIO_EVENT = {"Key": "images/nature-wallpaper-229.jpg",
                             "eventTime": "2018-06-29T10:23:44Z"}]}
 
 DELEGATED_MINIO_EVENT = {"storage_provider": "minio.cluster2",
-                         "event": json.dumps(MINIO_EVENT)
-                        }
+                         "event": json.dumps(MINIO_EVENT)}
 
 ONEDATA_EVENT = {"Key": "/my-onedata-space/files/file.txt",
                  "Records": [{"objectKey": "file.txt",
@@ -72,9 +72,13 @@ APIGTW_EVENT_W_JSON_STRING = {'body': json.dumps(DELEGATED_MINIO_EVENT),
                               'isBase64Encoded': False,
                               'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
 
-DCACHE_EVENT = {"event": {"name":"image2.jpg",
-                        "mask":["IN_CREATE"]},
-                "subscription":"https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AAC"}
+DCACHE_EVENT = {"event": {"name": "image2.jpg",
+                          "mask": ["IN_CREATE"]},
+                "subscription": "https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AAC"}
+
+RUCIO_EVENT = {"event": {"name": "image2.jpg",
+                         "scope": "user.jdoe"}}
+
 
 class EventModuleTest(unittest.TestCase):
 
@@ -129,6 +133,10 @@ class EventModuleTest(unittest.TestCase):
     def test_parse_event_storage(self):
         result = events.parse_event(S3_EVENT)
         self.assertIsInstance(result, S3Event)
+
+    def test_parse_event_rucio(self):
+        result = events.parse_event(RUCIO_EVENT)
+        self.assertIsInstance(result, RucioEvent)
 
 
 class ApiGatewayEventTest(unittest.TestCase):
