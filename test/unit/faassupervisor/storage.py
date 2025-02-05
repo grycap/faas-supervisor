@@ -23,12 +23,15 @@ from faassupervisor.storage.providers.local import Local
 from faassupervisor.storage.providers.minio import Minio
 from faassupervisor.storage.providers.onedata import Onedata
 from faassupervisor.storage.providers.s3 import S3
+from faassupervisor.storage.providers.rucio import Rucio
 from faassupervisor.events import parse_event
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.utils import StrUtils
+from rucio.common.exception import DataIdentifierNotFound
+
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
@@ -115,6 +118,7 @@ ONEDATA_EVENT = """
     ]
 }
 """
+
 
 class AuthDataTest(unittest.TestCase):
 
@@ -507,3 +511,63 @@ class S3ProviderTest(unittest.TestCase):
                              call().upload_fileobj(mopen.return_value,
                                                    's3_bucket',
                                                    's3_folder/processed.jpg'))
+
+
+class RucioProviderTest(unittest.TestCase):
+
+    RUCIO_CREDS = {
+        'host': 'https://test_rucio.host',
+        'auth_host': 'https://test_auth.host',
+        'account': 'test_account',
+        'token': 'test_token'
+    }
+
+    @mock.patch('rucio.client.Client')
+    def test_create_rucio_provider(self, mock_rucio):
+        rucio_auth = AuthData('RUCIO', self.RUCIO_CREDS)
+        provider = create_provider(rucio_auth)
+        self.assertEqual(provider.get_type(), 'RUCIO')
+        self.assertEqual(provider.stg_auth.creds, self.RUCIO_CREDS)
+        expected_cfg_file = "[client]\n"
+        expected_cfg_file += "rucio_host = https://test_rucio.host\n"
+        expected_cfg_file += "auth_host = https://test_auth.host\n"
+        expected_cfg_file += "ca_cert = %s\n" % provider._CA_CERT
+        expected_cfg_file += "auth_type = oidc\n"
+        expected_cfg_file += "account = test_account\n"
+        expected_cfg_file += "auth_token_file_path = %s\n" % provider.tmp_files[0]
+        expected_cfg_file += "oidc_scope = %s\n" % provider._OIDC_SCOPE
+        with open(provider.tmp_files[1], 'r') as f:
+            cfg_file = f.read()
+            self.assertEqual(cfg_file, expected_cfg_file)
+
+    @mock.patch('faassupervisor.storage.providers.rucio.Client')
+    @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
+    @mock.patch('os.rename')
+    def test_download_file(self, mock_rename, mock_download, mock_client):
+        # Mock download client
+        mock_download_client = mock.Mock(["download_dids"])
+        mock_download.return_value = mock_download_client
+        mock_download_client.download_dids.return_value = {}
+        rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
+        # Create mock event
+        event = mock.Mock()
+        type(event).file_name = mock.PropertyMock(return_value='rucio_file')
+        type(event).object_key = mock.PropertyMock(return_value='folder/rucio_file_key')
+
+        download_file = rucio_provider.download_file(event, '/tmp/input')
+        self.assertEqual(download_file, '/tmp/input/rucio_file')
+        mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account:folder__rucio_file_key'}])
+        mock_rename.assert_called_once_with('test_account/folder__rucio_file_key', '/tmp/input/rucio_file')
+
+    @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
+    @mock.patch('faassupervisor.storage.providers.rucio.Client')
+    def test_upload_file(self, mock_client, mock_upload):
+        # Mock upload client
+        mock_upload_client = mock.Mock(["upload"])
+        mock_upload.return_value = mock_upload_client
+        mock_upload_client.upload.return_value = {}
+        rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
+        rucio_provider.upload_file('/tmp/output/rucio_file', 'rucio_file', 'test_folder')
+        mock_upload_client.upload.assert_called_once_with([{'path': '/tmp/output/rucio_file',
+                                                            'did_scope': 'test_account',
+                                                            'did_name': 'test_folder__rucio_file'}])

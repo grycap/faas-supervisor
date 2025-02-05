@@ -53,5 +53,5 @@ class DefaultStorageProvider(metaclass=abc.ABCMeta):
 
     def get_type(self):
         """Returns the storage type.
-        Can be LOCAL, MINIO, ONEDATA, S3, WEBDAV."""
+        Can be LOCAL, MINIO, ONEDATA, S3, WEBDAV, RUCIO."""
         return self._TYPE

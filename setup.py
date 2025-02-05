@@ -37,7 +37,8 @@ setup(name='faas-supervisor',
           'requests',
           'boto3',
           'setuptools >= 40.8.0',
-          'pyyaml'
+          'pyyaml',
+          'rucio-clients >= 1.31.7',
       ],
       classifiers=[
           'Programming Language :: Python :: 3',
