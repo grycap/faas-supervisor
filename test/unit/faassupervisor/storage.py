@@ -30,6 +30,8 @@ from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.utils import StrUtils
+from rucio.common.exception import DataIdentifierNotFound
+
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
@@ -550,11 +552,11 @@ class RucioProviderTest(unittest.TestCase):
         # Create mock event
         event = mock.Mock()
         type(event).file_name = mock.PropertyMock(return_value='rucio_file')
-        type(event).object_key = mock.PropertyMock(return_value='rucio_file_key')
+        type(event).object_key = mock.PropertyMock(return_value='folder/rucio_file_key')
 
         rucio_provider.download_file(event, '/tmp/input')
-        mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account:rucio_file_key'}])
-        mock_rename.assert_called_once_with('test_account/rucio_file_key', '/tmp/input/rucio_file')
+        mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account:folder__rucio_file_key'}])
+        mock_rename.assert_called_once_with('test_account/folder__rucio_file_key', '/tmp/input/rucio_file')
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
@@ -564,7 +566,7 @@ class RucioProviderTest(unittest.TestCase):
         mock_upload.return_value = mock_upload_client
         mock_upload_client.upload.return_value = {}
         rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
-        rucio_provider.upload_file('/tmp/output/rucio_file', 'rucio_file', '')
+        rucio_provider.upload_file('/tmp/output/rucio_file', 'rucio_file', 'test_folder')
         mock_upload_client.upload.assert_called_once_with([{'path': '/tmp/output/rucio_file',
                                                             'did_scope': 'test_account',
-                                                            'did_name': 'rucio_file'}])
+                                                            'did_name': 'test_folder__rucio_file'}])

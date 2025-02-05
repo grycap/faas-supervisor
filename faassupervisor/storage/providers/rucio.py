@@ -22,6 +22,8 @@ from faassupervisor.utils import SysUtils
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
+from rucio.common.exception import DataIdentifierAlreadyExists
+from faassupervisor.exceptions import RucioDataIdentifierAlreadyExists
 
 
 class Rucio(DefaultStorageProvider):
@@ -30,6 +32,7 @@ class Rucio(DefaultStorageProvider):
     _TYPE = 'RUCIO'
     _OIDC_SCOPE = 'openid profile offline_access eduperson_entitlement'
     _CA_CERT = '/etc/ssl/certs/ca-certificates.crt'
+    _FOLDER_SEPARATOR = '__'
 
     def __init__(self, stg_auth):
         super().__init__(stg_auth)
@@ -73,21 +76,24 @@ class Rucio(DefaultStorageProvider):
         get_logger().info("Downloading item from host '%s' with key '%s'",
                           self.rucio_host,
                           parsed_event.object_key)
-        file = {'did': '%s:%s' % (self.scope, parsed_event.object_key)}
+        did_name = parsed_event.object_key.replace('/', self._FOLDER_SEPARATOR)
+        file = {'did': '%s:%s' % (self.scope, did_name)}
 
         download = self.download_client.download_dids([file])
         get_logger().debug('Downloaded file info: %s', download)
-        os.rename(SysUtils.join_paths(self.scope, parsed_event.object_key),
+        os.rename(SysUtils.join_paths(self.scope, did_name),
                   SysUtils.join_paths(input_dir_path, parsed_event.file_name))
 
     def upload_file(self, file_path, file_name, output_path):
         """Uploads the file to the Onedata output path."""
         file_name = file_name.strip('/')
+        upload_path = f'{output_path}/{file_name}'
 
         file = {
             'path': file_path,
             'did_scope': self.scope,
-            'did_name': file_name
+            # For some reason, the did_name cannot contain slashes
+            'did_name': upload_path.replace('/', self._FOLDER_SEPARATOR)
         }
         if self.rse:
             file['rse'] = self.rse
@@ -95,5 +101,9 @@ class Rucio(DefaultStorageProvider):
         get_logger().info("Uploading file '%s' to host '%s'",
                           file_path,
                           self.rucio_host)
-        upload = self.upload_client.upload([file])
+        try:
+            upload = self.upload_client.upload([file])
+        except DataIdentifierAlreadyExists:
+            raise RucioDataIdentifierAlreadyExists(scope=self.scope, file_name=file_name)
+
         get_logger().debug('Uploaded file info: %s', upload)
