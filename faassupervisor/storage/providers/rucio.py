@@ -22,7 +22,7 @@ from faassupervisor.utils import SysUtils
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
-from rucio.common.exception import DataIdentifierAlreadyExists
+from rucio.common.exception import DataIdentifierAlreadyExists, NoFilesUploaded
 from faassupervisor.exceptions import RucioDataIdentifierAlreadyExists
 
 
@@ -105,7 +105,8 @@ class Rucio(DefaultStorageProvider):
                           self.rucio_host)
         try:
             upload = self.upload_client.upload([file])
+            get_logger().debug('Uploaded file info: %s', upload)
         except DataIdentifierAlreadyExists:
             raise RucioDataIdentifierAlreadyExists(scope=self.scope, file_name=file_name)
-
-        get_logger().debug('Uploaded file info: %s', upload)
+        except NoFilesUploaded:
+            get_logger().info('File %s not uploaded. It already exists. Ignore.' % file_path)
