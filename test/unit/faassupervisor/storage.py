@@ -554,7 +554,8 @@ class RucioProviderTest(unittest.TestCase):
         type(event).file_name = mock.PropertyMock(return_value='rucio_file')
         type(event).object_key = mock.PropertyMock(return_value='folder/rucio_file_key')
 
-        rucio_provider.download_file(event, '/tmp/input')
+        download_file = rucio_provider.download_file(event, '/tmp/input')
+        self.assertEqual(download_file, '/tmp/input/rucio_file')
         mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account:folder__rucio_file_key'}])
         mock_rename.assert_called_once_with('test_account/folder__rucio_file_key', '/tmp/input/rucio_file')
 

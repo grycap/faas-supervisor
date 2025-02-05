@@ -71,7 +71,7 @@ class Rucio(DefaultStorageProvider):
         self.download_client = DownloadClient(self.client)
 
     def download_file(self, parsed_event, input_dir_path):
-        """Downloads the file from the space of Onedata and
+        """Downloads the file from Rucio and
         returns the path were the download is placed. """
         get_logger().info("Downloading item from host '%s' with key '%s'",
                           self.rucio_host,
@@ -81,11 +81,13 @@ class Rucio(DefaultStorageProvider):
 
         download = self.download_client.download_dids([file])
         get_logger().debug('Downloaded file info: %s', download)
-        os.rename(SysUtils.join_paths(self.scope, did_name),
-                  SysUtils.join_paths(input_dir_path, parsed_event.file_name))
+        file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
+        os.rename(SysUtils.join_paths(self.scope, did_name), file_download_path)
+        return file_download_path
 
     def upload_file(self, file_path, file_name, output_path):
-        """Uploads the file to the Onedata output path."""
+        """Uploads the file to the Rucio output path.
+        It fakes the folder structure by using a separator in the file name."""
         file_name = file_name.strip('/')
         upload_path = f'{output_path}/{file_name}'
 
