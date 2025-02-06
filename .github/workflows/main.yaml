@@ -96,11 +96,9 @@ jobs:
       uses: actions/checkout@v4
     - name: Build binary
       run: |
-        docker run --rm  --volume "${PWD}:/repo" alpine:3.16 /bin/sh -c " \
+        docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.2 /bin/sh -c " \
           cd /repo && \
-          apk add --no-cache python3 py3-pip autoconf libcurl curl zip unzip cmake make automake curl-dev libtool autoconf gcc g++ libexecinfo-dev &&\
           pip install -r requirements.txt &&\
-          pip install pyinstaller &&\
           pyinstaller --hiddenimport dogpile.cache.backends.memory --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
           pyinstaller --hiddenimport dogpile.cache.backends.memory faassupervisor/supervisor.py &&\
           cd dist &&\
@@ -162,11 +160,9 @@ jobs:
       uses: docker/setup-buildx-action@v3
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm  --volume "${PWD}:/repo" alpine:3.16 /bin/sh -c " \
+        docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.2 /bin/sh -c " \
           cd /repo && \
-          apk add --no-cache python3 py3-pip autoconf libcurl curl zip unzip cmake make automake curl-dev libtool autoconf gcc g++ libexecinfo-dev &&\
           pip install -r requirements.txt &&\
-          pip install pyinstaller &&\
           pyinstaller --hiddenimport dogpile.cache.backends.memory --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
           pyinstaller --hiddenimport dogpile.cache.backends.memory faassupervisor/supervisor.py &&\
           cd dist &&\
