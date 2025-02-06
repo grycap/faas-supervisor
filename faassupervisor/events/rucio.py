@@ -18,7 +18,7 @@
 """
 
 from faassupervisor.events.unknown import UnknownEvent
-from faassupervisor.utils import SysUtils
+from faassupervisor.utils import FileUtils
 
 
 class RucioEvent(UnknownEvent):
@@ -31,9 +31,7 @@ class RucioEvent(UnknownEvent):
         self.provider_id = provider_id
 
     def _set_event_params(self):
-        self.file_name = self.event['name']
+        self.object_key = self.event['name']
+        self.file_name = FileUtils.get_file_name(self.object_key)
         self.scope = self.event['scope']
         self.event_time = None
-
-    def set_path(self, path):
-        self.object_key = SysUtils.join_paths(path, self.file_name)
