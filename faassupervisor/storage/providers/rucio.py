@@ -18,6 +18,8 @@ import os
 import tempfile
 
 # Import classes to force pyinstaller to add them to the package
+os.environ['RUCIO_CONFIG'] = '/dev/null'
+os.environ['RUCIO_CLIENT_MODE'] = '1'
 from rucio.rse.protocols import posix, webdav, storm, ssh, rclone, xrootd
 import dogpile.cache.backends.memory
 
