@@ -92,7 +92,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     container:
-      image: python-3.12-alpine
+      image: python:3.12-alpine
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -152,7 +152,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     container:
-      image: 3.9.16-alpine3.16
+      image: python:3.9.16-alpine3.16
     steps:
     - name: Checkout
       uses: actions/checkout@v4
