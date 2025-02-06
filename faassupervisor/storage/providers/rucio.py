@@ -18,8 +18,8 @@ import os
 import tempfile
 
 # Import classes to force pyinstaller to add them to the package
-from rucio.rse.protocols import posix, webdav, storm, ssh, rclone, xrootd
-import dogpile.cache.backends.memory
+from rucio.rse.protocols import posix, webdav, storm, ssh, rclone, xrootd # noqa
+import dogpile.cache.backends.memory # noqa
 
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
