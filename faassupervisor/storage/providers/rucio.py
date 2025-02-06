@@ -16,6 +16,11 @@ related with the Rucio storage provider. """
 
 import os
 import tempfile
+
+# Import classes to force pyinstaller to add them to the package
+from rucio.rse.protocols import posix, webdav, storm, ssh, rclone, xrootd
+import dogpile.cache.backends.memory
+
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
 from faassupervisor.utils import SysUtils
