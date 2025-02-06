@@ -531,7 +531,6 @@ class RucioProviderTest(unittest.TestCase):
         expected_cfg_file = "[client]\n"
         expected_cfg_file += "rucio_host = https://test_rucio.host\n"
         expected_cfg_file += "auth_host = https://test_auth.host\n"
-        expected_cfg_file += "ca_cert = %s\n" % provider._CA_CERT
         expected_cfg_file += "auth_type = oidc\n"
         expected_cfg_file += "account = test_account\n"
         expected_cfg_file += "auth_token_file_path = %s\n" % provider.tmp_files[0]
