@@ -31,7 +31,6 @@ class Rucio(DefaultStorageProvider):
 
     _TYPE = 'RUCIO'
     _OIDC_SCOPE = 'openid profile offline_access eduperson_entitlement'
-    _CA_CERT = '/etc/ssl/certs/ca-certificates.crt'
     _FOLDER_SEPARATOR = '__'
 
     def __init__(self, stg_auth):
@@ -59,7 +58,6 @@ class Rucio(DefaultStorageProvider):
         temp_file.write(b'[client]\n')
         temp_file.write(b'rucio_host = %s\n' % self.stg_auth.get_credential('host').encode())
         temp_file.write(b'auth_host = %s\n' % self.stg_auth.get_credential('auth_host').encode())
-        temp_file.write(b'ca_cert = %s\n' % self._CA_CERT.encode())
         temp_file.write(b'auth_type = oidc\n')
         temp_file.write(b'account = %s\n' % self.stg_auth.get_credential('account').encode())
         temp_file.write(b'auth_token_file_path = %s\n' % token_temp_file.name.encode())
