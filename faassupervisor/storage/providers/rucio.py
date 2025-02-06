@@ -71,6 +71,8 @@ class Rucio(DefaultStorageProvider):
         temp_file.write(b'oidc_scope = %s\n' % self._OIDC_SCOPE.encode())
         temp_file.close()
         os.environ['RUCIO_CONFIG'] = temp_file.name
+        if 'RUCIO_CLIENT_MODE' in os.environ:
+            del os.environ['RUCIO_CLIENT_MODE']
         self.client = Client()
         self.upload_client = UploadClient(self.client)
         self.download_client = DownloadClient(self.client)
