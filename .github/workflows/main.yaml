@@ -158,7 +158,8 @@ jobs:
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
-          pip3 install -r requirements.txt &&\
+          # do not install it as awslambdaric does not compile correctly
+          # pip3 install -r requirements.txt &&\
           pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
           pyinstaller faassupervisor/supervisor.py &&\
           cd dist &&\
