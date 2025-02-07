@@ -23,7 +23,7 @@ try:
     from rucio.rse.protocols import bittorrent, cache, dummy, globus, gsiftp, http_cache, mock, ngarc, posix, protocol, rclone, rfio, srm, ssh, storm, webdav, xrootd # noqa pylint: disable=unused-import
     # from rucio.rse.protocols import gfal  # noqa pylint: disable=unused-import
     # import gfal2  # noqa pylint: disable=unused-import
-except Exception:  # noqa pylint: disable=broad-except
+except Exception:  # nosec pylint: disable=broad-except
     pass
 
 
