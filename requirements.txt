@@ -1,6 +1,6 @@
 boto3==1.20.38
 webdavclient3==3.14.6
-requests==2.27.1
+requests==2.32.3
 setuptools>=40.8.0
 wheel==0.37.1
 pyyaml==6.0.1

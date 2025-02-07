@@ -16,14 +16,19 @@ related with the Rucio storage provider. """
 
 import os
 import tempfile
-from faassupervisor.logger import get_logger
-from faassupervisor.storage.providers import DefaultStorageProvider
-from faassupervisor.utils import SysUtils
+
+# Import classes to force pyinstaller to add them to the package
+from rucio.rse.protocols import posix, webdav, storm, ssh, rclone, xrootd # noqa pylint: disable=unused-import
+import dogpile.cache.backends.memory # noqa pylint: disable=unused-import
+
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
 from rucio.common.exception import DataIdentifierAlreadyExists, NoFilesUploaded
 from faassupervisor.exceptions import RucioDataIdentifierAlreadyExists
+from faassupervisor.logger import get_logger
+from faassupervisor.storage.providers import DefaultStorageProvider
+from faassupervisor.utils import SysUtils
 
 
 class Rucio(DefaultStorageProvider):
