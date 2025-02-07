@@ -160,7 +160,7 @@ jobs:
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
-          pip install -r requirements.txt &&\
+          # pip install -r requirements.txt &&\
           pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
           pyinstaller faassupervisor/supervisor.py &&\
           cd dist &&\
