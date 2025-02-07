@@ -20,8 +20,10 @@ import tempfile
 # Import classes to force pyinstaller to add them to the package
 try:
     import dogpile.cache.backends.memory # noqa pylint: disable=unused-import
-    from rucio.rse.protocols import bittorrent, cache, dummy, gfal, globus, gsiftp, http_cache, mock, ngarc, posix, protocol, rclone, rfio, srm, ssh, storm, webdav, xrootd # noqa pylint: disable=unused-import
-except Exception:  # pylint: disable=broad-except
+    from rucio.rse.protocols import bittorrent, cache, dummy, globus, gsiftp, http_cache, mock, ngarc, posix, protocol, rclone, rfio, srm, ssh, storm, webdav, xrootd # noqa pylint: disable=unused-import
+    # from rucio.rse.protocols import gfal  # noqa pylint: disable=unused-import
+    # import gfal2  # noqa pylint: disable=unused-import
+except Exception:  # noqa pylint: disable=broad-except
     pass
 
 
