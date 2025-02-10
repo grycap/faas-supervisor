@@ -2,7 +2,7 @@ name: Test, build and deploy
 
 on:
   push:
-   branches: ["**"]
+    branches: ["**"]
   pull_request:
     branches: ["**"]
   release:
@@ -10,14 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.8.9
+        python-version: "3.8"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -30,25 +30,25 @@ jobs:
     - name: Report coverage
       uses: codacy/codacy-coverage-reporter-action@v1
       with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.xml
 
   pypi:
     needs: test
     if: github.event_name == 'release'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.8.9
+        python-version: "3.8"
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install setuptools wheel twine
-        python -m pip install -r requirements.txt
+        pip install --upgrade pip
+        pip install setuptools wheel twine
+        pip install -r requirements.txt
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USER }}
@@ -59,19 +59,19 @@ jobs:
 
   build-amd64:
     needs: test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Check out the codebase.
+      uses: actions/checkout@v4
     - name: Build binary
       run: |
-        docker run --rm  --volume "${PWD}:/repo"  ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1 /bin/sh -c " \
+        docker run --rm --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1 /bin/sh -c " \
           cd /repo && \
-          python3.8 -m pip install -r requirements.txt  &&\
-          pyinstaller --hiddenimport dogpile.cache.backends.memory --onefile -n supervisor-bin faassupervisor/supervisor.py && \
-          pyinstaller --hiddenimport dogpile.cache.backends.memory faassupervisor/supervisor.py && \
-          cd dist && \
-          zip -r supervisor.zip supervisor \
+          pip3.8 install -r requirements.txt
+          pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
+          pyinstaller faassupervisor/supervisor.py
+          cd dist
+          zip -r supervisor.zip supervisor
           rm -r supervisor
           mv supervisor-bin supervisor
         "
@@ -88,7 +88,7 @@ jobs:
 
   build-alpine-amd64:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -96,11 +96,11 @@ jobs:
       run: |
         docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
-          python3.8 -m pip install -r requirements.txt  &&\
-          pyinstaller --hiddenimport dogpile.cache.backends.memory --onefile -n supervisor-alpine faassupervisor/supervisor.py && \
-          pyinstaller --hiddenimport dogpile.cache.backends.memory faassupervisor/supervisor.py && \
-          cd dist && \
-          zip -r supervisor-alpine.zip supervisor \
+          pip install -r requirements.txt &&\
+          pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
+          pyinstaller faassupervisor/supervisor.py &&\
+          cd dist &&\
+          zip -r supervisor-alpine.zip supervisor
         "
     - name: Upload amd64 binary
       uses: actions/upload-artifact@v4
@@ -115,21 +115,21 @@ jobs:
 
   build-aarch64:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v3
     - name: Build binary on emulated aarch64
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1 /bin/sh -c " \
           cd /repo && \
-          python3.8 -m pip install -r requirements.txt && \
-          pyinstaller --hiddenimport dogpile.cache.backends.memory --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
-          pyinstaller --hiddenimport dogpile.cache.backends.memory faassupervisor/supervisor.py && \
+          pip3.8 install -r requirements.txt && \
+          pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
+          pyinstaller faassupervisor/supervisor.py && \
           cd dist && \
           zip -r supervisor-arm64.zip supervisor \
         "
@@ -146,28 +146,22 @@ jobs:
 
   build-alpine-aarch64:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v3
     - name: Build binary on emulated aarch64
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
-          export CFLAGS="-Din_addr_t=unsigned long"
-          echo https://dl-cdn.alpinelinux.org/alpine/v3.12/main >> /etc/apk/repositories && \
-          apk add --no-cache --update --repository=https://dl-cdn.alpinelinux.org/alpine/v3.12/main/ libexecinfo-dev=1.1-r1  autoconf=2.69-r2  bash=5.0.17-r0  nodejs=12.22.12-r0  \
-          nghttp2-libs=1.41.0-r0 binutils=2.34-r2 libcurl=7.79.1-r1 curl=7.79.1-r1   zip=3.0-r8 unzip=6.0-r9 cmake=3.17.2-r0 automake=1.16.2-r0 make=4.3-r0 curl-dev=7.79.1-r1 libtool=2.4.6-r7 \
-          autoconf=2.69-r2 libressl-dev=3.1.2-r0 gcc=9.3.0-r2 g++=9.3.0-r2 zlib-dev=1.2.12-r3 build-base=0.5-r2 musl-dev=1.1.24-r10 py3-pip python3=3.8.10-r0 python3-dev=3.8.10-r0 libxml2-dev=2.9.14-r0 libxslt-dev=1.1.35-r0 && \
-          python3.8 -m pip install -r requirements.txt && \
-          pyinstaller --hiddenimport dogpile.cache.backends.memory --onefile -n supervisor-alpine faassupervisor/supervisor.py && \
-          pyinstaller --hiddenimport dogpile.cache.backends.memory faassupervisor/supervisor.py && \
-          cd dist && \
-          zip -r supervisor-alpine.zip supervisor \
+          pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
+          pyinstaller faassupervisor/supervisor.py &&\
+          cd dist &&\
+          zip -r supervisor-alpine.zip supervisor
         "
     - name: Upload arm64 binary
       uses: actions/upload-artifact@v4
@@ -187,7 +181,7 @@ jobs:
     - build-alpine-amd64
     - build-alpine-aarch64
     if: github.event_name == 'release'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Download jobs' artifacts
       uses: actions/download-artifact@v4
@@ -214,46 +208,44 @@ jobs:
       REGISTRY: ghcr.io
       IMAGE_NAME: grycap/faas-supervisor-kit
     name: Push Docker image to Docker Hub
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
       attestations: write
       id-token: write
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
+    - name: Check out the repo
+      uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v4
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+    - name: Build and push Docker image
+      id: push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./extra/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          FAAS_VERSION=${{ steps.meta.outputs.version }}
 
-      - name: Build and push Docker image
-        id: push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./extra/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            FAAS_VERSION=${{ steps.meta.outputs.version }}
-          
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        push-to-registry: true
