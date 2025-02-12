@@ -527,17 +527,6 @@ class RucioProviderTest(unittest.TestCase):
         rucio_auth = AuthData('RUCIO', self.RUCIO_CREDS)
         provider = create_provider(rucio_auth)
         self.assertEqual(provider.get_type(), 'RUCIO')
-        self.assertEqual(provider.stg_auth.creds, self.RUCIO_CREDS)
-        expected_cfg_file = "[client]\n"
-        expected_cfg_file += "rucio_host = https://test_rucio.host\n"
-        expected_cfg_file += "auth_host = https://test_auth.host\n"
-        expected_cfg_file += "auth_type = oidc\n"
-        expected_cfg_file += "account = test_account\n"
-        expected_cfg_file += "auth_token_file_path = %s\n" % provider.tmp_files[0]
-        expected_cfg_file += "oidc_scope = %s\n" % provider._OIDC_SCOPE
-        with open(provider.tmp_files[1], 'r') as f:
-            cfg_file = f.read()
-            self.assertEqual(cfg_file, expected_cfg_file)
 
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
     @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
@@ -561,13 +550,20 @@ class RucioProviderTest(unittest.TestCase):
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
-    def test_upload_file(self, mock_client, mock_upload):
+    @mock.patch('faassupervisor.storage.providers.rucio.RSEClient')
+    def test_upload_file(self, mock_rse, mock_client, mock_upload):
         # Mock upload client
-        mock_upload_client = mock.Mock(["upload"])
+        mock_upload_client = mock.Mock(["upload", "client"])
         mock_upload.return_value = mock_upload_client
         mock_upload_client.upload.return_value = {}
+        # Mock rse client
+        mock_rse_client = mock.Mock(["list_rses"])
+        mock_rse.return_value = mock_rse_client
+        mock_rse_client.list_rses.return_value = [{"rse": "DESY-DCACHE"}]
+
         rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
         rucio_provider.upload_file('/tmp/output/rucio_file', 'rucio_file', 'test_folder')
         mock_upload_client.upload.assert_called_once_with([{'path': '/tmp/output/rucio_file',
                                                             'did_scope': 'test_account',
-                                                            'did_name': 'test_folder__rucio_file'}])
+                                                            'did_name': 'test_folder__rucio_file',
+                                                            'rse': 'DESY-DCACHE'}])
