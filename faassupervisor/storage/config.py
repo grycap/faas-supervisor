@@ -274,7 +274,7 @@ class StorageConfig():
                     folder_key =output['path'].split("/")
                     if len(folder_key) > 1:
                         print(folder_key)
-                        delimiter="/"
+                        delimiter = "/"
                         print(parsed_event.bucket_name + "/" +   delimiter.join(folder_key[1:]))
                         output['path'] = parsed_event.bucket_name + "/" + delimiter.join(folder_key[1:])
             except:
