@@ -271,7 +271,12 @@ class StorageConfig():
             try:
                 if provider_type == 'MINIO' and ConfigUtils.read_cfg_var('isolation_level') == 'USER' and  \
                 parsed_event != None and  parsed_event.bucket_name in ConfigUtils.read_cfg_var('bucket_list'):
-                    output['path']=parsed_event.bucket_name+"/out"
+                    folder_key =output['path'].split("/")
+                    if len(folder_key) > 1:
+                        print(folder_key)
+                        delimiter = "/"
+                        print(parsed_event.bucket_name + "/" +   delimiter.join(folder_key[1:]))
+                        output['path'] = parsed_event.bucket_name + "/" + delimiter.join(folder_key[1:])
             except:
                 pass
             for file_path in output_files:
