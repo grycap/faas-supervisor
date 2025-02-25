@@ -18,8 +18,14 @@ import os
 import tempfile
 
 # Import classes to force pyinstaller to add them to the package
-from rucio.rse.protocols import posix, webdav, storm, ssh, rclone, xrootd # noqa pylint: disable=unused-import
-import dogpile.cache.backends.memory # noqa pylint: disable=unused-import
+try:
+    import dogpile.cache.backends.memory # noqa pylint: disable=unused-import
+    from rucio.rse.protocols import bittorrent, cache, dummy, globus, gsiftp, http_cache, mock, ngarc, posix, protocol, rclone, rfio, srm, ssh, storm, webdav, xrootd # noqa pylint: disable=unused-import
+    # from rucio.rse.protocols import gfal  # noqa pylint: disable=unused-import
+    # import gfal2  # noqa pylint: disable=unused-import
+except Exception:  # nosec pylint: disable=broad-except
+    pass
+
 
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient

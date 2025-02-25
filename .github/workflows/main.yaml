@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12.4"
+        python-version: "3.8"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -43,7 +43,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12.4"
+        python-version: "3.8"
     - name: Install dependencies
       run: |
         pip install --upgrade pip
@@ -63,20 +63,18 @@ jobs:
     steps:
     - name: Check out the codebase.
       uses: actions/checkout@v4
-    - name: Set up Python 3.
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12.4"
     - name: Build binary
       run: |
-        pip install pyinstaller
-        pip install -r requirements.txt
-        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
-        pyinstaller faassupervisor/supervisor.py
-        cd dist
-        zip -r supervisor.zip supervisor
-        rm -r supervisor
-        mv supervisor-bin supervisor
+        docker run --rm --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.2 /bin/sh -c " \
+          cd /repo && \
+          pip3.8 install -r requirements.txt
+          pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
+          pyinstaller faassupervisor/supervisor.py
+          cd dist
+          zip -r supervisor.zip supervisor
+          rm -r supervisor
+          mv supervisor-bin supervisor
+        "
     - name: Upload amd64 binary
       uses: actions/upload-artifact@v4
       with:
@@ -96,7 +94,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Build binary
       run: |
-        docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.2 /bin/sh -c " \
+        docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
           pip install -r requirements.txt &&\
           pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
@@ -125,11 +123,13 @@ jobs:
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+    # if we use debian10-1.2 we have tls1.3 support but we lose old distros (glibc older than 2.31)
+    # if we use ubuntu16.04-1.1 we lose the tls1.3 support but use glibc version 2.23.
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu24.10-latest /bin/sh -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:debian10-1.2 /bin/sh -c " \
           cd /repo && \
-          pip install -r requirements.txt && \
+          pip3.9 install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
           pyinstaller faassupervisor/supervisor.py && \
           cd dist && \
@@ -158,9 +158,8 @@ jobs:
       uses: docker/setup-buildx-action@v3
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.2 /bin/sh -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
           cd /repo && \
-          pip install -r requirements.txt &&\
           pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
           pyinstaller faassupervisor/supervisor.py &&\
           cd dist &&\
@@ -222,7 +221,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Log in to Docker Hub
-      uses: docker/login-action@v4
+      uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -230,13 +229,13 @@ jobs:
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
     - name: Build and push Docker image
       id: push
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./extra/Dockerfile
