@@ -199,3 +199,10 @@ class RucioDataIdentifierAlreadyExists(FaasSupervisorError):
     File already exists.
     """
     fmt = ("DID '{scope}:{file_name}' already exists.")
+
+
+class RucioNotRSE(FaasSupervisorError):
+    """
+    File already exists.
+    """
+    fmt = ("No RSEs available: {msg}.")
