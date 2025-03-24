@@ -38,10 +38,12 @@ from faassupervisor.events.apigateway import ApiGatewayEvent
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.s3 import S3Event
+from faassupervisor.events.dCache import DCacheEvent
+from faassupervisor.events.rucio import RucioEvent
 from faassupervisor.events.unknown import UnknownEvent
 from faassupervisor.logger import get_logger
 from faassupervisor.exceptions import exception, UnknowStorageEventWarning
-from faassupervisor.utils import SysUtils
+from faassupervisor.utils import SysUtils, ConfigUtils
 
 _S3_EVENT = "aws:s3"
 _MINIO_EVENT = "minio:s3"
@@ -66,6 +68,14 @@ def _is_delegated_event(event_info):
     return 'event' in event_info
 
 
+def _is_dcache_event(event_info):
+    return 'event' in event_info and 'subscription' in event_info
+
+
+def _is_rucio_event(event_info):
+    return 'event' in event_info and 'scope' in event_info['event']
+
+
 @exception()
 def _parse_storage_event(event, storage_provider='default'):
     record = event['Records'][0]['eventSource']
@@ -80,6 +90,20 @@ def _parse_storage_event(event, storage_provider='default'):
         get_logger().info("ONEDATA event created")
     else:
         raise UnknowStorageEventWarning()
+    return parsed_event
+
+
+def _parse_dcache_event(event, storage_provider='dcache'):
+    input_values = ConfigUtils.read_cfg_var('input')
+    provider = list(filter(lambda x: (x['storage_provider'] == 'webdav.dcache'),input_values))
+    input_path = ''
+    if len(provider):
+        input_path = provider[0]['path']
+    else:
+        get_logger().warning('There is no dcache input defined for this function.')
+    parsed_event = DCacheEvent(event, storage_provider)
+    parsed_event.set_path(input_path)
+    get_logger().info("DCACHE event created")
     return parsed_event
 
 
@@ -106,12 +130,15 @@ def parse_event(event, storage_provider="default"):
     if _is_api_gateway_event(event):
         get_logger().info("API Gateway event found.")
         parsed_event = ApiGatewayEvent(event)
-        # Update event info with API request event body
-        # to be further processed (if needed)
-        if parsed_event.has_json_body():
-            event = parsed_event.body
-            if not isinstance(parsed_event.body, dict):
-                event = json.loads(parsed_event.body)
+        return parse_event(parsed_event.body)
+    if _is_dcache_event(event):
+        get_logger().info("Dcache event found.")
+        parsed_event = _parse_dcache_event(event)
+        return parsed_event
+    if _is_rucio_event(event):
+        get_logger().info("Rucio event found.")
+        parsed_event = RucioEvent(event)
+        return parsed_event
     if _is_delegated_event(event):
         get_logger().info("Delegated event found.")
         if 'storage_provider' in event:

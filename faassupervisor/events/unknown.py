@@ -17,7 +17,7 @@ import json
 import base64
 import uuid
 from faassupervisor.utils import SysUtils, FileUtils
-
+from faassupervisor.logger import get_logger
 
 class UnknownEvent():
     """Class to manage unknown events."""
@@ -31,6 +31,7 @@ class UnknownEvent():
             records = event.get('Records')
             if records:
                 self.event_records = records[0]
+                get_logger().info("event_records = %s \n", self.event_records)
         self._set_event_params()
 
     def _set_event_params(self):

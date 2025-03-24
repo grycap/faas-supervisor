@@ -2,7 +2,7 @@ name: Test, build and deploy
 
 on:
   push:
-   branches: ["**"]
+    branches: ["**"]
   pull_request:
     branches: ["**"]
   release:
@@ -10,14 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.8.9
+        python-version: "3.9"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -30,25 +30,25 @@ jobs:
     - name: Report coverage
       uses: codacy/codacy-coverage-reporter-action@v1
       with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.xml
 
   pypi:
     needs: test
     if: github.event_name == 'release'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.8.9
+        python-version: "3.9"
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install setuptools wheel twine
-        python -m pip install -r requirements.txt
+        pip install --upgrade pip
+        pip install setuptools wheel twine
+        pip install -r requirements.txt
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USER }}
@@ -59,114 +59,119 @@ jobs:
 
   build-amd64:
     needs: test
-    runs-on: ubuntu-20.04
-    container: ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Check out the codebase.
+      uses: actions/checkout@v4
     - name: Build binary
       run: |
-        python3.8 -m pip install -r requirements.txt
-        pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
-        pyinstaller faassupervisor/supervisor.py
-        cd dist
-        zip -r supervisor.zip supervisor
-        rm -r supervisor
-        mv supervisor-bin supervisor
+        docker run --rm --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:debian10-1.2 /bin/sh -c " \
+          cd /repo && \
+          pip3.9 install -r requirements.txt
+          pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
+          pyinstaller faassupervisor/supervisor.py
+          cd dist
+          zip -r supervisor.zip supervisor
+          rm -r supervisor
+          mv supervisor-bin supervisor
+        "
     - name: Upload amd64 binary
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor
         path: dist/supervisor
     - name: Upload amd64 zip
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor.zip
         path: dist/supervisor.zip
 
   build-alpine-amd64:
     needs: test
-    runs-on: ubuntu-20.04
-    container: ghcr.io/grycap/faas-supervisor-build:alpine-1.1
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Build binary
       run: |
-        python3.8 -m pip install -r requirements.txt
-        pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py
-        pyinstaller faassupervisor/supervisor.py
-        cd dist
-        zip -r supervisor-alpine.zip supervisor
+        docker run --rm  --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.2 /bin/sh -c " \
+          cd /repo && \
+          pip install -r requirements.txt &&\
+          pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
+          pyinstaller faassupervisor/supervisor.py &&\
+          cd dist &&\
+          zip -r supervisor-alpine.zip supervisor
+        "
     - name: Upload amd64 binary
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor-alpine
         path: dist/supervisor-alpine
     - name: Upload amd64 zip
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor-alpine.zip
         path: dist/supervisor-alpine.zip
 
   build-aarch64:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v3
+    # if we use debian10-1.2 we have tls1.3 support but we lose old distros (glibc older than 2.31)
+    # if we use ubuntu16.04-1.1 we lose the tls1.3 support but use glibc version 2.23.
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:ubuntu16.04-1.1 /bin/sh -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:debian10-1.2 /bin/sh -c " \
           cd /repo && \
-          python3.8 -m pip install -r requirements.txt && \
+          pip3.9 install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
           pyinstaller faassupervisor/supervisor.py && \
           cd dist && \
           zip -r supervisor-arm64.zip supervisor \
         "
     - name: Upload arm64 binary
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor-arm64
         path: dist/supervisor-arm64
     - name: Upload arm64 zip
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor-arm64.zip
         path: dist/supervisor-arm64.zip
 
   build-alpine-aarch64:
     needs: test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v3
     - name: Build binary on emulated aarch64
       run: |
-        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.1 /bin/sh -c " \
+        docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:alpine-1.2 /bin/sh -c " \
           cd /repo && \
-          python3.8 -m pip install -r requirements.txt && \
-          pyinstaller --onefile -n supervisor-alpine-arm64 faassupervisor/supervisor.py && \
-          pyinstaller faassupervisor/supervisor.py && \
-          cd dist && \
-          zip -r supervisor-alpine-arm64.zip supervisor \
+          pyinstaller --onefile -n supervisor-alpine faassupervisor/supervisor.py &&\
+          pyinstaller faassupervisor/supervisor.py &&\
+          cd dist &&\
+          zip -r supervisor-alpine.zip supervisor
         "
     - name: Upload arm64 binary
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor-alpine-arm64
         path: dist/supervisor-alpine-arm64
     - name: Upload arm64 zip
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: supervisor-alpine-arm64.zip
         path: dist/supervisor-alpine-arm64.zip
@@ -178,10 +183,10 @@ jobs:
     - build-alpine-amd64
     - build-alpine-aarch64
     if: github.event_name == 'release'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Download jobs' artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
     - name: Upload artifacts to release
       uses: softprops/action-gh-release@v1
       with:
@@ -196,3 +201,53 @@ jobs:
           supervisor-alpine-arm64/supervisor-alpine-arm64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  push_faas_supervisor_kit:
+    if: github.event_name == 'release'
+    needs:
+    - release-assets
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: grycap/faas-supervisor-kit
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+    - name: Check out the repo
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    - name: Build and push Docker image
+      id: push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./extra/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          FAAS_VERSION=${{ steps.meta.outputs.version }}
+
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        push-to-registry: true

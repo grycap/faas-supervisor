@@ -66,17 +66,12 @@ class Supervisor():
         but one event always represents only one file (so far), so only
         one provider is going to be used for each event received.
         """
-        # Parse the 'download_input' config var
-        download_input = ConfigUtils.read_cfg_var('download_input')
-        if download_input == '':
-            download_input = True
-        else:
-            try:
-                download_input = bool(distutils.util.strtobool(download_input))
-            except ValueError:
-                download_input = True
+        # Parse the 'file_stage_in' config var
+        skip_download = ConfigUtils.read_cfg_var('file_stage_in')
+        if skip_download == '':
+            skip_download = False
         # Parse input file
-        if download_input is False:
+        if skip_download is True:
             get_logger().info('Skipping download of input file.')
         else:
             input_file_path = self.stg_config.download_input(self.parsed_event,
@@ -87,7 +82,7 @@ class Supervisor():
 
     @exception()
     def _parse_output(self):
-        self.stg_config.upload_output(self.output_tmp_dir.name)
+        self.stg_config.upload_output(self.output_tmp_dir.name,self.parsed_event)
 
     @exception()
     def run(self):

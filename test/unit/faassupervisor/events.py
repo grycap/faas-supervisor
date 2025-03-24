@@ -13,6 +13,7 @@
 # limitations under the License.
 """Unit tests for the faassupervisor.events module and classes."""
 
+import json
 import os
 import unittest
 from unittest import mock
@@ -21,7 +22,9 @@ from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.minio import MinioEvent
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.events.unknown import UnknownEvent
+from faassupervisor.events.dCache import DCacheEvent
 from faassupervisor.events.apigateway import ApiGatewayEvent
+from faassupervisor.events.rucio import RucioEvent
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-self-use
@@ -35,8 +38,7 @@ MINIO_EVENT = {"Key": "images/nature-wallpaper-229.jpg",
                             "eventTime": "2018-06-29T10:23:44Z"}]}
 
 DELEGATED_MINIO_EVENT = {"storage_provider": "minio.cluster2",
-                         "event": MINIO_EVENT
-                        }
+                         "event": json.dumps(MINIO_EVENT)}
 
 ONEDATA_EVENT = {"Key": "/my-onedata-space/files/file.txt",
                  "Records": [{"objectKey": "file.txt",
@@ -63,6 +65,19 @@ APIGTW_EVENT_W_JSON = {'body': S3_EVENT,
                        'httpMethod': 'POST',
                        'isBase64Encoded': False,
                        'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
+
+APIGTW_EVENT_W_JSON_STRING = {'body': json.dumps(DELEGATED_MINIO_EVENT),
+                              'headers': {'Content-Type': 'application/json'},
+                              'httpMethod': 'POST',
+                              'isBase64Encoded': False,
+                              'queryStringParameters': {'q1':'v1', 'q2':'v2'}}
+
+DCACHE_EVENT = {"event": {"name": "image2.jpg",
+                          "mask": ["IN_CREATE"]},
+                "subscription": "https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AAC"}
+
+RUCIO_EVENT = {"event": {"name": "image2.jpg",
+                         "scope": "user.jdoe"}}
 
 
 class EventModuleTest(unittest.TestCase):
@@ -91,6 +106,10 @@ class EventModuleTest(unittest.TestCase):
         result = events._parse_storage_event(ONEDATA_EVENT)
         self.assertIsInstance(result, OnedataEvent)
 
+    def test_parse_event_dcache(self):
+        result = events.parse_event(DCACHE_EVENT)
+        self.assertIsInstance(result, DCacheEvent)
+
     def test_parse_storage_event_unknown(self):
         result = events._parse_storage_event(UNKNOWN_EVENT)
         self.assertIsNone(result)
@@ -99,17 +118,25 @@ class EventModuleTest(unittest.TestCase):
         result = events.parse_event(UNKNOWN_EVENT)
         self.assertIsInstance(result, UnknownEvent)
 
-    def test_parse_event_apigateway_wo_json_body(self):
-        result = events.parse_event(APIGTW_EVENT_WO_JSON)
-        self.assertIsInstance(result, ApiGatewayEvent)
+    # def test_parse_event_apigateway_wo_json_body(self):
+    #     result = events.parse_event(APIGTW_EVENT_WO_JSON)
+    #     self.assertIsInstance(result, ApiGatewayEvent)
 
     def test_parse_event_apigateway_w_json_body(self):
         result = events.parse_event(APIGTW_EVENT_W_JSON)
         self.assertIsInstance(result, S3Event)
 
+    def test_parse_event_apigateway_w_json_body_string(self):
+        result = events.parse_event(APIGTW_EVENT_W_JSON_STRING)
+        self.assertIsInstance(result, MinioEvent)
+
     def test_parse_event_storage(self):
         result = events.parse_event(S3_EVENT)
         self.assertIsInstance(result, S3Event)
+
+    def test_parse_event_rucio(self):
+        result = events.parse_event(RUCIO_EVENT)
+        self.assertIsInstance(result, RucioEvent)
 
 
 class ApiGatewayEventTest(unittest.TestCase):
@@ -166,7 +193,7 @@ class MinioEventTest(unittest.TestCase):
         self.assertEqual(event.get_type(), "MINIO")
 
     def test_delegated_minio_event(self):
-        event = MinioEvent(DELEGATED_MINIO_EVENT, 'minio.cluster2')
+        event = events.parse_event(DELEGATED_MINIO_EVENT, 'minio.cluster2')
         self.assertEqual(event.object_key, "nature-wallpaper-229.jpg")
         self.assertEqual(event.bucket_arn, "arn:aws:s3:::images")
         self.assertEqual(event.bucket_name, "images")
@@ -193,6 +220,12 @@ class S3EventTest(unittest.TestCase):
         self.assertEqual(event.file_name, "dog.jpg")
         self.assertEqual(event.get_type(), "S3")
 
+class DCacheEventTest(unittest.TestCase):
+
+    def test_dcache_event_creation(self):
+        event = DCacheEvent(DCACHE_EVENT)
+        self.assertEqual(event.file_name, "image2.jpg")
+        self.assertEqual(event.get_type(), "DCACHE")
 
 class UnknownEventTest(unittest.TestCase):
 

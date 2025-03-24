@@ -189,3 +189,20 @@ class OnedataFolderCreationError(FaasSupervisorError):
     """
     fmt = ("Folder '{folder_name}' creation in Onedata failed. "
            "Status code: {status_code}")
+
+
+################################################
+#          RUCIO PROVIDER EXCEPTIONS           #
+################################################
+class RucioDataIdentifierAlreadyExists(FaasSupervisorError):
+    """
+    File already exists.
+    """
+    fmt = ("DID '{scope}:{file_name}' already exists.")
+
+
+class RucioNotRSE(FaasSupervisorError):
+    """
+    File already exists.
+    """
+    fmt = ("No RSEs available: {msg}.")
