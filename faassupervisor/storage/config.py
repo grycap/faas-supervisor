@@ -24,6 +24,7 @@ from faassupervisor.storage.providers.s3 import S3
 from faassupervisor.storage.providers.rucio import Rucio
 from faassupervisor.logger import get_logger
 
+_STORAGE_CREDENTIALS_PATH = "/var/run/secrets/providers/"
 
 def create_provider(storage_auth):
     """Returns the storage provider needed
@@ -117,12 +118,11 @@ class StorageConfig():
     def _validate_minio_creds(self, minio_creds):
         if isinstance(minio_creds, dict):
             for provider_id in minio_creds:
-                if ('access_key' in minio_creds[provider_id]
-                        and minio_creds[provider_id]['access_key'] is not None
-                        and minio_creds[provider_id]['access_key'] != ''
-                        and 'secret_key' in minio_creds[provider_id]
-                        and minio_creds[provider_id]['secret_key'] is not None
-                        and minio_creds[provider_id]['secret_key'] != ''):
+                # Read access key and secret key from secret path
+                minio_path = _STORAGE_CREDENTIALS_PATH+"minio."+provider_id
+                access_key = FileUtils.read_file(minio_path+"/accessKey")
+                secret_key = FileUtils.read_file(minio_path+"/secretKey")
+                if access_key != '' and secret_key != '':
                     self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
                 else:
                     raise StorageAuthError(auth_type='MINIO')
