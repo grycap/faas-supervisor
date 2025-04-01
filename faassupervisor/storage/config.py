@@ -118,11 +118,26 @@ class StorageConfig():
     def _validate_minio_creds(self, minio_creds):
         if isinstance(minio_creds, dict):
             for provider_id in minio_creds:
-                # Read access key and secret key from secret path
-                minio_path = _STORAGE_CREDENTIALS_PATH+"minio."+provider_id
-                access_key = FileUtils.read_file(minio_path+"/accessKey")
-                secret_key = FileUtils.read_file(minio_path+"/secretKey")
-                if access_key != '' and secret_key != '':
+                # If provider_id is "default" MinIO credentials are read from the user's secret
+                if provider_id == "default":
+                    minio_credentials_path = _STORAGE_CREDENTIALS_PATH+"minio."+provider_id
+                    access_key = FileUtils.read_file(minio_credentials_path+"/accessKey")
+                    secret_key = FileUtils.read_file(minio_credentials_path+"/secretKey")
+                    get_logger().info('Using MinIO credentials for user: \'%s\'', access_key)
+                    if access_key != '' and secret_key != '':
+                        minio_creds[provider_id]["access_key"] = access_key[:-1]
+                        minio_creds[provider_id]["secret_key"] = secret_key[:-1]
+                        self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
+                    else:
+                        raise StorageAuthError(auth_type='MINIO')
+                
+                elif ('access_key' in minio_creds[provider_id]
+                        and minio_creds[provider_id]['access_key'] is not None
+                        and minio_creds[provider_id]['access_key'] != ''
+                        and 'secret_key' in minio_creds[provider_id]
+                        and minio_creds[provider_id]['secret_key'] is not None
+                        and minio_creds[provider_id]['secret_key'] != ''):
+                    # Validate other credentials present on the FDL (temporal)
                     self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
                 else:
                     raise StorageAuthError(auth_type='MINIO')
@@ -251,6 +266,7 @@ class StorageConfig():
         auth_data = self._get_input_auth_data(parsed_event)
         stg_provider = create_provider(auth_data)
         get_logger().info('Found \'%s\' input provider', stg_provider.get_type())
+        
         return stg_provider.download_file(parsed_event, input_dir_path)
 
     def upload_output(self, output_dir_path, parsed_event=None):
