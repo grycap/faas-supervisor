@@ -125,8 +125,8 @@ class StorageConfig():
                     secret_key = FileUtils.read_file(minio_credentials_path+"/secretKey")
                     get_logger().info('Using MinIO credentials for user: \'%s\'', access_key)
                     if access_key != '' and secret_key != '':
-                        minio_creds[provider_id]["access_key"] = access_key[:-1]
-                        minio_creds[provider_id]["secret_key"] = secret_key[:-1]
+                        minio_creds[provider_id]["access_key"] = access_key
+                        minio_creds[provider_id]["secret_key"] = secret_key
                         self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
                     else:
                         raise StorageAuthError(auth_type='MINIO')
