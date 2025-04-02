@@ -121,6 +121,9 @@ class StorageConfig():
                 # If provider_id is "default" MinIO credentials are read from the user's secret
                 if provider_id == "default":
                     minio_credentials_path = _STORAGE_CREDENTIALS_PATH+"minio."+provider_id
+                    if not FileUtils.is_dir(minio_credentials_path):
+                        get_logger().info('No MinIO user configuration found')
+                        continue
                     access_key = FileUtils.read_file(minio_credentials_path+"/accessKey")
                     secret_key = FileUtils.read_file(minio_credentials_path+"/secretKey")
                     get_logger().info('Using MinIO credentials for user: \'%s\'', access_key)
