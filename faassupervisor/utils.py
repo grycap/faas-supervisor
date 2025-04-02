@@ -162,6 +162,11 @@ class FileUtils():
         return os.path.isfile(file_path)
 
     @staticmethod
+    def is_dir(file_path):
+        """Test whether a path is a regular file."""
+        return os.path.isdir(file_path)
+
+    @staticmethod
     def get_file_name(file_path):
         """Returns the filename."""
         return os.path.basename(file_path)
