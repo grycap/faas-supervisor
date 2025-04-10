@@ -133,6 +133,8 @@ class StorageConfig():
                     and minio_creds[provider_id]['secret_key'] != ''):
                     # Validate other credentials present on the FDL (temporal)
                     self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
+                else:
+                    raise StorageAuthError(auth_type='MINIO')
         else:
             raise StorageAuthError(auth_type='MINIO')
 

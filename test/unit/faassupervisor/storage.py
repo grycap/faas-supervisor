@@ -84,8 +84,7 @@ CONFIG_FILE_INVALID_MINIO = """
 name: test-func
 storage_providers:
   minio:
-    secret_key: test_minio_secret
-    access_key: ''
+    secret_key: ''
 """
 
 CONFIG_FILE_INVALID_ONEDATA = """
