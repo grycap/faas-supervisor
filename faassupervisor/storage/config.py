@@ -23,6 +23,7 @@ from faassupervisor.storage.providers.onedata import Onedata
 from faassupervisor.storage.providers.s3 import S3
 from faassupervisor.logger import get_logger
 
+_STORAGE_CREDENTIALS_PATH = "/var/run/secrets/providers/"
 
 def create_provider(storage_auth):
     """Returns the storage provider needed
@@ -109,15 +110,29 @@ class StorageConfig():
     def _validate_minio_creds(self, minio_creds):
         if isinstance(minio_creds, dict):
             for provider_id in minio_creds:
-                if ('access_key' in minio_creds[provider_id]
-                        and minio_creds[provider_id]['access_key'] is not None
-                        and minio_creds[provider_id]['access_key'] != ''
-                        and 'secret_key' in minio_creds[provider_id]
-                        and minio_creds[provider_id]['secret_key'] is not None
-                        and minio_creds[provider_id]['secret_key'] != ''):
+                # If provider_id is "default" MinIO credentials are read from the user's secret
+                if provider_id == "default":
+                    minio_credentials_path = _STORAGE_CREDENTIALS_PATH+"minio."+provider_id
+                    if not FileUtils.is_dir(minio_credentials_path):
+                        get_logger().info('No MinIO user configuration found')
+                        continue
+                    access_key = FileUtils.read_file(minio_credentials_path+"/accessKey")
+                    secret_key = FileUtils.read_file(minio_credentials_path+"/secretKey")
+                    get_logger().info('Using MinIO credentials for user: \'%s\'', access_key)
+                    if access_key != '' and secret_key != '':
+                        minio_creds[provider_id]["access_key"] = access_key[:-1]
+                        minio_creds[provider_id]["secret_key"] = secret_key[:-1]
+                        self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
+                    else:
+                        raise StorageAuthError(auth_type='MINIO')
+                elif ('access_key' in minio_creds[provider_id]
+                    and minio_creds[provider_id]['access_key'] is not None
+                    and minio_creds[provider_id]['access_key'] != ''
+                    and 'secret_key' in minio_creds[provider_id]
+                    and minio_creds[provider_id]['secret_key'] is not None
+                    and minio_creds[provider_id]['secret_key'] != ''):
+                    # Validate other credentials present on the FDL (temporal)
                     self.minio_auth[provider_id] = AuthData('MINIO', minio_creds[provider_id])
-                else:
-                    raise StorageAuthError(auth_type='MINIO')
         else:
             raise StorageAuthError(auth_type='MINIO')
 
