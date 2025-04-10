@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -43,7 +43,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Install dependencies
       run: |
         pip install --upgrade pip
@@ -67,7 +67,7 @@ jobs:
       run: |
         docker run --rm --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:debian10-1.2 /bin/sh -c " \
           cd /repo && \
-          pip3.8 install -r requirements.txt
+          pip3.9 install -r requirements.txt
           pyinstaller --onefile -n supervisor-bin faassupervisor/supervisor.py
           pyinstaller faassupervisor/supervisor.py
           cd dist
@@ -129,7 +129,7 @@ jobs:
       run: |
         docker run --rm --platform arm64 --volume "${PWD}:/repo" ghcr.io/grycap/faas-supervisor-build:debian10-1.2 /bin/sh -c " \
           cd /repo && \
-          pip3.8 install -r requirements.txt && \
+          pip3.9 install -r requirements.txt && \
           pyinstaller --onefile -n supervisor-arm64 faassupervisor/supervisor.py && \
           pyinstaller faassupervisor/supervisor.py && \
           cd dist && \
