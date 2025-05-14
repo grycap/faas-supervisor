@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8.9
+        python-version: 3.8.12
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -187,7 +187,7 @@ jobs:
     - build-alpine-amd64
     - build-alpine-aarch64
     if: github.event_name == 'release'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Download jobs' artifacts
       uses: actions/download-artifact@v4
