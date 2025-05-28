@@ -13,7 +13,6 @@
 # limitations under the License.
 """Module with methods shared by all the classes."""
 
-
 import base64
 import json
 import os
