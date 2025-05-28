@@ -15,8 +15,7 @@
 {"event":
     {
         "name":"image2.jpg",
-        "scope":"user.jdoe",
-        "token": "oidc_token",
+        "scope":"user.jdoe"
     }
 """
 
@@ -38,4 +37,3 @@ class RucioEvent(UnknownEvent):
         self.file_name = FileUtils.get_file_name(self.object_key)
         self.scope = self.event['scope']
         self.event_time = None
-        self.token = self.event.get('token')

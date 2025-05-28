@@ -21,8 +21,6 @@ import tempfile
 try:
     import dogpile.cache.backends.memory # noqa pylint: disable=unused-import
     from rucio.rse.protocols import bittorrent, cache, dummy, globus, gsiftp, http_cache, mock, ngarc, posix, protocol, rclone, rfio, srm, ssh, storm, webdav, xrootd # noqa pylint: disable=unused-import
-    # from rucio.rse.protocols import gfal  # noqa pylint: disable=unused-import
-    # import gfal2  # noqa pylint: disable=unused-import
 except Exception:  # nosec pylint: disable=broad-except
     pass
 
@@ -35,7 +33,7 @@ from rucio.common.exception import DataIdentifierAlreadyExists, NoFilesUploaded
 from faassupervisor.exceptions import RucioDataIdentifierAlreadyExists, RucioNotRSE
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
-from faassupervisor.utils import SysUtils
+from faassupervisor.utils import SysUtils, OIDCUtils
 
 
 class Rucio(DefaultStorageProvider):
@@ -64,7 +62,24 @@ class Rucio(DefaultStorageProvider):
         self.auth_host = self.stg_auth.get_credential('auth_host')
         self.scope = self.stg_auth.get_credential('account')
         self.rse = self.stg_auth.get_credential('rse')
-        self.token = self.stg_auth.get_credential('token')
+        self.oidc_token = None
+        self.refresh_token = self.stg_auth.get_credential('refresh_token')
+        self.token_endpoint = self.stg_auth.get_credential('token_endpoint')
+        if not self.token_endpoint:
+            self.token_endpoint = OIDCUtils.DEFAULT_TOKEN_ENDPOINT
+        self.scopes = self.stg_auth.get_credential('scopes')
+        if not self.scopes:
+            self.scopes = OIDCUtils.DEFAULT_SCOPES
+
+    def _get_access_token(self):
+        """Returns the access token for Rucio."""
+        if not self.refresh_token:
+            raise ValueError("Refresh token is not set in the storage authentication.")
+        if OIDCUtils.is_access_token_expired(self.oidc_token):
+            self.oidc_token = OIDCUtils.refresh_access_token(self.refresh_token,
+                                                             self.scopes,
+                                                             self.token_endpoint)
+        return self.oidc_token
 
     def _get_rucio_client(self, client_type=None):
         for file in self.tmp_files:
@@ -72,7 +87,7 @@ class Rucio(DefaultStorageProvider):
         self.tmp_files = []
         token_temp_file = tempfile.NamedTemporaryFile(delete=False)
         self.tmp_files.append(token_temp_file.name)
-        token_temp_file.write(self.stg_auth.get_credential('token').encode())
+        token_temp_file.write(self._get_access_token().encode())
         token_temp_file.close()
         temp_file = tempfile.NamedTemporaryFile(delete=False)
         self.tmp_files.append(temp_file.name)
@@ -101,9 +116,6 @@ class Rucio(DefaultStorageProvider):
                           parsed_event.object_key)
         did_name = parsed_event.object_key.replace('/', self._FOLDER_SEPARATOR)
         file = {'did': '%s:%s' % (parsed_event.scope, did_name)}
-
-        if parsed_event.token:
-            self.token = parsed_event.token
 
         downloadc = self._get_rucio_client("download")
         download = downloadc.download_dids([file])

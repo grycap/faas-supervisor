@@ -519,7 +519,7 @@ class RucioProviderTest(unittest.TestCase):
         'host': 'https://test_rucio.host',
         'auth_host': 'https://test_auth.host',
         'account': 'test_account',
-        'token': 'test_token'
+        'refresh_token': 'test_refres_token'
     }
 
     @mock.patch('rucio.client.Client')
@@ -531,7 +531,8 @@ class RucioProviderTest(unittest.TestCase):
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
     @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
     @mock.patch('os.rename')
-    def test_download_file(self, mock_rename, mock_download, mock_client):
+    @mock.patch('faassupervisor.utils.OIDCUtils.refresh_access_token')
+    def test_download_file(self, mock_refesh, mock_rename, mock_download, mock_client):
         # Mock download client
         mock_download_client = mock.Mock(["download_dids"])
         mock_download.return_value = mock_download_client
@@ -542,6 +543,8 @@ class RucioProviderTest(unittest.TestCase):
         type(event).file_name = mock.PropertyMock(return_value='rucio_file')
         type(event).object_key = mock.PropertyMock(return_value='folder/rucio_file_key')
         type(event).scope = mock.PropertyMock(return_value='test_account2')
+        # Mock the refresh token call
+        mock_refesh.return_value = 'new_access_token'
 
         download_file = rucio_provider.download_file(event, '/tmp/input')
         self.assertEqual(download_file, '/tmp/input/rucio_file')
@@ -551,7 +554,8 @@ class RucioProviderTest(unittest.TestCase):
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
     @mock.patch('faassupervisor.storage.providers.rucio.RSEClient')
-    def test_upload_file(self, mock_rse, mock_client, mock_upload):
+    @mock.patch('faassupervisor.utils.OIDCUtils.refresh_access_token')
+    def test_upload_file(self, mock_refesh, mock_rse, mock_client, mock_upload):
         # Mock upload client
         mock_upload_client = mock.Mock(["upload", "client"])
         mock_upload.return_value = mock_upload_client
@@ -560,6 +564,8 @@ class RucioProviderTest(unittest.TestCase):
         mock_rse_client = mock.Mock(["list_rses"])
         mock_rse.return_value = mock_rse_client
         mock_rse_client.list_rses.return_value = [{"rse": "DESY-DCACHE"}]
+        # Mock the refresh token call
+        mock_refesh.return_value = 'new_access_token'
 
         rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
         rucio_provider.upload_file('/tmp/output/rucio_file', 'rucio_file', 'test_folder')
