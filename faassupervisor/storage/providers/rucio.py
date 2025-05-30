@@ -28,7 +28,6 @@ except Exception:  # nosec pylint: disable=broad-except
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
-from rucio.client.didclient import DIDClient
 from rucio.client.rseclient import RSEClient
 from rucio.common.exception import DataIdentifierAlreadyExists, NoFilesUploaded
 from faassupervisor.exceptions import RucioDataIdentifierAlreadyExists, RucioNotRSE

@@ -295,7 +295,7 @@ class OIDCUtils():
 
     # Default values for OIDC refresh token using EGI CheckIn
     DEFAULT_SCOPES = ['openid', 'email', 'profile', 'voperson_id', 'eduperson_entitlement']
-    DEFAULT_TOKEN_ENDPOINT = 'https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token'
+    DEFAULT_TOKEN_ENDPOINT = 'https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token'  # nosec
 
     @staticmethod
     def _b64d(b):
