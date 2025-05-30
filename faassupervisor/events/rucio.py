@@ -14,7 +14,7 @@
 """rucio event example:
 {"event":
     {
-        "name":"image2.jpg",
+        "name":"dataset_1",
         "scope":"user.jdoe"
     }
 """
@@ -34,6 +34,5 @@ class RucioEvent(UnknownEvent):
 
     def _set_event_params(self):
         self.object_key = self.event['name']
-        self.file_name = FileUtils.get_file_name(self.object_key)
         self.scope = self.event['scope']
         self.event_time = None

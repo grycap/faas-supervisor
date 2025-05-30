@@ -28,12 +28,13 @@ except Exception:  # nosec pylint: disable=broad-except
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
+from rucio.client.didclient import DIDClient
 from rucio.client.rseclient import RSEClient
 from rucio.common.exception import DataIdentifierAlreadyExists, NoFilesUploaded
 from faassupervisor.exceptions import RucioDataIdentifierAlreadyExists, RucioNotRSE
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider
-from faassupervisor.utils import SysUtils, OIDCUtils
+from faassupervisor.utils import SysUtils, OIDCUtils, FileUtils
 
 
 class Rucio(DefaultStorageProvider):
@@ -41,7 +42,6 @@ class Rucio(DefaultStorageProvider):
 
     _TYPE = 'RUCIO'
     _OIDC_SCOPE = 'openid profile offline_access eduperson_entitlement'
-    _FOLDER_SEPARATOR = '__'
     _CONFIG_FILE = 1
     _TOKEN_FILE = 0
 
@@ -109,32 +109,38 @@ class Rucio(DefaultStorageProvider):
             return DownloadClient(client)
 
     def download_file(self, parsed_event, input_dir_path):
-        """Downloads the file from Rucio and
-        returns the path were the download is placed. """
+        """Downloads the dataset from Rucio and
+        returns the path were the all the downloaded
+        files are placed. """
         get_logger().info("Downloading item from host '%s' with key '%s'",
                           self.rucio_host,
                           parsed_event.object_key)
-        did_name = parsed_event.object_key.replace('/', self._FOLDER_SEPARATOR)
-        file = {'did': '%s:%s' % (parsed_event.scope, did_name)}
+        dataset_name = parsed_event.object_key
+
+        rcli = self._get_rucio_client()
+        files = rcli.list_files(parsed_event.scope, dataset_name)
+
+        dids = [{'did': '%s:%s' % (f['scope'], f['name'])} for f in files]
+
+        output_dir = SysUtils.join_paths(input_dir_path, dataset_name)
+        FileUtils.create_folder(output_dir)
 
         downloadc = self._get_rucio_client("download")
-        download = downloadc.download_dids([file])
+        download = downloadc.download_dids(dids)
         get_logger().debug('Downloaded file info: %s', download)
-        file_download_path = SysUtils.join_paths(input_dir_path, parsed_event.file_name)
-        os.rename(SysUtils.join_paths(parsed_event.scope, did_name), file_download_path)
-        return file_download_path
+        return output_dir
 
     def upload_file(self, file_path, file_name, output_path):
-        """Uploads the file to the Rucio output path.
-        It fakes the folder structure by using a separator in the file name."""
+        """Uploads the file to Rucio.
+        In this case the output path is ignored.
+        """
         file_name = file_name.strip('/')
-        upload_path = f'{output_path}/{file_name}'
+        upload_path = file_name
 
         file = {
             'path': file_path,
             'did_scope': self.scope,
-            # For some reason, the did_name cannot contain slashes
-            'did_name': upload_path.replace('/', self._FOLDER_SEPARATOR)
+            'did_name': upload_path
         }
 
         if self.rse:
