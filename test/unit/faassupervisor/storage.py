@@ -119,6 +119,15 @@ ONEDATA_EVENT = """
 }
 """
 
+RUCIO_CFG_FILE = """[client]
+rucio_host = https://test_rucio.host
+auth_host = https://test_auth.host
+auth_type = oidc
+account = test_account
+auth_token_file_path = {rucio_provider.token_temp_file}
+oidc_scope = openid profile offline_access eduperson_entitlement
+"""
+
 
 class AuthDataTest(unittest.TestCase):
 
@@ -554,6 +563,11 @@ class RucioProviderTest(unittest.TestCase):
         mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account2:file1'},
                                                                     {'did': 'test_account2:file2'}])
         mock_rucio_client.list_files.assert_called_once_with('test_account2', 'dataset_name')
+        with open(rucio_provider.cfg_temp_file, 'r') as f:
+            content = f.read()
+            exp_content = RUCIO_CFG_FILE.format(rucio_provider=rucio_provider)
+
+            self.assertEqual(content, exp_content)
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
