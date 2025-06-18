@@ -566,8 +566,10 @@ class RucioProviderTest(unittest.TestCase):
         with open(rucio_provider.cfg_temp_file, 'r') as f:
             content = f.read()
             exp_content = RUCIO_CFG_FILE.format(rucio_provider=rucio_provider)
-
             self.assertEqual(content, exp_content)
+        with open(rucio_provider.token_temp_file, 'r') as f:
+            content = f.read()
+            self.assertEqual(content, 'new_access_token')
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
