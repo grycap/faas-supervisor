@@ -50,7 +50,9 @@ class Rucio(DefaultStorageProvider):
             self.client_id = 'token-portal'
         self.oidc_token = self.stg_auth.get_credential('access_token')
         self.token_temp_file = tempfile.NamedTemporaryFile(delete=False)
+        self.token_temp_file.close()
         self.cfg_temp_file = tempfile.NamedTemporaryFile(delete=False)
+        self.cfg_temp_file.close()
         self.rucio_host = self.stg_auth.get_credential('host')
         self.auth_host = self.stg_auth.get_credential('auth_host')
         self.scope = self.stg_auth.get_credential('account')
@@ -87,16 +89,17 @@ class Rucio(DefaultStorageProvider):
 
     def _get_rucio_client(self, client_type=None):
         # Create token file
-        self.token_temp_file.write(self._get_access_token().encode())
+        with open(self.token_temp_file.name, 'w') as f:
+            f.write(self.oidc_token)
         # Create config file
-        self.cfg_temp_file.write(b'[client]\n')
-        self.cfg_temp_file.write(b'rucio_host = %s\n' % self.rucio_host.encode())
-        self.cfg_temp_file.write(b'auth_host = %s\n' % self.auth_host.encode())
-        self.cfg_temp_file.write(b'auth_type = oidc\n')
-        self.cfg_temp_file.write(b'account = %s\n' % self.scope.encode())
-        self.cfg_temp_file.write(b'auth_token_file_path = %s\n' % self.token_temp_file.name.encode())
-        self.cfg_temp_file.write(b'oidc_scope = %s\n' % self._OIDC_SCOPE.encode())
-        self.cfg_temp_file.close()
+        with open(self.cfg_temp_file.name, 'w') as f:
+            f.write('[client]\n')
+            f.write('rucio_host = %s\n' % self.rucio_host)
+            f.write('auth_host = %s\n' % self.auth_host)
+            f.write('auth_type = oidc\n')
+            f.write('account = %s\n' % self.scope)
+            f.write('auth_token_file_path = %s\n' % self.token_temp_file.name)
+            f.write('oidc_scope = %s\n' % self._OIDC_SCOPE)
         os.environ['RUCIO_CONFIG'] = self.cfg_temp_file.name
         client = Client()
         if not client_type:
