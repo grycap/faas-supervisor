@@ -364,7 +364,7 @@ class OIDCUtils():
             return True
 
     @staticmethod
-    def refresh_access_token(refresh_token, scopes, token_endpoint):
+    def refresh_access_token(refresh_token, scopes, token_endpoint, audience=None):
         """
         Refresh the access token using the refresh token
         """
@@ -372,9 +372,11 @@ class OIDCUtils():
             'grant_type': 'refresh_token',
             'refresh_token': refresh_token,
             'client_id': 'token-portal',
-            'scope': ' '.join(scopes),
-            'resource': 'rucio-testbed'
+            'scope': ' '.join(scopes)
         }
+
+        if audience:
+            data['resource'] = audience
 
         response = requests.post(token_endpoint, data=data)
 

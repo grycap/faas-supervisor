@@ -64,6 +64,7 @@ class Rucio(DefaultStorageProvider):
         self.oidc_token = None
         self.refresh_token = self.stg_auth.get_credential('refresh_token')
         self.token_endpoint = self.stg_auth.get_credential('token_endpoint')
+        self.oidc_audience = self.stg_auth.get_credential('oidc_audience')
         if not self.token_endpoint:
             self.token_endpoint = OIDCUtils.DEFAULT_TOKEN_ENDPOINT
         self.scopes = self.stg_auth.get_credential('scopes')
@@ -77,7 +78,8 @@ class Rucio(DefaultStorageProvider):
         if OIDCUtils.is_access_token_expired(self.oidc_token):
             self.oidc_token = OIDCUtils.refresh_access_token(self.refresh_token,
                                                              self.scopes,
-                                                             self.token_endpoint)
+                                                             self.token_endpoint,
+                                                             self.oidc_audience)
         return self.oidc_token
 
     def _get_rucio_client(self, client_type=None):
