@@ -229,7 +229,8 @@ class OIDCUtilsTest(unittest.TestCase):
             access_token = OIDCUtils.refresh_access_token("old_refresh_token",
                                                           ["openid", "profile", "email"],
                                                           "http://test.com/token",
-                                                          'audience')
+                                                          'audience',
+                                                          'token-portal')
 
             assert access_token == "new_access_token"  # nosec
             mock_post.assert_called_once_with(
