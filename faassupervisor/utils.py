@@ -372,7 +372,8 @@ class OIDCUtils():
             'grant_type': 'refresh_token',
             'refresh_token': refresh_token,
             'client_id': 'token-portal',
-            'scope': ' '.join(scopes)
+            'scope': ' '.join(scopes),
+            'resource': 'rucio-testbed'
         }
 
         response = requests.post(token_endpoint, data=data)
