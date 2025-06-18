@@ -45,8 +45,12 @@ class Rucio(DefaultStorageProvider):
     def __init__(self, stg_auth):
         super().__init__(stg_auth)
         # Initializes the Rucio storage provider
+        self.client_id = self.stg_auth.get_credential('client_id')
+        if not self.client_id:
+            self.client_id = 'token-portal'
         self.oidc_token = self.stg_auth.get_credential('access_token')
         self.token_temp_file = tempfile.NamedTemporaryFile(delete=False)
+        self.cfg_temp_file = tempfile.NamedTemporaryFile(delete=False)
         self.rucio_host = self.stg_auth.get_credential('host')
         self.auth_host = self.stg_auth.get_credential('auth_host')
         self.scope = self.stg_auth.get_credential('account')
@@ -62,34 +66,39 @@ class Rucio(DefaultStorageProvider):
 
     def __del__(self):
         try:
-            os.remove(self.token_temp_file)
+            os.remove(self.token_temp_file.name)
+            os.remove(self.cfg_temp_file.name)
         except Exception as exc:
             get_logger().warning('Error removing temporary file: %s', exc)
 
     def _get_access_token(self):
         """Returns the access token for Rucio."""
         if OIDCUtils.is_access_token_expired(self.oidc_token):
+            get_logger().debug("Access token expired, refreshing...")
             if not self.refresh_token:
                 raise ValueError("Refresh token is not set in the storage authentication.")
 
             self.oidc_token = OIDCUtils.refresh_access_token(self.refresh_token,
                                                              self.scopes,
                                                              self.token_endpoint,
-                                                             self.oidc_audience)
+                                                             self.oidc_audience,
+                                                             self.client_id)
         return self.oidc_token
 
     def _get_rucio_client(self, client_type=None):
+        # Create token file
         self.token_temp_file.write(self._get_access_token().encode())
-        client = Client(
-            rucio_host=self.rucio_host,
-            auth_host=self.auth_host,
-            account=self.scope,
-            auth_type="oidc",
-            creds={
-                "auth_token_file_path": self.token_temp_file.name,
-                "oidc_scope": self._OIDC_SCOPE
-            }
-        )
+        # Create config file
+        self.cfg_temp_file.write(b'[client]\n')
+        self.cfg_temp_file.write(b'rucio_host = %s\n' % self.rucio_host.encode())
+        self.cfg_temp_file.write(b'auth_host = %s\n' % self.auth_host.encode())
+        self.cfg_temp_file.write(b'auth_type = oidc\n')
+        self.cfg_temp_file.write(b'account = %s\n' % self.scope.encode())
+        self.cfg_temp_file.write(b'auth_token_file_path = %s\n' % self.token_temp_file.name.encode())
+        self.cfg_temp_file.write(b'oidc_scope = %s\n' % self._OIDC_SCOPE.encode())
+        self.cfg_temp_file.close()
+        os.environ['RUCIO_CONFIG'] = self.cfg_temp_file.name
+        client = Client()
         if not client_type:
             return client
         elif client_type == "upload":

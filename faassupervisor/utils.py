@@ -364,14 +364,14 @@ class OIDCUtils():
             return True
 
     @staticmethod
-    def refresh_access_token(refresh_token, scopes, token_endpoint, audience=None):
+    def refresh_access_token(refresh_token, scopes, token_endpoint, audience=None, client_id=None):
         """
         Refresh the access token using the refresh token
         """
         data = {
             'grant_type': 'refresh_token',
             'refresh_token': refresh_token,
-            'client_id': 'token-portal',
+            'client_id': client_id,
             'scope': ' '.join(scopes)
         }
 
