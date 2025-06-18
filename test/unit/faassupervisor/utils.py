@@ -239,6 +239,6 @@ class OIDCUtilsTest(unittest.TestCase):
                     "refresh_token": "old_refresh_token",
                     "client_id": "token-portal",
                     "scope": "openid profile email",
-                    "audience": "audience"
+                    "resource": "audience"
                 }
             )
