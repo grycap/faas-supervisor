@@ -542,11 +542,12 @@ class RucioProviderTest(unittest.TestCase):
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
     @mock.patch('faassupervisor.storage.providers.rucio.DownloadClient')
     @mock.patch('faassupervisor.utils.OIDCUtils.refresh_access_token')
-    def test_download_file(self, mock_refesh, mock_download, mock_client):
+    @mock.patch('faassupervisor.utils.FileUtils.cp_file')
+    def test_download_file(self, mock_cp, mock_refesh, mock_download, mock_client):
         # Mock download client
         mock_download_client = mock.Mock(["download_dids"])
         mock_download.return_value = mock_download_client
-        mock_download_client.download_dids.return_value = {}
+        mock_download_client.download_dids.return_value = [{"dest_file_paths": ["/tmp/somefile"]}]
         rucio_provider = Rucio(AuthData('RUCIO', self.RUCIO_CREDS))
         # Create mock event
         event = mock.Mock()
