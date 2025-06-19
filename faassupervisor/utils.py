@@ -294,7 +294,6 @@ class OIDCUtils():
     """
 
     # Default values for OIDC refresh token using EGI CheckIn
-    DEFAULT_SCOPES = ['openid', 'profile', 'offline_access', 'eduperson_entitlement']
     DEFAULT_TOKEN_ENDPOINT = 'https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token'  # nosec
 
     @staticmethod

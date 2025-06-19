@@ -528,7 +528,9 @@ class RucioProviderTest(unittest.TestCase):
         'host': 'https://test_rucio.host',
         'auth_host': 'https://test_auth.host',
         'account': 'test_account',
-        'refresh_token': 'test_refres_token'
+        'refresh_token': 'test_refresh_token',
+        'token_endpoint': 'https://test_token.endpoint',
+        'oidc_audience': 'rucio-testbed'
     }
 
     @mock.patch('rucio.client.Client')
@@ -593,3 +595,8 @@ class RucioProviderTest(unittest.TestCase):
                                                             'did_scope': 'test_account',
                                                             'did_name': 'rucio_file',
                                                             'rse': 'DESY-DCACHE'}])
+        mock_refesh.assert_called_once_with('test_refresh_token',
+                                            Rucio._OIDC_SCOPE.split(),
+                                            'https://test_token.endpoint',
+                                            'rucio-testbed',
+                                            'token-portal')

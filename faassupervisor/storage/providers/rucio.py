@@ -60,15 +60,17 @@ class Rucio(DefaultStorageProvider):
             self.token_endpoint = OIDCUtils.DEFAULT_TOKEN_ENDPOINT
         self.scopes = self.stg_auth.get_credential('scopes')
         if not self.scopes:
-            self.scopes = OIDCUtils.DEFAULT_SCOPES
-        self.token_temp_file = tempfile.mktemp()
-        self.cfg_temp_file = tempfile.mktemp()
+            self.scopes = self._OIDC_SCOPE.split()
+        self.token_temp_file = tempfile.mktemp(prefix='rucio_token_',
+                                               suffix='.token')  # nosec
         self._create_config_file()
 
     def __del__(self):
         try:
-            os.remove(self.token_temp_file)
-            os.remove(self.cfg_temp_file)
+            if os.path.exists(self.token_temp_file):
+                os.remove(self.token_temp_file)
+            if os.path.exists(self.cfg_temp_file):
+                os.remove(self.cfg_temp_file)
         except Exception as exc:
             get_logger().warning('Error removing temporary file: %s', exc)
 
@@ -87,14 +89,15 @@ class Rucio(DefaultStorageProvider):
         return self.oidc_token
 
     def _create_config_file(self):
-        with open(self.cfg_temp_file, 'w') as f:
-            f.write('[client]\n')
-            f.write('rucio_host = %s\n' % self.rucio_host)
-            f.write('auth_host = %s\n' % self.auth_host)
-            f.write('auth_type = oidc\n')
-            f.write('account = %s\n' % self.scope)
-            f.write('auth_token_file_path = %s\n' % self.token_temp_file)
-            f.write('oidc_scope = %s\n' % self._OIDC_SCOPE)
+        cfg_temp_file = tempfile.NamedTemporaryFile(delete=False)
+        cfg_temp_file.write(b'[client]\n')
+        cfg_temp_file.write(b'rucio_host = %s\n' % self.rucio_host.encode())
+        cfg_temp_file.write(b'auth_host = %s\n' % self.auth_host.encode())
+        cfg_temp_file.write(b'auth_type = oidc\n')
+        cfg_temp_file.write(b'account = %s\n' % self.scope.encode())
+        cfg_temp_file.write(b'auth_token_file_path = %s\n' % self.token_temp_file.encode())
+        cfg_temp_file.write(b'oidc_scope = %s\n' % self._OIDC_SCOPE.encode())
+        self.cfg_temp_file = cfg_temp_file.name
 
     def _get_rucio_client(self, client_type=None):
         # Create token file
