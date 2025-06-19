@@ -76,8 +76,9 @@ DCACHE_EVENT = {"event": {"name": "image2.jpg",
                           "mask": ["IN_CREATE"]},
                 "subscription": "https://prometheus.desy.de:3880/api/v1/events/channels/oyGcraV_6abmXQU0_yMApQ/subscriptions/inotify/AAC"}
 
-RUCIO_EVENT = {"event": {"name": "image2.jpg",
-                         "scope": "user.jdoe"}}
+RUCIO_EVENT = {"event_type": "close",
+               "payload": {"name": "dataset_name",
+                           "scope": "user.jdoe"}}
 
 
 class EventModuleTest(unittest.TestCase):

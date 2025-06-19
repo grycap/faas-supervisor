@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """rucio event example:
-{"event":
-    {
-        "name":"image2.jpg",
-        "scope":"user.jdoe",
-        "token": "oidc_token",
-    }
+{"event_type": "close",
+ "payload": {"scope": "username",
+             "name": "dataset_name"}
+}
 """
 
 from faassupervisor.events.unknown import UnknownEvent
-from faassupervisor.utils import FileUtils
 
 
 class RucioEvent(UnknownEvent):
@@ -34,8 +31,6 @@ class RucioEvent(UnknownEvent):
         self.provider_id = provider_id
 
     def _set_event_params(self):
-        self.object_key = self.event['name']
-        self.file_name = FileUtils.get_file_name(self.object_key)
-        self.scope = self.event['scope']
+        self.object_key = self.event['payload']['name']
+        self.scope = self.event['payload']['scope']
         self.event_time = None
-        self.token = self.event.get('token')

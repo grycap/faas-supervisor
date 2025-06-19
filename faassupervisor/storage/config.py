@@ -207,9 +207,12 @@ class StorageConfig():
                         and 'rse' in rucio_creds[provider_id]
                         and rucio_creds[provider_id]['rse'] is not None
                         and rucio_creds[provider_id]['rse'] != ''
-                        and 'token' in rucio_creds[provider_id]
-                        and rucio_creds[provider_id]['token'] is not None
-                        and rucio_creds[provider_id]['token'] != ''
+                        and(( 'access_token' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['access_token'] is not None
+                        and rucio_creds[provider_id]['access_token'] != '')
+                        or ('refresh_token' in rucio_creds[provider_id]
+                        and rucio_creds[provider_id]['refresh_token'] is not None
+                        and rucio_creds[provider_id]['refresh_token'] != '' ))
                         and 'account' in rucio_creds[provider_id]
                         and rucio_creds[provider_id]['account'] is not None
                         and rucio_creds[provider_id]['account'] != ''
