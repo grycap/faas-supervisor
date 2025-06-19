@@ -81,7 +81,7 @@ class Supervisor():
                 get_logger().info('INPUT_FILE_PATH variable set to \'%s\'', input_file_path)
             elif input_file_path or FileUtils.is_directory(input_file_path):
                 SysUtils.set_env_var('INPUT_FILE_PATH', self.input_tmp_dir.name)
-                get_logger().info('INPUT_FILE_PATH variable of set to \'%s\'', self.input_tmp_dir.name)             
+                get_logger().info('INPUT_FILE_PATH variable of set to \'%s\'', self.input_tmp_dir.name)            
 
     @exception()
     def _parse_output(self):
