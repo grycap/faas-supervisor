@@ -33,6 +33,6 @@ class RucioEvent(UnknownEvent):
         self.provider_id = provider_id
 
     def _set_event_params(self):
-        self.object_key = self.event['name']
-        self.scope = self.event['scope']
+        self.object_key = self.event['payload']['name']
+        self.scope = self.event['payload']['scope']
         self.event_time = None

@@ -16,6 +16,7 @@ related with the Rucio storage provider. """
 
 import os
 import tempfile
+from faassupervisor.utils import  FileUtils
 
 # Import classes to force pyinstaller to add them to the package
 try:
@@ -129,6 +130,12 @@ class Rucio(DefaultStorageProvider):
         downloadc = self._get_rucio_client("download")
         download = downloadc.download_dids(dids)
         get_logger().debug('Downloaded file info: %s', download)
+        try:
+            for file in download[0]["dest_file_paths"]:
+                basename = file.split("/")[-1]
+                FileUtils.cp_file(file,input_dir_path + "/" + basename)
+        except Exception as e:
+            print("An exception occurred" + e)
         return output_dir
 
     def upload_file(self, file_path, file_name, output_path):

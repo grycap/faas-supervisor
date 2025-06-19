@@ -48,6 +48,7 @@ from faassupervisor.utils import SysUtils, ConfigUtils
 _S3_EVENT = "aws:s3"
 _MINIO_EVENT = "minio:s3"
 _ONEDATA_EVENT = "OneTrigger"
+_RUCIO_EVENT = "rucio"
 
 
 def _is_api_gateway_event(event_info):
@@ -60,7 +61,8 @@ def _is_storage_event(event_info):
            and 'eventSource' in event_info['Records'][0]:
         return event_info['Records'][0]['eventSource'] == _S3_EVENT \
             or event_info['Records'][0]['eventSource'] == _MINIO_EVENT \
-            or event_info['Records'][0]['eventSource'] == _ONEDATA_EVENT
+            or event_info['Records'][0]['eventSource'] == _ONEDATA_EVENT \
+            or event_info['Records'][0]['eventSource'] == _RUCIO_EVENT
     return False
 
 
@@ -73,7 +75,7 @@ def _is_dcache_event(event_info):
 
 
 def _is_rucio_event(event_info):
-    return 'event' in event_info and 'scope' in event_info['event']
+    return 'event_type' in event_info and 'scope' in event_info['payload']
 
 
 @exception()
@@ -88,6 +90,8 @@ def _parse_storage_event(event, storage_provider='default'):
     elif record == _ONEDATA_EVENT:
         parsed_event = OnedataEvent(event)
         get_logger().info("ONEDATA event created")
+    elif record == _RUCIO_EVENT:
+        parsed_event = RucioEvent(event, storage_provider)
     else:
         raise UnknowStorageEventWarning()
     return parsed_event
