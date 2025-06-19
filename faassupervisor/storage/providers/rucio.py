@@ -127,20 +127,17 @@ class Rucio(DefaultStorageProvider):
 
         dids = [{'did': '%s:%s' % (f['scope'], f['name'])} for f in files]
 
-        output_dir = SysUtils.join_paths(input_dir_path, dataset_name)
-        FileUtils.create_folder(output_dir)
-
         downloadc = self._get_rucio_client("download")
         download = downloadc.download_dids(dids)
         get_logger().debug('Downloaded file info: %s', download)
         try:
             for file in download[0]["dest_file_paths"]:
                 basename = os.path.basename(file)
-                FileUtils.cp_file(file, SysUtils.join_paths(output_dir,
+                FileUtils.cp_file(file, SysUtils.join_paths(input_dir_path,
                                                             basename))
         except Exception as e:
             print("An exception occurred" + e)
-        return output_dir
+        return input_dir_path
 
     def upload_file(self, file_path, file_name, output_path):
         """Uploads the file to Rucio.

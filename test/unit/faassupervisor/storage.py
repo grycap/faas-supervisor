@@ -562,7 +562,7 @@ class RucioProviderTest(unittest.TestCase):
                                                      {'scope': 'test_account2', 'name': 'file2'}]
 
         download_file = rucio_provider.download_file(event, '/tmp/input')
-        self.assertEqual(download_file, '/tmp/input/dataset_name')
+        self.assertEqual(download_file, '/tmp/input')
         mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account2:file1'},
                                                                     {'did': 'test_account2:file2'}])
         mock_rucio_client.list_files.assert_called_once_with('test_account2', 'dataset_name')
