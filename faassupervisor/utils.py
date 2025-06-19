@@ -163,12 +163,12 @@ class FileUtils():
     def is_file(file_path):
         """Test whether a path is a regular file."""
         return os.path.isfile(file_path)
-    
+
     @staticmethod
     def is_directory(directory_path):
         """Test whether a path is a directoy."""
         return os.path.isdir(directory_path)
-    
+
     @staticmethod
     def is_dir(file_path):
         """Test whether a path is a regular file."""
