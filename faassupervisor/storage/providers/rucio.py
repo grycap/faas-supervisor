@@ -16,7 +16,6 @@ related with the Rucio storage provider. """
 
 import os
 import tempfile
-from faassupervisor.utils import FileUtils
 
 # Import classes to force pyinstaller to add them to the package
 try:
