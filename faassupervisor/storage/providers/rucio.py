@@ -130,9 +130,10 @@ class Rucio(DefaultStorageProvider):
         download = downloadc.download_dids(dids)
         get_logger().debug('Downloaded file info: %s', download)
         try:
-            for file in download[0]["dest_file_paths"]:
-                basename = os.path.basename(file)
-                FileUtils.cp_file(file, SysUtils.join_paths(input_dir_path,
+            for file in download:
+                complete_name = file["dest_file_paths"][0]
+                basename = os.path.basename(complete_name)
+                FileUtils.cp_file(complete_name, SysUtils.join_paths(input_dir_path,
                                                             basename))
         except Exception as e:
             print("An exception occurred" + e)
