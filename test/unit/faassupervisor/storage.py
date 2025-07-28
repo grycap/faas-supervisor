@@ -31,6 +31,7 @@ from faassupervisor.events.s3 import S3Event
 from faassupervisor.events.onedata import OnedataEvent
 from faassupervisor.utils import StrUtils
 from rucio.common.exception import DataIdentifierNotFound
+from rucio.common.config import config_get, config_has_section
 
 
 # pylint: disable=missing-docstring
@@ -566,13 +567,16 @@ class RucioProviderTest(unittest.TestCase):
         mock_download_client.download_dids.assert_called_once_with([{'did': 'test_account2:file1'},
                                                                     {'did': 'test_account2:file2'}])
         mock_rucio_client.list_files.assert_called_once_with('test_account2', 'dataset_name')
-        with open(rucio_provider.cfg_temp_file, 'r') as f:
-            content = f.read()
-            exp_content = RUCIO_CFG_FILE.format(rucio_provider=rucio_provider)
-            self.assertEqual(content, exp_content)
         with open(rucio_provider.token_temp_file, 'r') as f:
             content = f.read()
             self.assertEqual(content, 'new_access_token')
+        self.assertTrue(config_has_section('client'))
+        self.assertEqual(config_get('client', 'auth_token_file_path'), rucio_provider.token_temp_file)
+        self.assertEqual(config_get('client', 'oidc_scope'), Rucio._OIDC_SCOPE)
+        self.assertEqual(config_get('client', 'rucio_host'), rucio_provider.rucio_host)
+        self.assertEqual(config_get('client', 'auth_host'), rucio_provider.auth_host)
+        self.assertEqual(config_get('client', 'account'), rucio_provider.scope)
+        self.assertEqual(config_get('client', 'auth_type'), 'oidc')
 
     @mock.patch('faassupervisor.storage.providers.rucio.UploadClient')
     @mock.patch('faassupervisor.storage.providers.rucio.Client')
