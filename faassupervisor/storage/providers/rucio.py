@@ -25,7 +25,7 @@ except Exception:  # nosec pylint: disable=broad-except
     pass
 
 
-from rucio.common.config import config_set, config_add_section
+from rucio.common.config import config_set, config_add_section, config_has_section
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
@@ -90,7 +90,9 @@ class Rucio(DefaultStorageProvider):
     def _create_rucio_config(self):
         os.environ["RUCIO_CLIENT_MODE"] = "1"
         os.environ["RUCIO_CONFIG"] = "/dev/null"
-        config_add_section("client")
+
+        if not config_has_section("client"):
+            config_add_section("client")
         config_set(section="client", option="auth_token_file_path", value=self.token_temp_file)
         config_set(section="client", option="oidc_scope", value=self._OIDC_SCOPE)
         config_set(section="client", option="rucio_host", value=self.rucio_host)
