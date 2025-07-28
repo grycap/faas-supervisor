@@ -25,6 +25,7 @@ except Exception:  # nosec pylint: disable=broad-except
     pass
 
 
+from rucio.common.config import config_set, config_add_section
 from rucio.client.client import Client
 from rucio.client.uploadclient import UploadClient
 from rucio.client.downloadclient import DownloadClient
@@ -49,10 +50,6 @@ class Rucio(DefaultStorageProvider):
         if not self.client_id:
             self.client_id = 'token-portal'
         self.oidc_token = self.stg_auth.get_credential('access_token')
-        self.token_temp_file = tempfile.NamedTemporaryFile(delete=False)
-        self.token_temp_file.close()
-        self.cfg_temp_file = tempfile.NamedTemporaryFile(delete=False)
-        self.cfg_temp_file.close()
         self.rucio_host = self.stg_auth.get_credential('host')
         self.auth_host = self.stg_auth.get_credential('auth_host')
         self.scope = self.stg_auth.get_credential('account')
@@ -64,12 +61,15 @@ class Rucio(DefaultStorageProvider):
             self.token_endpoint = OIDCUtils.DEFAULT_TOKEN_ENDPOINT
         self.scopes = self.stg_auth.get_credential('scopes')
         if not self.scopes:
-            self.scopes = OIDCUtils.DEFAULT_SCOPES
+            self.scopes = self._OIDC_SCOPE.split()
+        self.token_temp_file = tempfile.mktemp(prefix='rucio_token_',
+                                               suffix='.token')  # nosec
+        self._create_rucio_config()
 
     def __del__(self):
         try:
-            os.remove(self.token_temp_file.name)
-            os.remove(self.cfg_temp_file.name)
+            if os.path.exists(self.token_temp_file):
+                os.remove(self.token_temp_file)
         except Exception as exc:
             get_logger().warning('Error removing temporary file: %s', exc)
 
@@ -87,20 +87,21 @@ class Rucio(DefaultStorageProvider):
                                                              self.client_id)
         return self.oidc_token
 
+    def _create_rucio_config(self):
+        os.environ["RUCIO_CLIENT_MODE"] = "1"
+        os.environ["RUCIO_CONFIG"] = "/dev/null"
+        config_add_section("client")
+        config_set(section="client", option="auth_token_file_path", value=self.token_temp_file)
+        config_set(section="client", option="oidc_scope", value=self._OIDC_SCOPE)
+        config_set(section="client", option="rucio_host", value=self.rucio_host)
+        config_set(section="client", option="auth_host", value=self.auth_host)
+        config_set(section="client", option="account", value=self.scope)
+        config_set(section="client", option="auth_type", value="oidc")
+
     def _get_rucio_client(self, client_type=None):
         # Create token file
-        with open(self.token_temp_file.name, 'w') as f:
-            f.write(self.oidc_token)
-        # Create config file
-        with open(self.cfg_temp_file.name, 'w') as f:
-            f.write('[client]\n')
-            f.write('rucio_host = %s\n' % self.rucio_host)
-            f.write('auth_host = %s\n' % self.auth_host)
-            f.write('auth_type = oidc\n')
-            f.write('account = %s\n' % self.scope)
-            f.write('auth_token_file_path = %s\n' % self.token_temp_file.name)
-            f.write('oidc_scope = %s\n' % self._OIDC_SCOPE)
-        os.environ['RUCIO_CONFIG'] = self.cfg_temp_file.name
+        with open(self.token_temp_file, 'w') as f:
+            f.write(self._get_access_token())
         client = Client()
         if not client_type:
             return client
@@ -123,13 +124,18 @@ class Rucio(DefaultStorageProvider):
 
         dids = [{'did': '%s:%s' % (f['scope'], f['name'])} for f in files]
 
-        output_dir = SysUtils.join_paths(input_dir_path, dataset_name)
-        FileUtils.create_folder(output_dir)
-
         downloadc = self._get_rucio_client("download")
         download = downloadc.download_dids(dids)
         get_logger().debug('Downloaded file info: %s', download)
-        return output_dir
+        try:
+            for file in download:
+                complete_name = file["dest_file_paths"][0]
+                basename = os.path.basename(complete_name)
+                FileUtils.cp_file(complete_name, SysUtils.join_paths(input_dir_path,
+                                                                     basename))
+        except Exception as e:
+            print("An exception occurred" + e)
+        return input_dir_path
 
     def upload_file(self, file_path, file_name, output_path):
         """Uploads the file to Rucio.
