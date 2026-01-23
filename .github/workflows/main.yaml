@@ -28,6 +28,7 @@ jobs:
     - name: Generate XML coverage report
       run: python -m coverage xml
     - name: Report coverage
+      if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
       uses: codacy/codacy-coverage-reporter-action@v1
       with:
         project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
