@@ -16,12 +16,17 @@ related with the S3 storage provider. """
 
 import boto3
 import urllib3
+from boto3.s3.transfer import TransferConfig
 from faassupervisor.logger import get_logger
 from faassupervisor.storage.providers import DefaultStorageProvider, \
     get_bucket_name, get_file_key
 from faassupervisor.utils import SysUtils
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+S3_TRANSFER_CONFIG = TransferConfig(use_threads=False)
+
 
 class S3(DefaultStorageProvider):
     """Class that manages downloads and uploads from S3."""
@@ -54,7 +59,8 @@ class S3(DefaultStorageProvider):
         with open(file_download_path, 'wb') as data:
             self.client.download_fileobj(parsed_event.bucket_name,
                                          parsed_event.object_key,
-                                         data)
+                                         data,
+                                         Config=S3_TRANSFER_CONFIG)
         get_logger().info('Successful download of file \'%s\' from bucket \'%s\' in path \'%s\'',
                           parsed_event.object_key,
                           parsed_event.bucket_name,
@@ -67,4 +73,5 @@ class S3(DefaultStorageProvider):
         bucket_name = get_bucket_name(output_path)
         get_logger().info('Uploading file \'%s\' to bucket \'%s\'', file_key, bucket_name)
         with open(file_path, 'rb') as data:
-            self.client.upload_fileobj(data, bucket_name, file_key)
+            self.client.upload_fileobj(data, bucket_name, file_key,
+                                       Config=S3_TRANSFER_CONFIG)
