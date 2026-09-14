@@ -16,7 +16,6 @@
 Also entry point of the faassupervisor package."""
 
 import os
-import distutils.util
 from faassupervisor.events import parse_event
 from faassupervisor.exceptions import exception, FaasSupervisorError
 from faassupervisor.storage.config import StorageConfig

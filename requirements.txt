@@ -1,8 +1,8 @@
-boto3==1.20.38
+boto3>=1.43.92
 webdavclient3==3.14.6
 requests==2.32.4
-setuptools>=40.8.0
+setuptools>=80
 wheel==0.46.2
-pyyaml==6.0.1
-awslambdaric==2.0.12
-rucio-clients==36.5.0
+pyyaml>=6.0.2
+awslambdaric==3.1.1
+rucio-clients>=41.2.2
