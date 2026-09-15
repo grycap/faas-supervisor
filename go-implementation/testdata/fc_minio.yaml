@@ -1,0 +1,16 @@
+name: grayify
+log_level: DEBUG
+storage_providers:
+  minio:
+    default:
+      endpoint: "http://localhost:9000"
+      verify: true
+      access_key: "minioadmin"
+      secret_key: "minioadmin"
+      region: us-east-1
+input:
+- storage_provider: minio
+  path: grayify/in
+output:
+- storage_provider: minio
+  path: grayify/out
